@@ -14,6 +14,8 @@
 
 typedef int								socket_t;
 
+typedef std::istringstream				isstream_t;
+
 typedef std::string						str_t;
 
 typedef std::vector<str_t>				vec_str_t;
