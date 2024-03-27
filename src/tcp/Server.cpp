@@ -5,7 +5,7 @@ Server::~Server( void ) { close( sock ); }
 
 void Server::listening( void ) {
 	if ( listen( sock, 10 ) == ERROR )
-		throw err_t( "fail to listening" );		
+		throw err_t( "fail to listening" );
 		
 	std::clog << "Listening on port 8080\n";
 

@@ -2,7 +2,7 @@ NAME		= webserv
 
 CPP			= c++
 FLAG		= -Wall -Wextra -Werror \
-$(FLG_STD) -I include
+$(FLG_STD) -I include -I include/class
 
 FLG_STD		= -std=c++98
 
