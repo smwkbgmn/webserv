@@ -12,8 +12,9 @@
 
 class HTTP {
 	public:
-		static method_t		method;
-		static status_t		status;	
+		// static method_t		method;
+		static status_t		status;
+		static mime_t		mime;
 
 		static void	respone( Transaction&, socket_t );
 		static void	init( const str_t&, const str_t& );

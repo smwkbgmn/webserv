@@ -7,13 +7,13 @@
 	4. Send response
 */
 
-method_t	HTTP::method;
+mime_t		HTTP::mime;
+// method_t	HTTP::method;
 status_t	HTTP::status;
 
-void init( const str_t& nameHeader, const str_t& nameStatus ) {
-	File	header( nameHeader, R );
+void init( const str_t& nameHeader, const str_t& nameStatus, const str_t& nameMime ) {
+	( void )nameHeader;
+	( void )nameMime;
 	File	status( nameStatus, R );
-
 	
 }
-
