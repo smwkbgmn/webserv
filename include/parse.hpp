@@ -20,30 +20,4 @@
 # define CRLF				"\r\n"
 # define SP					' '
 
-/* TRANSACTION */
-# define CNT_METHOD			3
-
-enum 
-
-const str_t		httpName	= "HTTP";
-const vec_str_t	httpVersion	= {
-	"0.9",
-	"1.0",
-	"1.1",
-	"2.0"
-};
-
-enum methodID {
-	GET,
-	POST,
-	DELETE
-};
-
-const str_t	methodName[CNT_METHOD] = {
-	"GET",
-	"POST",
-	"DELETE"
-};
-
-
 #endif 

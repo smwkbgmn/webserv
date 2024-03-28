@@ -10,17 +10,37 @@
 	redirection
 */
 
+# define CNT_METHOD 3
+# define CNT_VERSION 4
+
+// Shitty shit versin limitation: initializer list
+const str_t	strMethod[] = {
+	"GET",
+	"POST",
+	"DELETE"
+};
+
+const str_t	strVersion[] = {
+	"0.9",
+	"1.0",
+	"1.1",
+	"2.0"
+};
+
 class HTTP {
 	public:
-		// static method_t		method;
+		static str_t		http;
+		static vec_str_t	version;
+		static vec_str_t	method;
 		static status_t		status;
 		static mime_t		mime;
 
-		static void	respone( Transaction&, socket_t );
-		static void	init( const str_t&, const str_t& );
+		static void			respone( Transaction&, socket_t );
+		static void			init( const str_t&, const str_t& );
 	
 	private:
-		static void	_method( Transaction& );
+		static void			_assignVec( vec_str_t&, const str_t[], size_t );
+		static void			_method( Transaction& );
 
 };
 
