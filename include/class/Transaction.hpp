@@ -3,6 +3,7 @@
 
 # include <algorithm>
 
+# include "HTTP.hpp"
 # include "parse.hpp"
 # include "error.hpp"
 
@@ -12,8 +13,6 @@
 
 	GET: refuse body contents
 */
-
-
 
 class Request {
 	public:
@@ -25,7 +24,6 @@ class Request {
 		// header_t		_header;
 		bits_t			_body; // Should be changed later to Transfer-encoding type
 
-
 		void			_getLine( str_t );
 		void			_assignMethod( str_t );
 		void			_assignURI( str_t );
@@ -35,6 +33,9 @@ class Request {
 		void			_getBody( str_t );
 
 		str_t			_token( isstream_t&, char );
+		
+		template<typename T>
+		typename T::iterator	_find( T&, str_t );
 		
 };
 

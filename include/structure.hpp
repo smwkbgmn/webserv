@@ -12,12 +12,6 @@
 /* UTILL */
 # include <string>
 
-struct request_line_s;
-struct response_line_s;
-
-typedef struct request_line_s			request_line_t;
-typedef struct response_line_s			response_line_t;
-
 typedef unsigned int					uint_t;
 typedef unsigned int					bits_t;
 
@@ -34,16 +28,28 @@ typedef std::map<str_t, vec_str_t>		mime_t;
 typedef std::map<str_t, vec_str_t>		method_t;
 typedef std::map<unsigned int, str_t>	status_t;
 
+enum methodID {
+	GET,
+	POST,
+	DELETE
+};
 
-struct request_line_s {
+enum versionID {
+	VERSION_9,
+	VERSION_10,
+	VERSION_11,
+	VERSION_20
+};
+
+typedef struct {
 	methodID	method;
 	str_t		target;
-	uint_t		version;
-};
+	versionID	version;
+}	request_line_t;
 
-struct response_line_s {
-	uint_t		version;
+typedef struct {
+	versionID	version;
 	status_t	status;
-};
+}	response_line_t;
 
 #endif

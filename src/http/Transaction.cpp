@@ -22,7 +22,7 @@ Request::Request( const str_t& msgRequest ) {
 
 	// CRLF could be replaced with only LF (see RFC)
 	_getLine( msgRequest.substr( pos, pos = msgRequest.find( CRLF, pos ) ) );
-	_getHeader( msgRequest.substr( ++pos, pos = msgRequest.find( CRLF, pos ) ) );
+	// _getHeader( msgRequest.substr( ++pos, pos = msgRequest.find( CRLF, pos ) ) );
 	// _getBody(  );
 }
 
@@ -37,14 +37,12 @@ Request::_getLine( str_t line ) {
 
 void
 Request::_assignMethod( str_t token ) {
-	int	id = 0;
-	while ( id < CNT_METHOD && token != methodName[id] )
-		id++;
+	vec_str_iter_t	iter = _find( HTTP::method, token );
 
-	if ( id == CNT_METHOD )
+	if ( iter == HTTP::method.end() )
 		throw err_t( "_assignMethod: " + errMsg[INVALID_REQUEST_LINE] );
 	
-	_line.method = static_cast<methodID>( id );
+	_line.method = static_cast<methodID>( std::distance( HTTP::method.begin(), iter ) );
 }
 
 void
@@ -54,25 +52,24 @@ void
 Request::_assignVersion( str_t token ) {
 	isstream_t iss( token );
 
-	if ( _token( iss, '/' ) != httpName )
+	if ( _token( iss, '/' ) != HTTP::http )
 		throw err_t( "_assignVersion: " + errMsg[INVALID_REQUEST_LINE] );
 	
-	vec_str_iter_t iter =
-		std::find( httpVersion.begin(), httpVersion.end(), _token( iss, NONE ) );
+	vec_str_iter_t iter = _find( HTTP::version, _token( iss, NONE ) );
 
-	if ( iter == httpVersion.end() )
+	if ( iter == HTTP::version.end() )
 		throw err_t( "_assignVersion: " + errMsg[INVALID_REQUEST_LINE] );
 
-	_line.version = std::distance( httpVersion.begin(), iter );
+	_line.version = static_cast<versionID>( std::distance( HTTP::version.begin(), iter ) );
 }
 
 
 
 
-void
-Request::_getHeader( str_t token ) {
+// void
+// Request::_getHeader( str_t token ) {
 	
-}
+// }
 
 
 
@@ -88,6 +85,10 @@ Request::_token( isstream_t& iss, char delim ) {
 
 	return token;
 }
+
+template<typename T>
+typename T::iterator
+Request::_find( T& obj, str_t token ) { return std::find( obj.begin(), obj.end(), token ); }
 
 /* BASE - RESPONSE */
 

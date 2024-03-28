@@ -1,11 +1,11 @@
 #ifndef ERROR_HPP
 # define ERROR_HPP
 
-# define ERROR -1
-
 # include <exception>
 
-# include <sys/errno.h>
+# include "structure.hpp"
+
+# define ERROR -1
 
 typedef std::runtime_error	err_t;
 
