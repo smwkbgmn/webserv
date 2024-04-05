@@ -2,25 +2,27 @@
 # define HTTP_HPP
 
 # include "Transaction.hpp"
-# include "File.hpp"
-
-/*
-	[Any HTTP method and resources]
-	GET, POST, DELETE
-	redirection
-*/
+# include "Client.hpp"
+# include "log.hpp"
 
 # define CNT_METHOD 3
 # define CNT_VERSION 4
 
-// Shitty shit versin limitation: initializer list
-const str_t	strMethod[] = {
+const str_t dirRoot			= "./html";
+const str_t	dirKeys			= "./src/http/";
+const str_t	nameStatus		= dirKeys + "keyStatus.txt";
+const str_t	nameMime		= dirKeys + "keyMime.txt";
+const str_t	nameHeaderIn	= dirKeys + "keyHeaderIn.txt";
+const str_t	nameHeaderOut	= dirKeys + "keyHeaderOut.txt";
+
+// Shitty shit versin limit: initializer list
+const str_t	strMethod[]		= {
 	"GET",
 	"POST",
 	"DELETE"
 };
 
-const str_t	strVersion[] = {
+const str_t	strVersion[]	= {
 	"0.9",
 	"1.0",
 	"1.1",
@@ -32,17 +34,37 @@ class HTTP {
 		static str_t		http;
 		static vec_str_t	version;
 		static vec_str_t	method;
+		static vec_str_t	header_in;
+		static vec_str_t	header_out;
 		static status_t		status;
 		static mime_t		mime;
 
-		static void			respone( Transaction&, socket_t );
-		static void			init( const str_t&, const str_t& );
+		static void			init( void );
+		static void			response( const Client&, const Request& );
 	
+		static char*		GET( const str_t&, size_t& );
+		static void			POST( const Request& );
+		// static void			DELETE( const Request& );
+
+		// CGI
+		// Redirect
+
 	private:
+		static void			_assignHeader( void );
+		static void			_assignStatus( void );
+		static void			_assignMime( void );
 		static void			_assignVec( vec_str_t&, const str_t[], size_t );
-		static void			_method( Transaction& );
+
+		static void			_message( const Response&, osstream_t& );
+		static void			_msgLine( const Response&, osstream_t& );
+		static void			_msgHeader( const Response&, osstream_t& );
+		static void			_msgBody( const Response&, osstream_t& );
 
 };
+
+template<typename Container, typename Target>
+typename Container::iterator
+lookup( Container& obj, Target token ) { return std::find( obj.begin(), obj.end(), token ); }
 
 #endif
 

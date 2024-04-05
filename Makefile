@@ -8,6 +8,8 @@ FLG_STD		= -std=c++98
 
 SRC			= \
 $(wildcard src/*.cpp) \
+$(wildcard src/cgi/*.cpp) \
+$(wildcard src/http/*.cpp) \
 $(wildcard src/tcp/*.cpp)
 
 OBJ			= $(SRC:.cpp=.o)
@@ -26,6 +28,9 @@ clean		:
 fclean		:
 			make clean
 			$(RM) $(NAME)
+
+rmlog		:
+			$(RM) $(wildcard log/*.log)
 
 re			:
 			make fclean
