@@ -1,5 +1,12 @@
 #include "webserv.hpp"
 
+/*
+	- method DELETE
+	- MIME init
+	- header_out structure
+	- error handled response
+*/
+
 int main( void ) {	
 	try {
 		Server	server;

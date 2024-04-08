@@ -14,13 +14,10 @@
 	BWS		= OWS; "bad" whitespace
 */
 
-// # define FALSE		0
-// # define TRUE		1
-
-/* VALUE */
 # define NONE	0
+# define FALSE	0
+# define TRUE	1
 
-/* TOKEN */
 # define LF		'\n'
 # define CR		'\r'
 # define CRLF	"\r\n"
@@ -44,46 +41,65 @@ enum connectionID {
 	KEEP_ALIVE
 };
 
-/* STRUCT */
+enum headerInID {
+	IN_HOST,
+	IN_CONNECTION,
+	IN_CHUNK,
+	IN_CONTENT_LEN,
+	IN_CONTENT_TYPE
+};
+
+enum headerOutID {
+	OUT_SERVER,
+	OUT_DATE,
+	OUT_CONNECTION,
+	OUT_CHUNK,
+	OUT_CONTENT_LEN,
+	OUT_CONTENT_TYPE
+};
+
+
+
+/* STRUCT - Request */
 typedef struct {
 	methodID	method;
 	str_t		uri;
 	versionID	version;
 }	request_line_t;
 
-typedef struct {
-	versionID	version;
-	uint_t		status;
-}	response_line_t;
-
-/*
-	[Request]
-	Host
-	Connection
-	Accept
-	Accept-Encoding
-	
-	[Response]
-	Date
-	Content-Length
-	Content-Range
-	Content-Type
-*/
-
-typedef struct {
+typedef struct request_header_s {
 	str_t		host;
-	str_t		date;
+	// date_t		date;
 	unsigned	connection: 2;
-	size_t		content_length;
-	unsigned	content_type: 8;
-	
-}	request_header_t;
-
-typedef struct {
-	str_t		date;
+	unsigned	chunked: 1;
 	size_t		content_length;
 	str_t		content_type;
 	
+	vec_uint_t	list;
+	request_header_s( void );
+}	request_header_t;
+
+
+
+/* STRUCT - Response */
+typedef struct {
+	versionID	version;
+	uint_t		status;
+
+}	response_line_t;
+
+typedef struct response_header_s {
+	str_t		server;
+	// date_t		date;
+	// date_t		last_modified;
+	unsigned	connection: 2;
+	unsigned	chunked: 1;
+	size_t		content_length;
+	str_t		content_type;
+	
+	vec_uint_t	list;
+
+	response_header_s( void );
 }	response_header_t;
 
 #endif 

@@ -11,6 +11,7 @@
 extern int errno;
 
 typedef std::runtime_error	err_t;
+typedef std::exception		exception_t;
 
 enum errID {
 	INVALID_REQUEST_LINE,

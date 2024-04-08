@@ -6,6 +6,9 @@
 
 # include "structure.hpp"
 
+const str_t	unrecogType	= "text/plain";
+const str_t	nameServer	= "ft_webserv";
+
 /* For body contents, see RFC HTTP semantic 6.4 Content */
 
 class Request {
@@ -29,6 +32,7 @@ class Request {
 		void					_assignVersion( str_t );
 
 		void					_getHeader( str_t );
+		void					_add( vec_uint_t&, uint_t );
 		void					_getBody( str_t );
 
 		str_t					_token( isstream_t&, char );

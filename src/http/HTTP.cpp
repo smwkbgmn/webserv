@@ -1,23 +1,22 @@
 #include "HTTP.hpp"
 
-str_t		HTTP::http;
-vec_str_t	HTTP::version;
-vec_str_t	HTTP::method;
-vec_str_t	HTTP::header_in;
-vec_str_t	HTTP::header_out;
-status_t	HTTP::status;
-mime_t		HTTP::mime;
+str_t			HTTP::signature;
+vec_str_t		HTTP::version;
+vec_str_t		HTTP::method;
+vec_str_t		HTTP::header_in;
+vec_str_t		HTTP::header_out;
+map_uint_str_t	HTTP::status;
+map_str_str_t	HTTP::mime;
 
-/* METHOD - init*/
-
+/* METHOD - init: load keys */
 void
 HTTP::init( void ) {
-	http = "HTTP";
-	_assignVec( version, strVersion, CNT_VERSION );
-	_assignVec( method, strMethod, CNT_METHOD );
+	signature = "HTTP";
 	_assignHeader();
 	_assignStatus();
 	_assignMime();
+	_assignVec( version, strVersion, CNT_VERSION );
+	_assignVec( method, strMethod, CNT_METHOD );
 }
 
 void
@@ -51,7 +50,17 @@ HTTP::_assignStatus( void ) {
 
 void
 HTTP::_assignMime( void ) {
-	File	file( nameMime, R );	
+	File		file( nameMime, R );
+	str_t		type, exts, ext;
+
+	while ( !file.fs.eof() ) {
+		file.fs >> type;
+		
+		std::getline( file.fs, exts, ';' );
+		isstream_t	iss( exts );
+		while ( iss >> ext )
+			mime.insert( std::make_pair( ext, type ) );
+	}
 }
 
 void
@@ -60,8 +69,7 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 		target.push_back( source[idx] );
 }
 
-/* METHOD - response */
-
+/* METHOD - response: send response message */
 void
 HTTP::response( const Client& client, const Request& rqst ) {
 	osstream_t oss;
@@ -84,48 +92,43 @@ HTTP::_message( const Response& rspn, osstream_t& oss ) {
 
 void
 HTTP::_msgLine( const Response& rspn, osstream_t& oss ) {
-	status_t::iterator iter = HTTP::status.find( rspn.line().status );
+	map_uint_str_t::iterator iter = HTTP::status.find( rspn.line().status );
 
 	oss <<
-	http << '/' << version.at( static_cast<size_t>( rspn.line().version ) ) << ' ' <<
-	iter->first << " " << iter->second <<
+	signature << '/' << version.at( static_cast<size_t>( rspn.line().version ) ) << ' ' <<
+	iter->first << " " << iter->second << 
 	CRLF;
-}
-
-void HTTP::_msgHeader( const Response& rspn, osstream_t& oss ) {
-	oss << 
-	"Content-Length: " << rspn.header().content_length << CRLF <<
-	CRLF;
-}
-
-void HTTP::_msgBody( const Response& rspn, osstream_t& oss ) {
-	oss << rspn.body();
-}
-
-/* METHOD - methods */
-
-char*
-HTTP::GET( const str_t& uri, size_t& size ) {
-	File target( dirRoot + uri, R_BINARY );
-
-	std::filebuf* pbuf = target.fs.rdbuf();
-	size = pbuf->pubseekoff( 0, target.fs.end, target.fs.in );
-	pbuf->pubseekpos( 0, target.fs.in );
-
-	char *buf = new char[size];
-	pbuf->sgetn( buf, size );
-	
-	return buf;
 }
 
 void
-HTTP::POST( const Request& rqst ) {
-	File target( dirRoot + rqst.line().uri, W );
-
-	target.fs << rqst.body();
+HTTP::_msgHeader( const Response& rspn, osstream_t& oss ) {
+	for ( vec_uint_t::const_iterator iter = rspn.header().list.begin(); iter != rspn.header().list.end(); ++iter ) {
+		_msgHeaderName( *iter, oss );
+		_msgHeaderValue( rspn.header(), *iter, oss );
+	}
+	oss << CRLF;
 }
 
-// void
-// HTTP::DELETE( const Request& rqst ) {
-	
-// }
+void
+HTTP::_msgHeaderName( uint_t id, osstream_t& oss ) {
+	oss << HTTP::header_out.at( id ) << ": ";
+}
+
+void
+HTTP::_msgHeaderValue( const response_header_t& header, uint_t id, osstream_t& oss ) {
+	switch( id ) {
+		case OUT_SERVER: oss << header.server; break;
+		case OUT_DATE: break;
+		case OUT_CONNECTION: break;
+		case OUT_CHUNK: break;
+		case OUT_CONTENT_LEN: oss << header.content_length; break;
+		case OUT_CONTENT_TYPE: oss << header.content_type; break;
+	}
+	oss << CRLF;
+}
+
+void
+HTTP::_msgBody( const Response& rspn, osstream_t& oss ) {
+	for ( size_t idx = 0; idx < rspn.header().content_length; ++idx )
+		oss << rspn.body()[idx];
+}

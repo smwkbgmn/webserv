@@ -59,9 +59,7 @@ Request::Request( const char* buf ): _body( NULL ) {
 	_getLine( msgRqst.substr( posBegin, posEnd ) );
 	posBegin = posEnd + 2;
 
-	while ( LOOP ) {
-		posEnd = msgRqst.find( CRLF, posBegin );
-		if ( posEnd == str_t::npos ) break;
+	while ( ( posEnd = msgRqst.find( CRLF, posBegin ) ) != str_t::npos ) {
 		_getHeader( msgRqst.substr( posBegin, posEnd ) );
 		posBegin = posEnd + 2;
 	}
@@ -98,7 +96,7 @@ void
 Request::_assignVersion( str_t token ) {
 	isstream_t iss( token );
 
-	if ( _token( iss, '/' ) != HTTP::http )
+	if ( _token( iss, '/' ) != HTTP::signature )
 		throw err_t( "_assignVersion: " + errMsg[INVALID_REQUEST_LINE] );
 	
 	vec_str_iter_t iter = lookup( HTTP::version, _token( iss, NONE ) );
@@ -117,16 +115,22 @@ Request::_getHeader( str_t field ) {
 	// 	throw err_t( "_getHeader: " + errMsg[INVALID_REQUEST_FIELD] + " " + field );
 
 	switch ( std::distance( HTTP::header_in.begin(), iter ) ) {
-		case 0: _header.host = field; break;
-		case 1: _header.date = field; break;
-		case 2: _header.connection = KEEP_ALIVE; break;
+		case IN_HOST: _header.host = field; _add( _header.list, 0 ); break;
+		case IN_CONNECTION: _header.connection = KEEP_ALIVE; _add( _header.list, 2 ); break;
+		case IN_CHUNK: break;
+		case IN_CONTENT_LEN: break;
+		case IN_CONTENT_TYPE: break;
 		// default: throw err_t( "_getHeader: " + errMsg[INVALID_REQUEST_FIELD] + " " + field );
 	}
 }
 
 void
+Request::_add( vec_uint_t& list, uint_t id ) { list.push_back( id ); }
+
+void
 Request::_getBody( str_t body ) {
 	_header.content_length = body.size();
+	_header.list.push_back( IN_CONTENT_LEN );
 	
 	_body = new char[body.length()];
 	body.copy( _body, body.length() );
@@ -146,7 +150,6 @@ Request::_token( isstream_t& iss, char delim ) {
 
 Request::~Request( void ) { if ( _body ) delete _body; }
 
- /* REQUEST - METHOD */
 const request_line_t&
 Request::line( void ) const { return _line; }
 
@@ -158,20 +161,22 @@ Request::body( void ) const { return _body; }
 
 
 
-
-
 /* RESPONSE */
 Response::Response( const Request& rqst ): _body( NULL ) {
 	switch ( rqst.line().method ) {
 		case GET:
-			_body = HTTP::GET( rqst.line().uri, _header.content_length ); break;
+			_body = HTTP::GET( rqst.line().uri, _header.content_type, _header.content_length );
+			_header.list.push_back( OUT_CONTENT_TYPE );
+			_header.list.push_back( OUT_CONTENT_LEN );
+			break;
 
 		case POST:
-			HTTP::POST( rqst ); break;
+			HTTP::POST( rqst );
+			break;
 
 		case DELETE:
+			// HTTP::DELETE( rqst );
 			break;
-			// HTTP::DELETE( rqst ); break;
 	}
 
 	_line.version = VERSION_11;
@@ -189,3 +194,20 @@ Response::header( void ) const { return _header; }
 const char*
 Response::body( void ) const { return _body; }
 
+
+
+/* STRUCT INIT */
+request_header_s::request_header_s( void ) {
+	connection		= KEEP_ALIVE;
+	chunked			= FALSE;
+	content_length	= 0;
+	content_type	= unrecogType;
+}
+
+response_header_s::response_header_s( void ) {
+	server			= nameServer;
+	connection		= KEEP_ALIVE;
+	chunked			= FALSE;
+	content_length	= 0;
+	content_type	= unrecogType;
+}
