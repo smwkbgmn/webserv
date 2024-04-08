@@ -1,22 +1,23 @@
 #include "HTTP.hpp"
 
-str_t			HTTP::signature;
-vec_str_t		HTTP::version;
-vec_str_t		HTTP::method;
-vec_str_t		HTTP::header_in;
-vec_str_t		HTTP::header_out;
-map_uint_str_t	HTTP::status;
-map_str_str_t	HTTP::mime;
+http_t			HTTP::http;
+config_t		HTTP::config;
+key_t			HTTP::key;
 
 /* METHOD - init: load keys */
 void
 HTTP::init( void ) {
-	signature = "HTTP";
+	http.server			= "ft_webserv";
+	http.signature		= "HTTP";
+	config.typeUnrecog	= "text/plain";
+	config.nameNotFound	= "/404_not_found.html";
+	config.dirRoot		= "./html";
+	
 	_assignHeader();
 	_assignStatus();
 	_assignMime();
-	_assignVec( version, strVersion, CNT_VERSION );
-	_assignVec( method, strMethod, CNT_METHOD );
+	_assignVec( http.version, strVersion, CNT_VERSION );
+	_assignVec( http.method, strMethod, CNT_METHOD );
 }
 
 void
@@ -25,11 +26,11 @@ HTTP::_assignHeader( void ) {
 
 	File fileIn( nameHeaderIn, R );
 	while ( std::getline( fileIn.fs, header ) )
-		header_in.push_back( header );
+		key.header_in.push_back( header );
 
 	File fileOut( nameHeaderOut, R );
 	while ( std::getline( fileOut.fs, header ) )
-		header_out.push_back( header );
+		key.header_out.push_back( header );
 }
 
 void
@@ -44,14 +45,14 @@ HTTP::_assignStatus( void ) {
 		file.fs.get();
 		std::getline( file.fs, reason );
 
-		status.insert( std::make_pair( code, reason ) );
+		key.status.insert( std::make_pair( code, reason ) );
 	}
 }
 
 void
 HTTP::_assignMime( void ) {
-	File		file( nameMime, R );
-	str_t		type, exts, ext;
+	File	file( nameMime, R );
+	str_t	type, exts, ext;
 
 	while ( !file.fs.eof() ) {
 		file.fs >> type;
@@ -59,7 +60,7 @@ HTTP::_assignMime( void ) {
 		std::getline( file.fs, exts, ';' );
 		isstream_t	iss( exts );
 		while ( iss >> ext )
-			mime.insert( std::make_pair( ext, type ) );
+			key.mime.insert( std::make_pair( ext, type ) );
 	}
 }
 
@@ -92,10 +93,10 @@ HTTP::_message( const Response& rspn, osstream_t& oss ) {
 
 void
 HTTP::_msgLine( const Response& rspn, osstream_t& oss ) {
-	map_uint_str_t::iterator iter = HTTP::status.find( rspn.line().status );
+	map_uint_str_t::iterator iter = key.status.find( rspn.line().status );
 
 	oss <<
-	signature << '/' << version.at( static_cast<size_t>( rspn.line().version ) ) << ' ' <<
+	http.signature << '/' << http.version.at( static_cast<size_t>( rspn.line().version ) ) << ' ' <<
 	iter->first << " " << iter->second << 
 	CRLF;
 }
@@ -111,7 +112,7 @@ HTTP::_msgHeader( const Response& rspn, osstream_t& oss ) {
 
 void
 HTTP::_msgHeaderName( uint_t id, osstream_t& oss ) {
-	oss << HTTP::header_out.at( id ) << ": ";
+	oss << key.header_out.at( id ) << ": ";
 }
 
 void

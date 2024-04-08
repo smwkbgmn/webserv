@@ -109,12 +109,12 @@ Request::_assignVersion( str_t token ) {
 
 void
 Request::_getHeader( str_t field ) {
-	vec_str_iter_t iter = lookup( HTTP::header_in, field );
+	vec_str_iter_t iter = lookup( HTTP::key.header_in, field );
 
 	// if ( iter == HTTP::header_in.end() )
 	// 	throw err_t( "_getHeader: " + errMsg[INVALID_REQUEST_FIELD] + " " + field );
 
-	switch ( std::distance( HTTP::header_in.begin(), iter ) ) {
+	switch ( std::distance( HTTP::key.header_in.begin(), iter ) ) {
 		case IN_HOST: _header.host = field; _add( _header.list, 0 ); break;
 		case IN_CONNECTION: _header.connection = KEEP_ALIVE; _add( _header.list, 2 ); break;
 		case IN_CHUNK: break;
@@ -163,24 +163,47 @@ Request::body( void ) const { return _body; }
 
 /* RESPONSE */
 Response::Response( const Request& rqst ): _body( NULL ) {
+	// Check the configuration what method are allowed
+	// When the method is known but not allowed, response
+	// with status 405
+
 	switch ( rqst.line().method ) {
 		case GET:
 			_body = HTTP::GET( rqst.line().uri, _header.content_type, _header.content_length );
+			if ( !_body ) {
+				_body = HTTP::GET( HTTP::config.nameNotFound, _header.content_type, _header.content_length );
+				_line.status = 404;
+			}
 			_header.list.push_back( OUT_CONTENT_TYPE );
 			_header.list.push_back( OUT_CONTENT_LEN );
 			break;
 
 		case POST:
+			// The POST can append data to or create target source
+			// Do i have to send different status code?
 			HTTP::POST( rqst );
+			_line.status = 204;
 			break;
 
 		case DELETE:
-			// HTTP::DELETE( rqst );
+			if ( HTTP::DELETE( rqst ) ) _line.status = 204;
+			else _line.status = 404;
 			break;
+		default:
+			_line.status = 400;
 	}
+}
 
-	_line.version = VERSION_11;
-	_line.status = 200;
+void
+Response::_extension( const str_t& uri, str_t& type ) {
+	size_t pos = uri.rfind( '.' );
+	
+	if ( pos != str_t::npos ) {
+		str_t ext = uri.substr( pos + 1 );
+
+		try { type = HTTP::key.mime.at( ext ); }
+		catch ( exception_t &exc ) { type = HTTP::config.typeUnrecog; }
+	}
 }
 
 Response::~Response( void ) { if ( _body ) delete _body; }
@@ -196,12 +219,17 @@ Response::body( void ) const { return _body; }
 
 
 
+
 /* STRUCT INIT */
 request_header_s::request_header_s( void ) {
 	connection		= KEEP_ALIVE;
 	chunked			= FALSE;
 	content_length	= 0;
-	content_type	= unrecogType;
+}
+
+response_line_s::response_line_s( void ) {
+	version	= VERSION_11;
+	status	= 200;
 }
 
 response_header_s::response_header_s( void ) {
@@ -209,5 +237,4 @@ response_header_s::response_header_s( void ) {
 	connection		= KEEP_ALIVE;
 	chunked			= FALSE;
 	content_length	= 0;
-	content_type	= unrecogType;
 }

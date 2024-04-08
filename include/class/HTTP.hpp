@@ -1,6 +1,8 @@
 #ifndef HTTP_HPP
 # define HTTP_HPP
 
+# include <cstdio>
+
 # include "Transaction.hpp"
 # include "Client.hpp"
 # include "log.hpp"
@@ -8,15 +10,12 @@
 # define CNT_METHOD 3
 # define CNT_VERSION 4
 
-/* CONFIGURATIONS */
-const str_t dirRoot				= "./html";
-const str_t	dirKeys				= "./src/http/";
-const str_t	nameStatus			= dirKeys + "keyStatus.txt";
-const str_t	nameMime			= dirKeys + "keyMime.txt";
-const str_t	nameHeaderIn		= dirKeys + "keyHeaderIn.txt";
-const str_t	nameHeaderOut		= dirKeys + "keyHeaderOut.txt";
+const str_t	dirKeys			= "./src/http/";
+const str_t	nameStatus		= dirKeys + "keyStatus.txt";
+const str_t	nameMime		= dirKeys + "keyMime.txt";
+const str_t	nameHeaderIn	= dirKeys + "keyHeaderIn.txt";
+const str_t	nameHeaderOut	= dirKeys + "keyHeaderOut.txt";
 
-// Shitty shit versin limit: initializer list
 const str_t	strMethod[]		= {
 	"GET",
 	"POST",
@@ -32,20 +31,16 @@ const str_t	strVersion[]	= {
 
 class HTTP {
 	public:
-		static str_t			signature;
-		static vec_str_t		version;
-		static vec_str_t		method;
-		static vec_str_t		header_in;
-		static vec_str_t		header_out;
-		static map_uint_str_t	status;
-		static map_str_str_t	mime;
+		static http_t			http;
+		static config_t			config;
+		static key_t			key;
 
 		static void			init( void );
 		static void			response( const Client&, const Request& );
 	
 		static char*		GET( const str_t&, str_t&, size_t& );
 		static void			POST( const Request& );
-		// static void			DELETE( const Request& );
+		static errno_t		DELETE( const Request& );
 
 		// CGI
 		// Redirect
@@ -62,8 +57,6 @@ class HTTP {
 		static void			_msgHeaderName( uint_t, osstream_t& );
 		static void			_msgHeaderValue( const response_header_t&, uint_t, osstream_t& );
 		static void			_msgBody( const Response&, osstream_t& );
-
-		static void			_extension( const str_t&, str_t& );
 
 };
 

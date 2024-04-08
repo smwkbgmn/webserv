@@ -1,6 +1,8 @@
 #ifndef STRUCTURE_HPP
 # define STRUCTURE_HPP
 
+# include <sys/stat.h>
+
 # include <iostream>
 # include <sstream>
 
@@ -12,6 +14,9 @@ typedef int								socket_t;
 typedef unsigned int					uint_t;
 typedef unsigned int					bits_t;
 typedef std::string						str_t;
+
+/* UNIX FILE */
+typedef struct stat						stat_t;
 
 /* I/O */
 typedef std::ostringstream				osstream_t;

@@ -12,6 +12,12 @@
 	OWS		= *( SP / HTAB ); optional whitespace
 	RWS		= 1*( SP / HTAB ); required whitespace
 	BWS		= OWS; "bad" whitespace
+
+	See iana.org for method, header and status list
+	method: https://www.iana.org/assignments/http-methods/http-methods.xhtml
+	header: https://www.iana.org/assignments/http-fields/http-fields.xhtml
+		also https://en.wikipedia.org/wiki/List_of_HTTP_header_fields
+	status: https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 */
 
 # define NONE	0
@@ -58,13 +64,36 @@ enum headerOutID {
 	OUT_CONTENT_TYPE
 };
 
+/* STRUCT - Http, Config, Keys */
+typedef std::vector<methodID>	vec_method_t;
 
+typedef struct {
+	str_t			signature;
+	vec_str_t		version;
+	vec_str_t		method;
+}	http_t;
+
+typedef struct {
+	str_t			server;
+	str_t			dirRoot;
+	str_t			typeUnrecog;
+	str_t			nameNotFound;
+	vec_method_t	allowedMethod;
+}	config_t;
+
+typedef struct {
+	vec_str_t		header_in;
+	vec_str_t		header_out;
+	map_uint_str_t	status;
+	map_str_str_t	mime;	
+}	key_t;
 
 /* STRUCT - Request */
 typedef struct {
 	methodID	method;
 	str_t		uri;
 	versionID	version;
+
 }	request_line_t;
 
 typedef struct request_header_s {
@@ -82,10 +111,11 @@ typedef struct request_header_s {
 
 
 /* STRUCT - Response */
-typedef struct {
+typedef struct response_line_s {
 	versionID	version;
 	uint_t		status;
 
+	response_line_s( void );
 }	response_line_t;
 
 typedef struct response_header_s {

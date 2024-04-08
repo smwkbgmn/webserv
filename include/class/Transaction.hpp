@@ -51,6 +51,8 @@ class Response {
 		response_line_t				_line;
 		response_header_t			_header;
 		char*						_body;
+
+		void						_extension( const str_t& );
 };
 
 #endif

@@ -4,7 +4,7 @@
 	- method DELETE
 	- MIME init
 	- header_out structure
-	- error handled response
+	- vary responses when fail to do method or incorrect message
 */
 
 int main( void ) {	
