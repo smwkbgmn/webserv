@@ -1,8 +1,7 @@
 #include "HTTP.hpp"
 #include "Transaction.hpp"
 
-/*
-	HTTP MESSAGE FORMMAT
+/*	HTTP MESSAGE FORMMAT
 
 	HTTP-message   = start-line CRLF
                    *( field-line CRLF )
@@ -16,7 +15,8 @@
 */
 
 
-/* NGINX plain GET transaction
+/*	NGINX plain GET transaction
+
 	[Request]
 		GET / HTTP/1.1
 		Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,**;q=0.8,application/signed-exchange;v=b3;q=0.7
@@ -47,25 +47,24 @@
 */
 
 /* REQUEST */
-// Request::Request( const str_t& msgRqst ): _body( NULL ) {
-Request::Request( const char* buf ): _body( NULL ) {
+Request::Request( const Client& client, const char* buf ): _client( client ), _body( NULL ) {
 	str_t	msgRqst( buf );
-	size_t	posBegin = 0;
-	size_t	posEnd = 0;
+	size_t	begin	= 0;
+	size_t	end		= 0;
 
 	// CRLF could be replaced with only LF (see RFC)
 	
-	posEnd = msgRqst.find( CRLF, posBegin );
-	_getLine( msgRqst.substr( posBegin, posEnd ) );
-	posBegin = posEnd + 2;
+	end = msgRqst.find( CRLF, begin );
+	_getLine( msgRqst.substr( begin, end ) );
+	begin = end + 2;
 
-	while ( ( posEnd = msgRqst.find( CRLF, posBegin ) ) != str_t::npos ) {
-		_getHeader( msgRqst.substr( posBegin, posEnd ) );
-		posBegin = posEnd + 2;
+	while ( ( end = msgRqst.find( CRLF, begin ) ) != str_t::npos ) {
+		_getHeader( msgRqst.substr( begin, end ) );
+		begin = end + 2;
 	}
 	
-	if( posBegin != msgRqst.length() )
-		_getBody( msgRqst.substr( posBegin ) );
+	if( begin != msgRqst.length() )
+		_getBody( msgRqst.substr( begin ) );
 
 	logfile.fs << msgRqst;
 }
@@ -81,12 +80,15 @@ Request::_getLine( str_t line ) {
 
 void
 Request::_assignMethod( str_t token ) {
-	vec_str_iter_t	iter = lookup( HTTP::method, token );
+	vec_str_iter_t	iter = lookup( HTTP::http.method, token );
 
-	if ( iter == HTTP::method.end() )
+	if ( iter == HTTP::http.method.end() )
 		throw err_t( "_assignMethod: " + errMsg[INVALID_REQUEST_LINE] );
 	
-	_line.method = static_cast<methodID>( std::distance( HTTP::method.begin(), iter ) );
+	_line.method = static_cast<methodID>( std::distance( HTTP::http.method.begin(), iter ) );
+
+	if ( !_client.server().config().allow.at( _line.method ) )
+		_line.method = NOT_ALLOWED;
 }
 
 void
@@ -96,15 +98,15 @@ void
 Request::_assignVersion( str_t token ) {
 	isstream_t iss( token );
 
-	if ( _token( iss, '/' ) != HTTP::signature )
+	if ( _token( iss, '/' ) != HTTP::http.signature )
 		throw err_t( "_assignVersion: " + errMsg[INVALID_REQUEST_LINE] );
 	
-	vec_str_iter_t iter = lookup( HTTP::version, _token( iss, NONE ) );
+	vec_str_iter_t iter = lookup( HTTP::http.version, _token( iss, NONE ) );
 
-	if ( iter == HTTP::version.end() )
+	if ( iter == HTTP::http.version.end() )
 		throw err_t( "_assignVersion: " + errMsg[INVALID_REQUEST_LINE] );
 
-	_line.version = static_cast<versionID>( std::distance( HTTP::version.begin(), iter ) );
+	_line.version = static_cast<versionID>( std::distance( HTTP::http.version.begin(), iter ) );
 }
 
 void
@@ -150,6 +152,9 @@ Request::_token( isstream_t& iss, char delim ) {
 
 Request::~Request( void ) { if ( _body ) delete _body; }
 
+const Client&
+Request::client( void ) const { return _client; }
+
 const request_line_t&
 Request::line( void ) const { return _line; }
 
@@ -161,49 +166,58 @@ Request::body( void ) const { return _body; }
 
 
 
+
+
+
 /* RESPONSE */
 Response::Response( const Request& rqst ): _body( NULL ) {
+	const config_t& servconf = rqst.client().server().config();
+
 	// Check the configuration what method are allowed
 	// When the method is known but not allowed, response
 	// with status 405
 
 	switch ( rqst.line().method ) {
 		case GET:
-			_body = HTTP::GET( rqst.line().uri, _header.content_type, _header.content_length );
+			_body = HTTP::GET( rqst.line().uri, _header.content_length, servconf.root );
 			if ( !_body ) {
-				_body = HTTP::GET( HTTP::config.nameNotFound, _header.content_type, _header.content_length );
+				_body = HTTP::GET( servconf.file40x, _header.content_length, servconf.root );
 				_line.status = 404;
 			}
+			_mime( rqst.line().uri, _header.content_type, HTTP::http.type );
 			_header.list.push_back( OUT_CONTENT_TYPE );
 			_header.list.push_back( OUT_CONTENT_LEN );
 			break;
 
 		case POST:
 			// The POST can append data to or create target source
-			// Do i have to send different status code?
-			HTTP::POST( rqst );
+			// Do I have to send different status code?
+			HTTP::POST( rqst, servconf.root );
 			_line.status = 204;
 			break;
 
 		case DELETE:
-			if ( HTTP::DELETE( rqst ) ) _line.status = 204;
+			if ( HTTP::DELETE( rqst, servconf.root ) ) _line.status = 204;
 			else _line.status = 404;
 			break;
-			
+
+		case NOT_ALLOWED:
+			break;
+
 		default:
 			_line.status = 400;
 	}
 }
 
 void
-Response::_extension( const str_t& uri, str_t& type ) {
+Response::_mime( const str_t& uri, str_t& typeHeader, const str_t& typeUnrecog ) {
 	size_t pos = uri.rfind( '.' );
 	
 	if ( pos != str_t::npos ) {
 		str_t ext = uri.substr( pos + 1 );
 
-		try { type = HTTP::key.mime.at( ext ); }
-		catch ( exception_t &exc ) { type = HTTP::config.typeUnrecog; }
+		try { typeHeader = HTTP::key.mime.at( ext ); }
+		catch ( exception_t &exc ) { typeHeader = typeUnrecog; }
 	}
 }
 
@@ -219,23 +233,3 @@ const char*
 Response::body( void ) const { return _body; }
 
 
-
-
-/* STRUCT INIT */
-request_header_s::request_header_s( void ) {
-	connection		= KEEP_ALIVE;
-	chunked			= FALSE;
-	content_length	= 0;
-}
-
-response_line_s::response_line_s( void ) {
-	version	= VERSION_11;
-	status	= 200;
-}
-
-response_header_s::response_header_s( void ) {
-	server			= nameServer;
-	connection		= KEEP_ALIVE;
-	chunked			= FALSE;
-	content_length	= 0;
-}

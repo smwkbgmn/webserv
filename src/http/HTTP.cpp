@@ -6,14 +6,13 @@ key_t			HTTP::key;
 /* METHOD - init: load keys */
 void
 HTTP::init( void ) {
-	http.signature		= "HTTP";
-	http.type			= "text/plain";
-	config.file40x		= "/404_not_found.html";
-	config.dirRoot		= "./html";
-	
+	http.signature	= "HTTP";
+	http.type		= "text/plain";
+
 	_assignHeader();
 	_assignStatus();
 	_assignMime();
+
 	_assignVec( http.version, strVersion, CNT_VERSION );
 	_assignVec( http.method, strMethod, CNT_METHOD );
 }
@@ -68,14 +67,16 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 		target.push_back( source[idx] );
 }
 
+
+
 /* METHOD - response: send response message */
 void
-HTTP::response( const Client& client, const Request& rqst ) {
+HTTP::transaction( const Request& rqst ) {
 	osstream_t oss;
 	_message( Response( rqst ), oss );
 
 	logfile.fs << oss.str() << std::endl;
-	ssize_t bytesSent = send( client.socket(), oss.str().c_str(), oss.str().size(), 0 );
+	ssize_t bytesSent = send( rqst.client().socket(), oss.str().c_str(), oss.str().size(), 0 );
 
 	if ( bytesSent == ERROR )
 		throw err_t( "http: send: " + errMsg[FAIL_SEND] );
@@ -130,4 +131,36 @@ void
 HTTP::_msgBody( const Response& rspn, osstream_t& oss ) {
 	for ( size_t idx = 0; idx < rspn.header().content_length; ++idx )
 		oss << rspn.body()[idx];
+}
+
+
+
+/* STRUCT INIT */
+config_s::config_s( void ) {
+	server			= "ft_webserv";
+	root			= "/html";
+	file40x			= "/40x.html";
+	file40x			= "/50x.html";
+	 
+	allow.insert( std::make_pair( GET, TRUE ) );
+	allow.insert( std::make_pair( POST, TRUE ) );
+	allow.insert( std::make_pair( DELETE, TRUE ) );
+}
+
+request_header_s::request_header_s( void ) {
+	connection		= KEEP_ALIVE;
+	chunked			= FALSE;
+	content_length	= 0;
+}
+
+response_line_s::response_line_s( void ) {
+	version			= VERSION_11;
+	status			= 200;
+}
+
+response_header_s::response_header_s( void ) {
+	server			= nameServer;
+	connection		= KEEP_ALIVE;
+	chunked			= FALSE;
+	content_length	= 0;
 }

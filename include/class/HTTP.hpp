@@ -34,14 +34,15 @@ class HTTP {
 		static http_t		http;
 		static key_t		key;
 		
-		config_t			config;
+		HTTP( config_t& );
+		~HTTP( void );
 
 		static void			init( void );
-		static void			response( const Client&, const Request& );
+		static void			transaction( const Request& );
 	
-		static char*		GET( const str_t&, str_t&, size_t& );
-		static void			POST( const Request& );
-		static bool			DELETE( const Request& );
+		static char*		GET( const str_t&, size_t&, const str_t& );
+		static void			POST( const Request&, const str_t& );
+		static bool			DELETE( const Request&, const str_t& );
 
 		// CGI
 		// Redirect

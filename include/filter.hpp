@@ -33,7 +33,8 @@
 enum methodID {
 	GET,
 	POST,
-	DELETE
+	DELETE,
+	NOT_ALLOWED
 };
 
 enum versionID {
@@ -65,45 +66,47 @@ enum headerOutID {
 };
 
 /* STRUCT - Http, Config, Keys */
-typedef std::vector<methodID>	vec_method_t;
+typedef std::map<methodID, bool>	map_method_bool_t;
 
 typedef struct {
-	str_t			signature;
-	vec_str_t		version;
-	vec_str_t		method;
-	str_t			type;
+	str_t				signature;
+	vec_str_t			version;
+	vec_str_t			method;
+	str_t				type;
 }	http_t;
 
-typedef struct {
-	str_t			server;
-	str_t			dirRoot;
-	str_t			file40x;
-	str_t			file50x;
-	vec_method_t	allowedMethod;
+typedef struct config_s {
+	str_t				server;
+	str_t				root;
+	map_method_bool_t	allow;
+	str_t				file40x;
+	str_t				file50x;
+	
+	config_s( void );
 }	config_t;
 
 typedef struct {
-	vec_str_t		header_in;
-	vec_str_t		header_out;
-	map_uint_str_t	status;
-	map_str_str_t	mime;	
+	vec_str_t			header_in;
+	vec_str_t			header_out;
+	map_uint_str_t		status;
+	map_str_str_t		mime;	
 }	key_t;
 
 /* STRUCT - Request */
 typedef struct {
-	methodID	method;
-	str_t		uri;
-	versionID	version;
+	methodID			method;
+	str_t				uri;
+	versionID			version;
 
 }	request_line_t;
 
 typedef struct request_header_s {
-	str_t		host;
-	// date_t		date;
-	unsigned	connection: 2;
-	unsigned	chunked: 1;
-	size_t		content_length;
-	str_t		content_type;
+	str_t				host;
+	// date_t				date;
+	unsigned			connection: 2;
+	unsigned			chunked: 1;
+	size_t				content_length;
+	str_t				content_type;
 	
 	vec_uint_t	list;
 	request_header_s( void );
@@ -113,22 +116,22 @@ typedef struct request_header_s {
 
 /* STRUCT - Response */
 typedef struct response_line_s {
-	versionID	version;
-	uint_t		status;
+	versionID			version;
+	uint_t				status;
 
 	response_line_s( void );
 }	response_line_t;
 
 typedef struct response_header_s {
-	str_t		server;
-	// date_t		date;
-	// date_t		last_modified;
-	unsigned	connection: 2;
-	unsigned	chunked: 1;
-	size_t		content_length;
-	str_t		content_type;
+	str_t				server;
+	// date_t				date;
+	// date_t				last_modified;
+	unsigned			connection: 2;
+	unsigned			chunked: 1;
+	size_t				content_length;
+	str_t				content_type;
 	
-	vec_uint_t	list;
+	vec_uint_t			list;
 
 	response_header_s( void );
 }	response_header_t;

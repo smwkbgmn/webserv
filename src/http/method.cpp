@@ -21,9 +21,10 @@
 */
 
 char*
-HTTP::GET( const str_t& uri, size_t& size ) {
+HTTP::GET( const str_t& uri, size_t& size, const str_t& root ) {
+	stat_t	statbuf;                                               
 	try {
-		File target( config.dirRoot + uri, R_BINARY );
+		File target( root + uri, R_BINARY );
 
 		std::filebuf* pbuf = target.fs.rdbuf();
 		size = pbuf->pubseekoff( 0, target.fs.end, target.fs.in );
@@ -37,18 +38,18 @@ HTTP::GET( const str_t& uri, size_t& size ) {
 }
  
 void
-HTTP::POST( const Request& rqst ) {
-	File target( config.dirRoot + rqst.line().uri, W );
+HTTP::POST( const Request& rqst, const str_t& root  ) {
+	File target( root + rqst.line().uri, W );
 
 	target.fs << rqst.body();
 }
 
 bool
-HTTP::DELETE( const Request& rqst ) {
-	stat_t	statBuf;
+HTTP::DELETE( const Request& rqst, const str_t& root ) {
+	stat_t	statbuf;
 
-	if ( stat( rqst.line().uri.c_str(), &statBuf ) != ERROR )
-		return std::remove( ( config.dirRoot + rqst.line().uri ).c_str() ) == ERROR;
+	if ( stat( rqst.line().uri.c_str(), &statbuf ) != ERROR )
+		return std::remove( ( root + rqst.line().uri ).c_str() ) == ERROR;
 
 	return FALSE;
 }

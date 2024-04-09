@@ -13,29 +13,32 @@ const str_t	nameServer	= "ft_webserv";
 
 class Request {
 	public:
-		// Request( const str_t& );
-		Request( const char* );
+		Request( const Client&, const char* );
 		~Request( void );
 
-		const request_line_t&	line( void ) const;
-		const request_header_t&	header( void ) const;
-		const char*				body( void ) const;
+		const Client&				client( void ) const;
+
+		const request_line_t&		line( void ) const;
+		const request_header_t&		header( void ) const;
+		const char*					body( void ) const;
 
 	private:
-		request_line_t			_line;
-		request_header_t		_header;
-		char*					_body;
+		const Client&				_client;
 
-		void					_getLine( str_t );
-		void					_assignMethod( str_t );
-		void					_assignURI( str_t );
-		void					_assignVersion( str_t );
+		request_line_t				_line;
+		request_header_t			_header;
+		char*						_body;
 
-		void					_getHeader( str_t );
-		void					_add( vec_uint_t&, uint_t );
-		void					_getBody( str_t );
+		void						_getLine( str_t );
+		void						_assignMethod( str_t );
+		void						_assignURI( str_t );
+		void						_assignVersion( str_t );
 
-		str_t					_token( isstream_t&, char );
+		void						_getHeader( str_t );
+		void						_add( vec_uint_t&, uint_t );
+		void						_getBody( str_t );
+
+		str_t						_token( isstream_t&, char );
 };
 
 class Response {
@@ -52,7 +55,7 @@ class Response {
 		response_header_t			_header;
 		char*						_body;
 
-		void						_extension( const str_t& );
+		void						_mime( const str_t&, str_t&, const str_t& );
 };
 
 #endif
