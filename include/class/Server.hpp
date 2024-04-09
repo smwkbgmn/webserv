@@ -2,7 +2,6 @@
 # define SERVER_HPP
 
 # include "ASocket.hpp"
-# include "Client.hpp"
 
 class Server: ASocket {
 	public:
@@ -18,5 +17,7 @@ class Server: ASocket {
 	private:
 		Server( socket_t );
 };
+
+# include "Client.hpp"
 
 #endif

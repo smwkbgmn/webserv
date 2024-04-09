@@ -31,34 +31,33 @@ const str_t	strVersion[]	= {
 
 class HTTP {
 	public:
-		static http_t		http;
-		static key_t		key;
+		static http_t	http;
+		static keys_t	key;
 		
 		HTTP( config_t& );
 		~HTTP( void );
 
-		static void			init( void );
-		static void			transaction( const Request& );
+		static void		init( void );
+		static void		transaction( const Request& );
 	
-		static char*		GET( const str_t&, size_t&, const str_t& );
-		static void			POST( const Request&, const str_t& );
-		static bool			DELETE( const Request&, const str_t& );
-
-		// CGI
-		// Redirect
+		static char*	GET( const str_t&, size_t&, const str_t& );
+		static void		POST( const Request&, const str_t& );
+		static bool		DELETE( const Request&, const str_t& );
 
 	private:
-		static void			_assignHeader( void );
-		static void			_assignStatus( void );
-		static void			_assignMime( void );
-		static void			_assignVec( vec_str_t&, const str_t[], size_t );
+		/* init */
+		static void		_assignHeader( void );
+		static void		_assignStatus( void );
+		static void		_assignMime( void );
+		static void		_assignVec( vec_str_t&, const str_t[], size_t );
 
-		static void			_message( const Response&, osstream_t& );
-		static void			_msgLine( const Response&, osstream_t& );
-		static void			_msgHeader( const Response&, osstream_t& );
-		static void			_msgHeaderName( uint_t, osstream_t& );
-		static void			_msgHeaderValue( const response_header_t&, uint_t, osstream_t& );
-		static void			_msgBody( const Response&, osstream_t& );
+		/* transaction */
+		static void		_message( const Response&, osstream_t& );
+		static void		_msgLine( const Response&, osstream_t& );
+		static void		_msgHeader( const Response&, osstream_t& );
+		static void		_msgHeaderName( uint_t, osstream_t& );
+		static void		_msgHeaderValue( const response_header_t&, uint_t, osstream_t& );
+		static void		_msgBody( const Response&, osstream_t& );
 
 };
 

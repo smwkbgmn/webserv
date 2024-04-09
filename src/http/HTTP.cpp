@@ -1,7 +1,7 @@
 #include "HTTP.hpp"
 
-http_t			HTTP::http;
-key_t			HTTP::key;
+http_t	HTTP::http;
+keys_t	HTTP::key;
 
 /* METHOD - init: load keys */
 void
@@ -9,12 +9,12 @@ HTTP::init( void ) {
 	http.signature	= "HTTP";
 	http.type		= "text/plain";
 
+	_assignVec( http.version, strVersion, CNT_VERSION );
+	_assignVec( http.method, strMethod, CNT_METHOD );
+
 	_assignHeader();
 	_assignStatus();
 	_assignMime();
-
-	_assignVec( http.version, strVersion, CNT_VERSION );
-	_assignVec( http.method, strMethod, CNT_METHOD );
 }
 
 void
@@ -69,7 +69,7 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 
 
 
-/* METHOD - response: send response message */
+/* METHOD - transaction: send response message */
 void
 HTTP::transaction( const Request& rqst ) {
 	osstream_t oss;
@@ -137,8 +137,8 @@ HTTP::_msgBody( const Response& rspn, osstream_t& oss ) {
 
 /* STRUCT INIT */
 config_s::config_s( void ) {
-	server			= "ft_webserv";
-	root			= "/html";
+	location		= "/";
+	root			= "./html";
 	file40x			= "/40x.html";
 	file40x			= "/50x.html";
 	 
@@ -159,7 +159,6 @@ response_line_s::response_line_s( void ) {
 }
 
 response_header_s::response_header_s( void ) {
-	server			= nameServer;
 	connection		= KEEP_ALIVE;
 	chunked			= FALSE;
 	content_length	= 0;

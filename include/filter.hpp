@@ -29,6 +29,8 @@
 # define CRLF	"\r\n"
 # define SP		' '
 
+
+
 /* IDs */
 enum methodID {
 	GET,
@@ -65,6 +67,8 @@ enum headerOutID {
 	OUT_CONTENT_TYPE
 };
 
+
+
 /* STRUCT - Http, Config, Keys */
 typedef std::map<methodID, bool>	map_method_bool_t;
 
@@ -76,12 +80,15 @@ typedef struct {
 }	http_t;
 
 typedef struct config_s {
-	str_t				server;
-	str_t				root;
+	name_t				location;
+	// str_t				server; // refer to the Server object
+	path_t				root;
+	bool				atidx;
 	map_method_bool_t	allow;
-	str_t				file40x;
-	str_t				file50x;
-	
+
+	name_t				file40x;
+	name_t				file50x;
+
 	config_s( void );
 }	config_t;
 
@@ -90,7 +97,9 @@ typedef struct {
 	vec_str_t			header_out;
 	map_uint_str_t		status;
 	map_str_str_t		mime;	
-}	key_t;
+}	keys_t;
+
+
 
 /* STRUCT - Request */
 typedef struct {

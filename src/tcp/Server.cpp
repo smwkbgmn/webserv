@@ -12,7 +12,7 @@ void Server::listening( void ) {
 
 	while ( LOOP ) {
 		try {
-			Client	connection( sock );
+			Client	connection( sock, *this );
 			
 			connection.receiving();
 			// connection.sending();

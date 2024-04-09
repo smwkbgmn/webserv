@@ -22,7 +22,6 @@
 
 char*
 HTTP::GET( const str_t& uri, size_t& size, const str_t& root ) {
-	stat_t	statbuf;                                               
 	try {
 		File target( root + uri, R_BINARY );
 
@@ -46,10 +45,10 @@ HTTP::POST( const Request& rqst, const str_t& root  ) {
 
 bool
 HTTP::DELETE( const Request& rqst, const str_t& root ) {
-	stat_t	statbuf;
+	// stat_t	statbuf;
 
-	if ( stat( rqst.line().uri.c_str(), &statbuf ) != ERROR )
-		return std::remove( ( root + rqst.line().uri ).c_str() ) == ERROR;
+	// if ( stat( rqst.line().uri.c_str(), &statbuf ) != ERROR )
+		return std::remove( ( root + rqst.line().uri ).c_str() ) != ERROR;
 
-	return FALSE;
+	// return FALSE;
 }

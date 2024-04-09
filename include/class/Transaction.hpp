@@ -5,9 +5,7 @@
 # include <algorithm>
 
 # include "structure.hpp"
-
-const str_t	unrecogType	= "text/plain";
-const str_t	nameServer	= "ft_webserv";
+# include "Client.hpp"
 
 /* For body contents, see RFC HTTP semantic 6.4 Content */
 

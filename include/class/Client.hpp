@@ -11,7 +11,7 @@ class Client: ASocket {
 		~Client( void );
 
 		socket_t		socket( void ) const { return sock; }
-		const Server&	server( void ) const { return server; }
+		const Server&	server( void ) const { return _server; }
 
 		void		receiving( void );
 		void		sending( void );

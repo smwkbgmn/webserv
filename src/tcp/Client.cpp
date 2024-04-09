@@ -12,7 +12,7 @@ Client::receiving( void ) {
 	if ( bytesRead == ERROR ) 
 		throw err_t( "fail to read from socket" );
 	
-	HTTP::response( *this, Request( buf ) );
+	HTTP::transaction( Request( *this, buf ) );
 }
 
 void
