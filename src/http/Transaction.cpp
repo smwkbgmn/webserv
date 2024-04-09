@@ -189,6 +189,7 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 			if ( HTTP::DELETE( rqst ) ) _line.status = 204;
 			else _line.status = 404;
 			break;
+			
 		default:
 			_line.status = 400;
 	}

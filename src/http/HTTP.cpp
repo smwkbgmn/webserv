@@ -1,16 +1,14 @@
 #include "HTTP.hpp"
 
 http_t			HTTP::http;
-config_t		HTTP::config;
 key_t			HTTP::key;
 
 /* METHOD - init: load keys */
 void
 HTTP::init( void ) {
-	http.server			= "ft_webserv";
 	http.signature		= "HTTP";
-	config.typeUnrecog	= "text/plain";
-	config.nameNotFound	= "/404_not_found.html";
+	http.type			= "text/plain";
+	config.file40x		= "/404_not_found.html";
 	config.dirRoot		= "./html";
 	
 	_assignHeader();

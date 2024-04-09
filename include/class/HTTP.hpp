@@ -31,16 +31,17 @@ const str_t	strVersion[]	= {
 
 class HTTP {
 	public:
-		static http_t			http;
-		static config_t			config;
-		static key_t			key;
+		static http_t		http;
+		static key_t		key;
+		
+		config_t			config;
 
 		static void			init( void );
 		static void			response( const Client&, const Request& );
 	
 		static char*		GET( const str_t&, str_t&, size_t& );
 		static void			POST( const Request& );
-		static errno_t		DELETE( const Request& );
+		static bool			DELETE( const Request& );
 
 		// CGI
 		// Redirect

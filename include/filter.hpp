@@ -71,13 +71,14 @@ typedef struct {
 	str_t			signature;
 	vec_str_t		version;
 	vec_str_t		method;
+	str_t			type;
 }	http_t;
 
 typedef struct {
 	str_t			server;
 	str_t			dirRoot;
-	str_t			typeUnrecog;
-	str_t			nameNotFound;
+	str_t			file40x;
+	str_t			file50x;
 	vec_method_t	allowedMethod;
 }	config_t;
 
