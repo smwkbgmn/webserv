@@ -6,18 +6,15 @@
 
 class Client: ASocket {
 	public:
-
-		Client( socket_t, const Server& );
+		Client( socket_t );
 		~Client( void );
 
-		socket_t		socket( void ) const { return sock; }
-		const Server&	server( void ) const { return _server; }
+		socket_t	socket( void ) const;
 
 		void		receiving( void );
 		void		sending( void );
 		
 	private:
-	 	const Server&	_server;
 		Client( void );
 };
 
