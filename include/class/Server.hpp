@@ -3,29 +3,35 @@
 
 #include "ASocket.hpp"
 #include "Client.hpp"
+// typedef struct kevent kevent;
 
 #define MAX_EVENTS 10
 
 class Server : ASocket {
- public:
-  Server(void);
-  Server(char *);
-  ~Server(void);
+  public:
+    Server(void);
+    Server(char *);
+    ~Server(void);
 
+    void change_events(uintptr_t, int16_t, uint16_t, uint32_t, intptr_t,
+                       void *);
+    void connect_sever();
+    void preSet();
 
-  void change_events( uintptr_t, int16_t ,
-        uint16_t , uint32_t , intptr_t , void *); 
-  void connect_sever();
+    size_t eventOccure();
+    void errorcheck(struct kevent &);
+    bool handleReadEvent(struct kevent *cur_event, int server_socket,
+                         std::map<int, std::string> &findClient);
+    void handleWriteEvent(struct kevent *cur_event,
+                          std::map<int, std::string> &findClient);
+    struct kevent &getEventList(int);
 
-  void disconnect_client(int  );
-  struct kevent&  getEventList(int );
-private:
-  int kq;
-  std::map<int, std::string> clients;
-  std::vector<struct kevent> change_list;
-  std::vector<struct kevent> server_list;
-  struct kevent* cur_event;
-  // struct kevent event_list[MAX_EVENTS];
+  private:
+    int kq;
+
+    std::vector<struct kevent> server_list;
+    struct kevent *cur_event;
+    struct timespec timeout;
 };
 
 #endif
