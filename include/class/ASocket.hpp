@@ -1,23 +1,23 @@
 #ifndef TCP_HPP
 #define TCP_HPP
 
-#include <fcntl.h>
-#include <exception>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <sys/event.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <fstream>
-#include <unistd.h>
-#include <vector>
-#include <map>
-#include <string>
-#include <cstring>
-#include <iostream>
 #include "error.hpp"
 #include "log.hpp"
 #include "structure.hpp"
+#include <cstring>
+#include <exception>
+#include <fcntl.h>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <string>
+#include <sys/event.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <vector>
 
 #define LOOP 1
 
@@ -50,21 +50,24 @@
 
 class ASocket {
 
+  public:
+    struct sockaddr_in addr;
+    socklen_t addrSize;
+    socket_t server_socket;
+    socket_t client_socket;
 
- public:
-  struct sockaddr_in addr;
-  socklen_t addrSize;
-  socket_t server_socket;
-  socket_t client_socket;
-//   std::vector<Server> sever_list;
+    //   std::vector<Server> sever_list;
 
-  ASocket(void);
-  ASocket(int);
-  virtual ~ASocket(void) = 0;
-  void setAddr(void);
+    ASocket(void);
+    ASocket(int);
+    virtual ~ASocket(void);
+    void setAddr(void);
 
-  void setNonBlocking(void);
+    void setNonBlocking(int);
+    void socketOpen(void);
+    void preSet();
+
+    void openSocket(void);
 };
-
 
 #endif
