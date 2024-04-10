@@ -48,29 +48,43 @@
 
 /* REQUEST */
 Request::Request( const Client& client, const char* buf ): _client( client ), _body( NULL ) {
+	// Parse request message
+	_parse( buf );
+
+	// Set config based by location
+	_configIdx = HTTP::getLocationConf( _line.uri, client.server().config() );
+
+	// If the method is not allowed at this location config, set methodID as NOT_ALLOWED
+	if ( _line.method != UNKNOWN ) {
+		try { config().allow.at( _line.method ); }
+		catch ( exception_t& exc ) { _line.method = NOT_ALLOWED; }
+	}
+}
+
+void
+Request::_parse( const char* buf ) {
 	str_t	msgRqst( buf );
 	size_t	begin	= 0;
 	size_t	end		= 0;
 
 	// CRLF could be replaced with only LF (see RFC)
-	
 	end = msgRqst.find( CRLF, begin );
-	_getLine( msgRqst.substr( begin, end ) );
+	_parseLine( msgRqst.substr( begin, end ) );
 	begin = end + 2;
 
 	while ( ( end = msgRqst.find( CRLF, begin ) ) != str_t::npos ) {
-		_getHeader( msgRqst.substr( begin, end ) );
+		_parseHeader( msgRqst.substr( begin, end ) );
 		begin = end + 2;
 	}
 	
 	if( begin != msgRqst.length() )
-		_getBody( msgRqst.substr( begin ) );
+		_parseBody( msgRqst.substr( begin ) );
 
 	logfile.fs << msgRqst;
-}
+} 
 
 void
-Request::_getLine( str_t line ) {
+Request::_parseLine( str_t line ) {
 	isstream_t iss( line );
 
 	_assignMethod( _token( iss, SP ) );
@@ -83,12 +97,9 @@ Request::_assignMethod( str_t token ) {
 	vec_str_iter_t	iter = lookup( HTTP::http.method, token );
 
 	if ( iter == HTTP::http.method.end() )
-		throw err_t( "_assignMethod: " + errMsg[INVALID_REQUEST_LINE] );
-	
-	_line.method = static_cast<methodID>( std::distance( HTTP::http.method.begin(), iter ) );
-
-	if ( !_client.server().config().allow.at( _line.method ) )
-		_line.method = NOT_ALLOWED;
+		_line.method = UNKNOWN;
+	else
+		_line.method = static_cast<methodID>( std::distance( HTTP::http.method.begin(), iter ) );
 }
 
 void
@@ -110,11 +121,11 @@ Request::_assignVersion( str_t token ) {
 }
 
 void
-Request::_getHeader( str_t field ) {
+Request::_parseHeader( str_t field ) {
 	vec_str_iter_t iter = lookup( HTTP::key.header_in, field );
 
 	// if ( iter == HTTP::header_in.end() )
-	// 	throw err_t( "_getHeader: " + errMsg[INVALID_REQUEST_FIELD] + " " + field );
+	// 	throw err_t( "_parseHeader: " + errMsg[INVALID_REQUEST_FIELD] + " " + field );
 
 	switch ( std::distance( HTTP::key.header_in.begin(), iter ) ) {
 		case IN_HOST: _header.host = field; _add( _header.list, 0 ); break;
@@ -122,7 +133,7 @@ Request::_getHeader( str_t field ) {
 		case IN_CHUNK: break;
 		case IN_CONTENT_LEN: break;
 		case IN_CONTENT_TYPE: break;
-		// default: throw err_t( "_getHeader: " + errMsg[INVALID_REQUEST_FIELD] + " " + field );
+		// default: throw err_t( "_parseHeader: " + errMsg[INVALID_REQUEST_FIELD] + " " + field );
 	}
 }
 
@@ -130,7 +141,7 @@ void
 Request::_add( vec_uint_t& list, uint_t id ) { list.push_back( id ); }
 
 void
-Request::_getBody( str_t body ) {
+Request::_parseBody( str_t body ) {
 	_header.content_length = body.size();
 	_header.list.push_back( IN_CONTENT_LEN );
 	
@@ -155,6 +166,9 @@ Request::~Request( void ) { if ( _body ) delete _body; }
 const Client&
 Request::client( void ) const { return _client; }
 
+const config_t& 
+Request::config( void ) const { return client().server().config().at( _configIdx ); }
+
 const request_line_t&
 Request::line( void ) const { return _line; }
 
@@ -171,17 +185,15 @@ Request::body( void ) const { return _body; }
 
 /* RESPONSE */
 Response::Response( const Request& rqst ): _body( NULL ) {
-	const config_t& servconf = rqst.client().server().config();
-
 	// Check the configuration what method are allowed
 	// When the method is known but not allowed, response
 	// with status 405
 
 	switch ( rqst.line().method ) {
 		case GET:
-			_body = HTTP::GET( rqst.line().uri, _header.content_length, servconf.root );
+			_body = HTTP::GET( rqst.line().uri, _header.content_length, rqst.config().root );
 			if ( !_body ) {
-				_body = HTTP::GET( servconf.file40x, _header.content_length, servconf.root );
+				_body = HTTP::GET( rqst.config().file40x, _header.content_length, rqst.config().root );
 				_line.status = 404;
 			}
 			_mime( rqst.line().uri, _header.content_type, HTTP::http.typeDefault );
@@ -192,12 +204,12 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 		case POST:
 			// The POST can append data to or create target source
 			// Do I have to send different status code?
-			HTTP::POST( rqst, servconf.root );
+			HTTP::POST( rqst, rqst.config().root );
 			_line.status = 204;
 			break;
 
 		case DELETE:
-			if ( HTTP::DELETE( rqst, servconf.root ) ) _line.status = 204;
+			if ( HTTP::DELETE( rqst, rqst.config().root ) ) _line.status = 204;
 			else _line.status = 404;
 			break;
 

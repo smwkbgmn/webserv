@@ -10,11 +10,13 @@
 # define CNT_METHOD 3
 # define CNT_VERSION 4
 
+const str_t	dirCGI			= "/cgi";
 const str_t	dirKeys			= "./src/http/";
 const str_t	nameStatus		= dirKeys + "keyStatus.txt";
 const str_t	nameMime		= dirKeys + "keyMime.txt";
 const str_t	nameHeaderIn	= dirKeys + "keyHeaderIn.txt";
 const str_t	nameHeaderOut	= dirKeys + "keyHeaderOut.txt";
+const str_t	nameListCGI		= dirKeys + "lstCGI.txt";
 
 const str_t	strMethod[]		= {
 	"GET",
@@ -37,8 +39,9 @@ class HTTP {
 		HTTP( config_t& );
 		~HTTP( void );
 
-		static void		init( void );
+		static void		init( const str_t&, const str_t& );
 		static void		transaction( const Request& );
+		static size_t	getLocationConf( const str_t&, const vec_config_t& );
 	
 		static char*	GET( const str_t&, size_t&, const str_t& );
 		static void		POST( const Request&, const str_t& );
@@ -52,12 +55,12 @@ class HTTP {
 		static void		_assignVec( vec_str_t&, const str_t[], size_t );
 
 		/* transaction */
-		static void		_message( const Response&, osstream_t& );
-		static void		_msgLine( const Response&, osstream_t& );
-		static void		_msgHeader( const Response&, osstream_t& );
-		static void		_msgHeaderName( uint_t, osstream_t& );
-		static void		_msgHeaderValue( const response_header_t&, uint_t, osstream_t& );
-		static void		_msgBody( const Response&, osstream_t& );
+		static void		_build( const Response&, osstream_t& );
+		static void		_buildLine( const Response&, osstream_t& );
+		static void		_buildHeader( const Response&, osstream_t& );
+		static void		_buildHeaderName( uint_t, osstream_t& );
+		static void		_buildHeaderValue( const response_header_t&, uint_t, osstream_t& );
+		static void		_buildBody( const Response&, osstream_t& );
 
 };
 

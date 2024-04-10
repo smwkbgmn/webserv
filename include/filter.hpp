@@ -36,7 +36,8 @@ enum methodID {
 	GET,
 	POST,
 	DELETE,
-	NOT_ALLOWED
+	NOT_ALLOWED,
+	UNKNOWN
 };
 
 enum versionID {
@@ -67,7 +68,8 @@ enum headerOutID {
 	OUT_CONTENT_TYPE
 };
 
-
+// Try default value by declaring directly
+// path_t	location = "/";
 
 /* STRUCT - Http, Config, Keys */
 typedef std::map<methodID, bool>	map_method_bool_t;
@@ -92,6 +94,8 @@ typedef struct config_s {
 
 	config_s( void );
 }	config_t;
+
+typedef std::vector<config_t>	vec_config_t;
 
 typedef struct {
 	vec_str_t			header_in;

@@ -5,9 +5,9 @@ keys_t	HTTP::key;
 
 /* METHOD - init: load keys */
 void
-HTTP::init( void ) {
-	http.signature	= "HTTP";
-	http.type		= "text/plain";
+HTTP::init( const str_t& sign, const str_t& type ) {
+	http.signature		= sign;
+	http.typeDefault	= type;
 
 	_assignVec( http.version, strVersion, CNT_VERSION );
 	_assignVec( http.method, strMethod, CNT_METHOD );
@@ -73,7 +73,7 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 void
 HTTP::transaction( const Request& rqst ) {
 	osstream_t oss;
-	_message( Response( rqst ), oss );
+	_build( Response( rqst ), oss );
 
 	logfile.fs << oss.str() << std::endl;
 	ssize_t bytesSent = send( rqst.client().socket(), oss.str().c_str(), oss.str().size(), 0 );
@@ -83,15 +83,15 @@ HTTP::transaction( const Request& rqst ) {
 }
 
 void
-HTTP::_message( const Response& rspn, osstream_t& oss ) {
-	_msgLine( rspn, oss );
-	_msgHeader( rspn, oss );
+HTTP::_build( const Response& rspn, osstream_t& oss ) {
+	_buildLine( rspn, oss );
+	_buildHeader( rspn, oss );
 	if ( rspn.body() )
-		_msgBody( rspn, oss );
+		_buildBody( rspn, oss );
 }
 
 void
-HTTP::_msgLine( const Response& rspn, osstream_t& oss ) {
+HTTP::_buildLine( const Response& rspn, osstream_t& oss ) {
 	map_uint_str_t::iterator iter = key.status.find( rspn.line().status );
 
 	oss <<
@@ -101,21 +101,21 @@ HTTP::_msgLine( const Response& rspn, osstream_t& oss ) {
 }
 
 void
-HTTP::_msgHeader( const Response& rspn, osstream_t& oss ) {
+HTTP::_buildHeader( const Response& rspn, osstream_t& oss ) {
 	for ( vec_uint_t::const_iterator iter = rspn.header().list.begin(); iter != rspn.header().list.end(); ++iter ) {
-		_msgHeaderName( *iter, oss );
-		_msgHeaderValue( rspn.header(), *iter, oss );
+		_buildHeaderName( *iter, oss );
+		_buildHeaderValue( rspn.header(), *iter, oss );
 	}
 	oss << CRLF;
 }
 
 void
-HTTP::_msgHeaderName( uint_t id, osstream_t& oss ) {
+HTTP::_buildHeaderName( uint_t id, osstream_t& oss ) {
 	oss << key.header_out.at( id ) << ": ";
 }
 
 void
-HTTP::_msgHeaderValue( const response_header_t& header, uint_t id, osstream_t& oss ) {
+HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, osstream_t& oss ) {
 	switch( id ) {
 		case OUT_SERVER: oss << header.server; break;
 		case OUT_DATE: break;
@@ -128,11 +128,26 @@ HTTP::_msgHeaderValue( const response_header_t& header, uint_t id, osstream_t& o
 }
 
 void
-HTTP::_msgBody( const Response& rspn, osstream_t& oss ) {
+HTTP::_buildBody( const Response& rspn, osstream_t& oss ) {
 	for ( size_t idx = 0; idx < rspn.header().content_length; ++idx )
 		oss << rspn.body()[idx];
 }
 
+
+
+/* METHOD - getLocationConf: get index of vec_config_t matching with request location */
+size_t
+HTTP::getLocationConf( const str_t& uri, const vec_config_t& config ) {
+	if ( config.size() > 0 ) {
+		size_t idx = 1;
+		for ( vec_config_t::const_iterator iter = config.begin(); iter != config.end(); ++iter ) {
+			if ( uri.find( iter->location ) == 0 )
+				return idx;
+			++idx;
+		}
+	}
+	return 0;
+}
 
 
 /* STRUCT INIT */

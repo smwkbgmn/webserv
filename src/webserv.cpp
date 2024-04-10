@@ -1,16 +1,17 @@
 #include "webserv.hpp"
 
 /*
-	- vary responses when fail to do method or incorrect message
-	- CGI
-	- redirect
+	- Vary responses when fail to do method or incorrect message
+	- CGI > file upload, calculator
+	- Redirecttion
 */
 
 int main( void ) {	
 	try {
 		Server	server;
 		
-		HTTP::init();
+		// Retrieve http signature and default type from config file
+		HTTP::init( "HTTP", "text/plain" );
 		server.listening();
 	} catch ( err_t &err ) { std::cerr << err.what() << std::endl; }
 
