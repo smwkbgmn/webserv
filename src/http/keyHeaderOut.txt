@@ -1,15 +1,6 @@
 Server
 Date
-Location
-Refresh
-Last-Modified
-Accept-Range
-Expires
-Charset
-Allow
-Location
-Content-Encoding
+Connection
+Transfer-Encoding
 Content-Length
-Content-Location
-Content-Range
 Content-Type

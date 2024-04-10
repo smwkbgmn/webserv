@@ -1,6 +1,8 @@
 #ifndef HTTP_HPP
 # define HTTP_HPP
 
+# include <cstdio>
+
 # include "Transaction.hpp"
 # include "Client.hpp"
 # include "log.hpp"
@@ -8,14 +10,12 @@
 # define CNT_METHOD 3
 # define CNT_VERSION 4
 
-const str_t dirRoot			= "./html";
 const str_t	dirKeys			= "./src/http/";
 const str_t	nameStatus		= dirKeys + "keyStatus.txt";
 const str_t	nameMime		= dirKeys + "keyMime.txt";
 const str_t	nameHeaderIn	= dirKeys + "keyHeaderIn.txt";
 const str_t	nameHeaderOut	= dirKeys + "keyHeaderOut.txt";
 
-// Shitty shit versin limit: initializer list
 const str_t	strMethod[]		= {
 	"GET",
 	"POST",
@@ -31,34 +31,33 @@ const str_t	strVersion[]	= {
 
 class HTTP {
 	public:
-		static str_t		http;
-		static vec_str_t	version;
-		static vec_str_t	method;
-		static vec_str_t	header_in;
-		static vec_str_t	header_out;
-		static status_t		status;
-		static mime_t		mime;
+		static http_t	http;
+		static keys_t	key;
+		
+		HTTP( config_t& );
+		~HTTP( void );
 
-		static void			init( void );
-		static void			response( const Client&, const Request& );
+		static void		init( void );
+		static void		transaction( const Request& );
 	
-		static char*		GET( const str_t&, size_t& );
-		static void			POST( const Request& );
-		// static void			DELETE( const Request& );
-
-		// CGI
-		// Redirect
+		static char*	GET( const str_t&, size_t&, const str_t& );
+		static void		POST( const Request&, const str_t& );
+		static bool		DELETE( const Request&, const str_t& );
 
 	private:
-		static void			_assignHeader( void );
-		static void			_assignStatus( void );
-		static void			_assignMime( void );
-		static void			_assignVec( vec_str_t&, const str_t[], size_t );
+		/* init */
+		static void		_assignHeader( void );
+		static void		_assignStatus( void );
+		static void		_assignMime( void );
+		static void		_assignVec( vec_str_t&, const str_t[], size_t );
 
-		static void			_message( const Response&, osstream_t& );
-		static void			_msgLine( const Response&, osstream_t& );
-		static void			_msgHeader( const Response&, osstream_t& );
-		static void			_msgBody( const Response&, osstream_t& );
+		/* transaction */
+		static void		_message( const Response&, osstream_t& );
+		static void		_msgLine( const Response&, osstream_t& );
+		static void		_msgHeader( const Response&, osstream_t& );
+		static void		_msgHeaderName( uint_t, osstream_t& );
+		static void		_msgHeaderValue( const response_header_t&, uint_t, osstream_t& );
+		static void		_msgBody( const Response&, osstream_t& );
 
 };
 

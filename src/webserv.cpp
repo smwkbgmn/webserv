@@ -1,5 +1,11 @@
 #include "webserv.hpp"
 
+/*
+	- vary responses when fail to do method or incorrect message
+	- CGI
+	- redirect
+*/
+
 int main( void ) {	
 	try {
 		Server	server;
