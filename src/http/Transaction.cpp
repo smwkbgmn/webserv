@@ -184,7 +184,7 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 				_body = HTTP::GET( servconf.file40x, _header.content_length, servconf.root );
 				_line.status = 404;
 			}
-			_mime( rqst.line().uri, _header.content_type, HTTP::http.type );
+			_mime( rqst.line().uri, _header.content_type, HTTP::http.typeDefault );
 			_header.list.push_back( OUT_CONTENT_TYPE );
 			_header.list.push_back( OUT_CONTENT_LEN );
 			break;

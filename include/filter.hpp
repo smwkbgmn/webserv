@@ -76,18 +76,19 @@ typedef struct {
 	str_t				signature;
 	vec_str_t			version;
 	vec_str_t			method;
-	str_t				type;
+	str_t				typeDefault;
 }	http_t;
 
 typedef struct config_s {
-	name_t				location;
+	path_t				location;
 	// str_t				server; // refer to the Server object
 	path_t				root;
 	bool				atidx;
 	map_method_bool_t	allow;
+	size_t				sizeBodyMax;
 
-	name_t				file40x;
-	name_t				file50x;
+	path_t				file40x;
+	path_t				file50x;
 
 	config_s( void );
 }	config_t;
@@ -104,7 +105,7 @@ typedef struct {
 /* STRUCT - Request */
 typedef struct {
 	methodID			method;
-	str_t				uri;
+	path_t				uri;
 	versionID			version;
 
 }	request_line_t;
