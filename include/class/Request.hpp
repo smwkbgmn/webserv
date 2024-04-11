@@ -1,13 +1,8 @@
-#ifndef TRANSACTION_HPP
-# define TRANSACTION_HPP
-
-# include <new>
-# include <algorithm>
+#ifndef REQUEST_HPP
+# define REQUEST_HPP
 
 # include "structure.hpp"
 # include "Client.hpp"
-
-/* For body contents, see RFC HTTP semantic 6.4 Content */
 
 class Request {
 	public:
@@ -30,35 +25,16 @@ class Request {
 		char*						_body;
 
 		void						_parse( const char* );
-
 		void						_parseLine( str_t );
 		void						_assignMethod( str_t );
 		void						_assignURI( str_t );
 		void						_assignVersion( str_t );
-
 		void						_parseHeader( str_t );
 		void						_add( vec_uint_t&, uint_t );
-
 		void						_parseBody( str_t );
-
 		str_t						_token( isstream_t&, char );
 };
 
-class Response {
-	public:
-		Response( const Request& );
-		~Response( void );
-
-		const response_line_t&		line( void ) const;
-		const response_header_t&	header( void ) const ;
-		const char*					body( void ) const;
-
-	private:
-		response_line_t				_line;
-		response_header_t			_header;
-		char*						_body;
-
-		void						_mime( const str_t&, str_t&, const str_t& );
-};
+# include "HTTP.hpp"
 
 #endif

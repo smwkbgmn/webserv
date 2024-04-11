@@ -1,8 +1,10 @@
 #include "webserv.hpp"
 
 /*
+	- Chunked request/response
 	- Vary responses when fail to do method or incorrect message
-	- CGI > file upload, calculator
+	- CGI > sorting (script), RPN calculator (execute)
+	- autoindex > print list of file
 	- Redirecttion
 */
 
@@ -11,7 +13,7 @@ int main( void ) {
 		Server	server;
 		
 		// Retrieve http signature and default type from config file
-		HTTP::init( "HTTP", "text/plain" );
+		HTTP::init( "HTTP", "text/plain", "/cgi-bin" );
 		server.listening();
 	} catch ( err_t &err ) { std::cerr << err.what() << std::endl; }
 

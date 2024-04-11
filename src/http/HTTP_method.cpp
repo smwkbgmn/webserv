@@ -33,7 +33,23 @@ HTTP::GET( const str_t& uri, size_t& size, const str_t& root ) {
 		pbuf->sgetn( buf, size );
 		
 		return buf;
-	} catch ( exception_t& exc ) { return NULL; }
+	} catch ( exception_t& exc ) { logfile.fs << exc.what() << '\n'; return NULL; }
+}
+
+char*
+HTTP::GET( const str_t& uri, size_t& size ) {
+	try {
+		File target( uri, R_BINARY );
+
+		std::filebuf* pbuf = target.fs.rdbuf();
+		size = pbuf->pubseekoff( 0, target.fs.end, target.fs.in );
+		pbuf->pubseekpos( 0, target.fs.in );
+
+		char *buf = new char[size];
+		pbuf->sgetn( buf, size );
+		
+		return buf;
+	} catch ( exception_t& exc ) { logfile.fs << exc.what() << '\n'; return NULL; }
 }
  
 void

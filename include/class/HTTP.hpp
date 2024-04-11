@@ -3,20 +3,23 @@
 
 # include <cstdio>
 
-# include "Transaction.hpp"
-# include "Client.hpp"
+# include "cgi.hpp"
 # include "log.hpp"
+
+# include "Request.hpp"
+# include "Response.hpp"
 
 # define CNT_METHOD 3
 # define CNT_VERSION 4
 
-const str_t	dirCGI			= "/cgi";
-const str_t	dirKeys			= "./src/http/";
-const str_t	nameStatus		= dirKeys + "keyStatus.txt";
-const str_t	nameMime		= dirKeys + "keyMime.txt";
-const str_t	nameHeaderIn	= dirKeys + "keyHeaderIn.txt";
-const str_t	nameHeaderOut	= dirKeys + "keyHeaderOut.txt";
-const str_t	nameListCGI		= dirKeys + "lstCGI.txt";
+const path_t	dirKeys			= "./src/http/key";
+const path_t	fileStatus		= dirKeys + "keyStatus.txt";
+const path_t	fileMime		= dirKeys + "keyMime.txt";
+const path_t	fileHeaderIn	= dirKeys + "keyHeaderIn.txt";
+const path_t	fileHeaderOut	= dirKeys + "keyHeaderOut.txt";
+const path_t	fileListCGI		= dirKeys + "lstCGI.txt";
+
+const path_t	fileBadRqst		= "./html/bad_request.html";
 
 const str_t	strMethod[]		= {
 	"GET",
@@ -39,11 +42,12 @@ class HTTP {
 		HTTP( config_t& );
 		~HTTP( void );
 
-		static void		init( const str_t&, const str_t& );
-		static void		transaction( const Request& );
+		static void		init( const str_t&, const str_t&, const str_t& );
+		static void		transaction( const Client&, const char* );
 		static size_t	getLocationConf( const str_t&, const vec_config_t& );
 	
 		static char*	GET( const str_t&, size_t&, const str_t& );
+		static char*	GET( const str_t&, size_t& ); // For getting body of error page
 		static void		POST( const Request&, const str_t& );
 		static bool		DELETE( const Request&, const str_t& );
 

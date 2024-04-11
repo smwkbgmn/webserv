@@ -4,10 +4,16 @@
 # include <string>
 
 typedef int								socket_t;
+typedef int								pipe_t;
 typedef unsigned int					uint_t;
 typedef unsigned int					bits_t;
 
 typedef std::string						str_t;
+
+/*
+	name_t: relative path, means when it be used, should combined with absolute path
+	path_t: absolute path
+*/
 typedef str_t							name_t;
 typedef str_t							path_t;
 

@@ -1,16 +1,11 @@
-// #ifndef CGI_HPP
-// # define CGI_HPP
+#ifndef CGI_HPP
+# define CGI_HPP
 
-// #include "ASocket.hpp"
+# define R 0
+# define W 1
 
-// class Cgi{
-//     private:
-//         std::vector<std::string> env_vector;
-//         pid_t pid;
+# include <unistd.h>
 
-//     public:
-//     Cgi(char **);
-//     ~Cgi();
-//     pid_t execute(Cgi &);
-// };
-// #endif
+pid_t	detach( void );
+
+#endif

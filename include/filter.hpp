@@ -30,7 +30,6 @@
 # define SP		' '
 
 
-
 /* IDs */
 enum methodID {
 	GET,
@@ -44,7 +43,8 @@ enum versionID {
 	VERSION_9,
 	VERSION_10,
 	VERSION_11,
-	VERSION_20
+	VERSION_20,
+	NOT_SUPPORTED
 };
 
 enum connectionID {
@@ -78,15 +78,17 @@ typedef struct {
 	str_t				signature;
 	vec_str_t			version;
 	vec_str_t			method;
+
 	str_t				typeDefault;
+	name_t				locationCGI;
 }	http_t;
 
 typedef struct config_s {
-	path_t				location;
-	// str_t				server; // refer to the Server object
+	name_t				location;
 	path_t				root;
-	bool				atidx;
 	map_method_bool_t	allow;
+
+	bool				atidx;
 	size_t				sizeBodyMax;
 
 	path_t				file40x;
@@ -95,7 +97,7 @@ typedef struct config_s {
 	config_s( void );
 }	config_t;
 
-typedef std::vector<config_t>	vec_config_t;
+typedef std::vector<config_t>		vec_config_t;
 
 typedef struct {
 	vec_str_t			header_in;
@@ -105,11 +107,10 @@ typedef struct {
 }	keys_t;
 
 
-
 /* STRUCT - Request */
 typedef struct {
 	methodID			method;
-	path_t				uri;
+	name_t				uri;
 	versionID			version;
 
 }	request_line_t;
@@ -122,10 +123,10 @@ typedef struct request_header_s {
 	size_t				content_length;
 	str_t				content_type;
 	
-	vec_uint_t	list;
+	vec_uint_t			list;
+
 	request_header_s( void );
 }	request_header_t;
-
 
 
 /* STRUCT - Response */
