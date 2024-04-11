@@ -6,7 +6,8 @@
 
 class Client: ASocket {
 	public:
-
+		const char*	buf;
+		
 		Client( socket_t, const Server& );
 		~Client( void );
 

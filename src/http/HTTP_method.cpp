@@ -1,4 +1,5 @@
 #include "HTTP.hpp"
+#include "CGI.hpp"
 
 /*
 	#define __DARWIN_STRUCT_STAT64 { \
@@ -20,10 +21,13 @@
 	}
 */
 
-char*
-HTTP::GET( const str_t& uri, size_t& size, const str_t& root ) {
+bool
+HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
+	if ( _cgiGet( rqst ) )
+		return CGI::GET( rqst, bufptr, size );
+
 	try {
-		File target( root + uri, R_BINARY );
+		File target( rqst.config().root + rqst.line().uri, R_BINARY );
 
 		std::filebuf* pbuf = target.fs.rdbuf();
 		size = pbuf->pubseekoff( 0, target.fs.end, target.fs.in );
@@ -32,12 +36,13 @@ HTTP::GET( const str_t& uri, size_t& size, const str_t& root ) {
 		char *buf = new char[size];
 		pbuf->sgetn( buf, size );
 		
-		return buf;
-	} catch ( exception_t& exc ) { logfile.fs << exc.what() << '\n'; return NULL; }
+		*bufptr = buf;
+		return TRUE;
+	} catch ( exception_t& exc ) { logfile.fs << exc.what() << '\n'; return FALSE; }
 }
 
-char*
-HTTP::GET( const str_t& uri, size_t& size ) {
+bool
+HTTP::GET( const str_t& uri, char** bufptr, size_t& size ) {
 	try {
 		File target( uri, R_BINARY );
 
@@ -48,23 +53,43 @@ HTTP::GET( const str_t& uri, size_t& size ) {
 		char *buf = new char[size];
 		pbuf->sgetn( buf, size );
 		
-		return buf;
-	} catch ( exception_t& exc ) { logfile.fs << exc.what() << '\n'; return NULL; }
+		*bufptr = buf;
+		return TRUE;
+	} catch ( exception_t& exc ) { logfile.fs << exc.what() << '\n'; return FALSE; }
 }
  
-void
-HTTP::POST( const Request& rqst, const str_t& root  ) {
-	File target( root + rqst.line().uri, W );
+bool
+HTTP::POST( const Request& rqst, char** bufptr, size_t& size ) {
+	if ( _cgiGet( rqst ) )
+		return CGI::POST( rqst, bufptr, size );
 
-	target.fs << rqst.body();
+	try {
+		File target( rqst.config().root + rqst.line().uri, W );
+
+		target.fs << rqst.body();
+		return TRUE;
+	} catch ( exception_t& exc ) { logfile.fs << exc.what() << '\n'; return FALSE; }
 }
 
 bool
-HTTP::DELETE( const Request& rqst, const str_t& root ) {
+HTTP::DELETE( const Request& rqst ) {
 	// stat_t	statbuf;
 
 	// if ( stat( rqst.line().uri.c_str(), &statbuf ) != ERROR )
-		return std::remove( ( root + rqst.line().uri ).c_str() ) != ERROR;
+		return std::remove( ( rqst.config().root + rqst.line().uri ).c_str() ) != ERROR;
 
 	// return FALSE;
 }
+
+bool
+HTTP::_cgiGet( const Request& rqst ) {
+	return rqst.config().location == HTTP::http.locationCGI ||
+		*rqst.line().uri.rbegin() == '/';
+}
+
+bool
+HTTP::_cgiPost( const Request& rqst ) {
+	size_t posDot = rqst.line().uri.rfind( '.' );
+	return rqst.line().uri.substr( posDot ) == ".exe";
+}
+

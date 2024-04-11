@@ -2,34 +2,40 @@
 #include "Response.hpp"
 
 Response::Response( const Request& rqst ): _body( NULL ) {
+	/*
+		The CGI could be invoked by several tokens
+		1. extension	: POST, .exe
+		2. location		: GET, /cgi-bin
+		3. autoindex	: GET, /
+	*/ 
+
 	// Check the configuration what method are allowed
 	// When the method is known but not allowed, response
 	// with status 405
 
 	switch ( rqst.line().method ) {
 		case GET:
-			_body = HTTP::GET( rqst.line().uri, _header.content_length, rqst.config().root );
-			if ( !_body ) {
-				_body = HTTP::GET( rqst.config().file40x, _header.content_length, rqst.config().root );
-				_line.status = 404;
+			if ( !HTTP::GET( rqst, &_body, _header.content_length ) )
+				_pageError( 404, rqst.config() );
+			else {
+				_mime( rqst.line().uri, _header.content_type, HTTP::http.typeDefault );
+				_header.list.push_back( OUT_CONTENT_LEN );
+				_header.list.push_back( OUT_CONTENT_TYPE );
 			}
-			_mime( rqst.line().uri, _header.content_type, HTTP::http.typeDefault );
-			_header.list.push_back( OUT_CONTENT_TYPE );
-			_header.list.push_back( OUT_CONTENT_LEN );
 			break;
 
 		case POST:
 			// The POST can append data to or create target source
 			// Do I have to send different status code?
-			HTTP::POST( rqst, rqst.config().root );
-			_line.status = 204;
+			if ( !HTTP::POST( rqst, &_body, _header.content_length ) )
+				_line.status = 400;
+			else
+				_line.status = 204;
 			break;
 
 		case DELETE:
-			if ( HTTP::DELETE( rqst, rqst.config().root ) )
-				_line.status = 204;
-			else
-				_line.status = 404;
+			if ( !HTTP::DELETE( rqst ) ) _line.status = 404;
+			else _line.status = 204;
 			break;
 
 		case NOT_ALLOWED:
@@ -57,7 +63,7 @@ Response::Response( const Client& client ): _body( NULL ) {
 	const config_t&	config = client.server().config().at( 0 );
 
 	_pageError( 400, config );
-	_mime( config.file40x, _header.content_type, HTTP::http.typeDefault );
+	_mime( fileBadRqst, _header.content_type, HTTP::http.typeDefault );
 }
 
 void
@@ -65,11 +71,11 @@ Response::_pageError( const uint_t& status, const config_t& config ) {
 	_line.status = status;	
 
 	if ( status == 400 )
-		_body = HTTP::GET( )
-	if ( status < 500 )
-		_body = HTTP::GET( config.file40x, _header.content_length );
+		HTTP::GET( fileBadRqst, &_body, _header.content_length );
+	else if ( status < 500 )
+		HTTP::GET( config.file40x, &_body, _header.content_length );
 	else
-		_body = HTTP::GET( config.file50x, _header.content_length, config.root );
+		HTTP::GET( config.file50x, &_body, _header.content_length );
 
 	_header.list.push_back( OUT_CONTENT_TYPE );
 	_header.list.push_back( OUT_CONTENT_LEN );

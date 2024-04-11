@@ -73,15 +73,15 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 /* METHOD - getLocationConf: get index of vec_config_t matching with request URI */
 size_t
 HTTP::getLocationConf( const str_t& uri, const vec_config_t& config ) {
-	if ( config.size() == 1 )
-		return 0;
-
-	size_t idx = 1;
-	for ( vec_config_t::const_iterator iter = config.begin(); iter != config.end(); ++iter ) {
-		if ( uri.find( iter->location ) == 0 )
-			return idx;
-		++idx;
+	if ( config.size() > 1 ) {
+		size_t idx = 1;
+		for ( vec_config_t::const_iterator iter = config.begin(); iter != config.end(); ++iter ) {
+			if ( uri.find( iter->location ) == 0 )
+				return idx;
+			++idx;
+		}
 	}
+	return 0;
 }
 
 

@@ -1,8 +1,8 @@
 #include "Request.hpp"
 
-Request::Request( const Client& client, const char* buf ): _client( client ), _body( NULL ) {
+Request::Request( const Client& client ): _client( client ), _body( NULL ) {
 	// Parse request message
-	_parse( buf );
+	_parse( client.buf );
 
 	// Set config based by location
 	_configIdx = HTTP::getLocationConf( _line.uri, client.server().config() );

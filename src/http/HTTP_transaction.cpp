@@ -1,7 +1,7 @@
 #include "HTTP.hpp"
 
-http_t	HTTP::http;
-keys_t	HTTP::key;
+// http_t	HTTP::http;
+// keys_t	HTTP::key;
 
 /*	HTTP MESSAGE FORMMAT
 
@@ -50,11 +50,13 @@ keys_t	HTTP::key;
 
 /* METHOD - transaction: send response message */
 void
-HTTP::transaction( const Client& client, const char* buf ) {
+HTTP::transaction( const Client& client ) {
 	osstream_t oss;
 
-	try { _build( Response( Request( client, buf ) ), oss ); }
-	catch ( exception_t& exc ) { _build( Response( client ), oss ); }
+	try {
+		Request rqst( client );
+		_build( Response( rqst ), oss );
+	} catch ( exception_t& exc ) { logfile.fs << exc.what(); _build( Response( client ), oss ); }
 
 	// LOGGING Response Message
 	logfile.fs << oss.str() << std::endl;
