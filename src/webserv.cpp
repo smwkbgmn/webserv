@@ -13,7 +13,7 @@ int main( void ) {
 		Server	server;
 		
 		// Retrieve http signature and default type from config file
-		HTTP::init( "HTTP", "text/plain", "/cgi-bin" );
+		HTTP::init( "text/plain", "/cgi-bin" );
 		server.listening();
 	} catch ( err_t &err ) { std::cerr << err.what() << std::endl; }
 

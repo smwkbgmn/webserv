@@ -15,28 +15,29 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 
 	switch ( rqst.line().method ) {
 		case GET:
-			if ( !HTTP::GET( rqst, &_body, _header.content_length ) )
-				_pageError( 404, rqst.config() );
-			else {
+			try {
+				HTTP::GET( rqst, &_body, _header.content_length );
 				_mime( rqst.line().uri, _header.content_type, HTTP::http.typeDefault );
 				_header.list.push_back( OUT_CONTENT_LEN );
 				_header.list.push_back( OUT_CONTENT_TYPE );
-			}
+			} catch ( errstat_t& errstat ) { _pageError( errstat.code, rqst.config() ); }
 			break;
 
 		case POST:
 			// The POST can append data to or create target source
 			// Do I have to send different status code?
-			if ( !HTTP::POST( rqst, &_body, _header.content_length ) )
-				_line.status = 400;
-			else
+			try {
+				HTTP::POST( rqst, &_body, _header.content_length );
 				_line.status = 204;
+			} catch ( errstat_t& errstat ) { _pageError( errstat.code, rqst.config() ); }
 			break;
 
 		case DELETE:
-			if ( !HTTP::DELETE( rqst ) ) _line.status = 404;
-			else _line.status = 204;
-			break;
+			try {
+				HTTP::DELETE( rqst );
+				_line.status = 204;
+			} catch ( errstat_t& errstat ) { _pageError( errstat.code, rqst.config() ); }
+ 			break;
 
 		case NOT_ALLOWED:
 			_pageError( 405, rqst.config() );

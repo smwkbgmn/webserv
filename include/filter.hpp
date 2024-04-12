@@ -81,6 +81,7 @@ typedef struct {
 
 	str_t				typeDefault;
 	name_t				locationCGI;
+	name_t				fileAtidx;
 }	http_t;
 
 typedef struct config_s {

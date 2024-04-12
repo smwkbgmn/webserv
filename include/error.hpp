@@ -26,6 +26,12 @@ const str_t	errMsg[] = {
 	"fail to send"
 };
 
+typedef struct errstat_s: exception_t {
+	uint_t	code;
+
+	errstat_s( const uint_t& );
+}	errstat_t;
+
 #endif
 
 /*

@@ -5,10 +5,11 @@ keys_t	HTTP::key;
 
 /* METHOD - init: assign basic HTTP info and load keys */
 void
-HTTP::init( const str_t& sign, const str_t& type, const name_t& cgi ) {
-	http.signature		= sign;
+HTTP::init( const str_t& type, const name_t& cgi ) {
+	http.signature		= "HTTP";
 	http.typeDefault	= type;
 	http.locationCGI	= cgi;
+	http.fileAtidx		= cgi + "/autoindex.cgi";
 
 	_assignVec( http.version, strVersion, CNT_VERSION );
 	_assignVec( http.method, strMethod, CNT_METHOD );
@@ -87,6 +88,10 @@ HTTP::getLocationConf( const str_t& uri, const vec_config_t& config ) {
 
 
 /* FILTER INIT */
+errstat_s::errstat_s( const uint_t& status ) {
+	code = status;
+}
+
 config_s::config_s( void ) {
 	location		= "/";
 	root			= "./html";
@@ -116,4 +121,17 @@ response_header_s::response_header_s( void ) {
 	connection		= KEEP_ALIVE;
 	chunked			= FALSE;
 	content_length	= 0;
+}
+
+
+char*
+dupIOBuf( std::ios& obj, size_t& size ) {
+	std::streambuf* pbuf = obj.rdbuf();
+	size = pbuf->pubseekoff( 0, obj.end, obj.in );
+	pbuf->pubseekpos( 0, obj.in );
+
+	char *buf = new char[size];
+	pbuf->sgetn( buf, size );
+	
+	return buf;
 }

@@ -42,14 +42,14 @@ class HTTP {
 		HTTP( config_t& );
 		~HTTP( void );
 
-		static void		init( const str_t&, const str_t&, const str_t& );
+		static void		init( const str_t&, const str_t& );
 		static void		transaction( const Client& );
 		static size_t	getLocationConf( const str_t&, const vec_config_t& );
 	
-		static bool		GET( const Request&, char**, size_t& );
-		static bool		GET( const str_t&, char**, size_t& ); // For getting body of error page
-		static bool		POST( const Request&, char**, size_t& );
-		static bool		DELETE( const Request& );
+		static void		GET( const Request&, char**, size_t& );
+		static void		GET( const str_t&, char**, size_t& ); // For getting body of error page
+		static void		POST( const Request&, char**, size_t& );
+		static void		DELETE( const Request& );
 
 	private:
 		/* init */
@@ -75,6 +75,8 @@ class HTTP {
 template<typename Container, typename Target>
 typename Container::iterator
 lookup( Container& obj, Target token ) { return std::find( obj.begin(), obj.end(), token ); }
+
+char* dupIOBuf( std::ios&, size_t& );
 
 # include "Request.hpp"
 # include "Response.hpp"

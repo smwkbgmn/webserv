@@ -5,6 +5,8 @@
 
 typedef int								socket_t;
 typedef int								pipe_t;
+typedef int								stat_t;
+
 typedef unsigned int					uint_t;
 typedef unsigned int					bits_t;
 
@@ -20,7 +22,7 @@ typedef str_t							path_t;
 /* UNIX */
 # include <sys/stat.h>
 
-typedef struct stat						stat_t;
+typedef struct stat						fstat_t;
 
 /* I/O */
 # include <iostream>
@@ -36,6 +38,7 @@ typedef std::istringstream				isstream_t;
 typedef std::vector<uint_t>				vec_uint_t;
 typedef std::vector<str_t>				vec_str_t;
 typedef vec_str_t::iterator				vec_str_iter_t;
+typedef std::vector<char*>				vec_cstr_t;
 
 typedef std::map<str_t, str_t>			map_str_str_t;
 typedef std::map<uint_t, str_t>			map_uint_str_t;
