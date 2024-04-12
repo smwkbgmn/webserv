@@ -38,93 +38,98 @@ enum versionID { VERSION_9, VERSION_10, VERSION_11, VERSION_20 };
 enum connectionID { KEEP_ALIVE };
 
 enum headerInID {
-    IN_HOST,
-    IN_CONNECTION,
-    IN_CHUNK,
-    IN_CONTENT_LEN,
-    IN_CONTENT_TYPE
+  IN_HOST,
+  IN_CONNECTION,
+  IN_CHUNK,
+  IN_CONTENT_LEN,
+  IN_CONTENT_TYPE
 };
 
 enum headerOutID {
-    OUT_SERVER,
-    OUT_DATE,
-    OUT_CONNECTION,
-    OUT_CHUNK,
-    OUT_CONTENT_LEN,
-    OUT_CONTENT_TYPE
+  OUT_SERVER,
+  OUT_DATE,
+  OUT_CONNECTION,
+  OUT_CHUNK,
+  OUT_CONTENT_LEN,
+  OUT_CONTENT_TYPE
 };
 
 /* STRUCT - Http, Config, Keys */
 typedef std::map<methodID, bool> map_method_bool_t;
 
 typedef struct {
-    str_t signature;
-    vec_str_t version;
-    vec_str_t method;
-    str_t typeDefault;
+  str_t signature;
+  vec_str_t version;
+  vec_str_t method;
+  str_t typeDefault;
 } http_t;
 
+typedef struct server_s {
+  str_t server_name;
+  uint_t listen;
+  str_t sizeBodyMax;  // client_body_size
+} server_t;
+
 typedef struct config_s {
-    path_t location;
-    // str_t				server; // refer to the Server object
-    path_t root;
-    bool atidx;
-    map_method_bool_t allow;
-    size_t sizeBodyMax;
+  path_t location;  // url
+  // str_t				server; // refer to the Server object
+  path_t root;              // root
+  bool atidx;               // autoindex
+  map_method_bool_t allow;  // allowed_method
+  vec_str_t index_files;
+  //   path_t file40x;  // errordefault
+  //   path_t file50x;  // errordefault
 
-    path_t file40x;
-    path_t file50x;
-
-    config_s(void);
+  config_s(void);
 } config_t;
 
 typedef struct {
-    vec_str_t header_in;
-    vec_str_t header_out;
-    map_uint_str_t status;
-    map_str_str_t mime;
+  vec_str_t header_in;
+  vec_str_t header_out;
+  map_uint_str_t status;
+  map_str_str_t mime;
 } keys_t;
 
 /* STRUCT - Request */
 typedef struct {
-    methodID method;
-    path_t uri;
-    versionID version;
+  methodID method;
+  path_t uri;
+  versionID version;
 
 } request_line_t;
 
 typedef struct request_header_s {
-    str_t host;
-    // date_t				date;
-    unsigned connection : 2;
-    unsigned chunked : 1;
-    size_t content_length;
-    str_t content_type;
+  str_t host;
+  // date_t				date;
+  unsigned connection : 2;
+  unsigned chunked : 1;
+  size_t content_length;
+  str_t content_type;
 
-    vec_uint_t list;
-    request_header_s(void);
+  vec_uint_t list;
+  request_header_s(void);
 } request_header_t;
 
 /* STRUCT - Response */
 typedef struct response_line_s {
-    versionID version;
-    uint_t status;
+  versionID version;
+  uint_t status;
 
-    response_line_s(void);
+  response_line_s(void);
 } response_line_t;
 
 typedef struct response_header_s {
-    str_t server;
-    // date_t				date;
-    // date_t				last_modified;
-    unsigned connection : 2;
-    unsigned chunked : 1;
-    size_t content_length;
-    str_t content_type;
+  str_t server;
+  // date_t				date;
+  // date_t				last_modified;
+  unsigned connection : 2;
+  unsigned chunked : 1;
+  size_t content_length;
+  str_t content_type;
 
-    vec_uint_t list;
+  vec_uint_t list;
 
-    response_header_s(void);
+  response_header_s(void);
 } response_header_t;
 
 #endif

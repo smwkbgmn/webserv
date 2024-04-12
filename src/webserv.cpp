@@ -11,7 +11,7 @@ int main(void) {
         Server server;
 
         HTTP::init();
-        server.listening();
+        server.connect_sever();
     } catch (err_t &err) {
         std::cerr << err.what() << std::endl;
     }

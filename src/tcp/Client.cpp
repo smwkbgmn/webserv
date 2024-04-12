@@ -1,7 +1,7 @@
 #include "Client.hpp"
 #include "HTTP.hpp"
 
-Client::Client(Server &connect_server) : server(connect_server) {}
+Client::Client(Server &connect_server) : srv(connect_server) {}
 
 Client::~Client() {}
 
@@ -11,15 +11,23 @@ void Client::disconnect_client(int client_fd) {
 }
 
 void Client::processClientRequest(int fd,
-                                  std::map<int, std::string> &findClient) {
+                                  std::map<int, std::string> &findClient,
+                                  Server &server) {
 
-    bool isChunked = false;
+    // bool isChunked = false;
 
-    if (isChunked) {
-        handleChunkedRequest(fd, findClient);
-    } else {
-        handleRegularRequest(fd, findClient);
-    }
+    // if (isChunked) {
+    //     handleChunkedRequest(fd, findClient);
+    // } else {
+    std::cout << socket() << std::endl;
+    handleRegularRequest(fd, findClient);
+    server.change_events(server_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0,
+                         NULL);
+    std::cout << server_socket << std::endl;
+    std::cout << client_socket << std::endl;
+    HTTP::transaction(Request(*this, buf));
+
+    // }
 }
 
 void Client::handleChunkedRequest(int fd,
@@ -73,6 +81,7 @@ void Client::handleChunkedRequest(int fd,
 
 void Client::handleRegularRequest(int fd,
                                   std::map<int, std::string> &findClient) {
+
     int n = read(fd, buf, sizeof(buf) - 1);
     if (n < 0) {
         std::cerr << "client read error!" << std::endl;
@@ -83,9 +92,10 @@ void Client::handleRegularRequest(int fd,
     } else {
         buf[n] = '\0';
         std::cout << "Received: " << buf << std::endl;
+        // HTTP::transaction(Request(*this, buf));
         findClient[fd] += buf;
     }
 }
 
 const std::map<int, std::string> &Client::getClients() const { return clients; }
-const Server &Client::getserver(void) const { return server; };
+const Server &Client::getserver(void) const { return srv; };
