@@ -19,6 +19,12 @@ enum errID { INVALID_REQUEST_LINE, INVALID_REQUEST_FIELD, FAIL_SEND };
 const str_t errMsg[] = {"invalid request line", "invalid request field",
                         "fail to send"};
 
+typedef struct errstat_s: exception_t {
+	uint_t	code;
+
+	errstat_s( const uint_t& );
+}	errstat_t;
+
 #endif
 
 /*

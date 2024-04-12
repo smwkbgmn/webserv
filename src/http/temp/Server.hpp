@@ -5,14 +5,14 @@
 
 class Server: ASocket {
 	public:
-		config_t	cnf;
+		vec_config_t	cnf;
 	
 		Server( void );
 		~Server( void );
 
 		void	listening( void );
 
-		const config_t&	config( void ) const { return cnf; }
+		const vec_config_t&	config( void ) const { return cnf; }
 
 	private:
 		Server( socket_t );

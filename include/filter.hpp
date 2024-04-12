@@ -25,15 +25,28 @@
 #define FALSE 0
 #define TRUE 1
 
-#define LF '\n'
-#define CR '\r'
-#define CRLF "\r\n"
-#define SP ' '
+# define LF		'\n'
+# define CR		'\r'
+# define CRLF	"\r\n"
+# define SP		' '
+
 
 /* IDs */
-enum methodID { GET, POST, DELETE, NOT_ALLOWED };
+enum methodID {
+	GET,
+	POST,
+	DELETE,
+	NOT_ALLOWED,
+	UNKNOWN
+};
 
-enum versionID { VERSION_9, VERSION_10, VERSION_11, VERSION_20 };
+enum versionID {
+	VERSION_9,
+	VERSION_10,
+	VERSION_11,
+	VERSION_20,
+	NOT_SUPPORTED
+};
 
 enum connectionID { KEEP_ALIVE };
 
@@ -54,56 +67,67 @@ enum headerOutID {
     OUT_CONTENT_TYPE
 };
 
+// Try default value by declaring directly
+// path_t	location = "/";
+
 /* STRUCT - Http, Config, Keys */
 typedef std::map<methodID, bool> map_method_bool_t;
 
 typedef struct {
-    str_t signature;
-    vec_str_t version;
-    vec_str_t method;
-    str_t typeDefault;
-} http_t;
+	str_t				signature;
+	vec_str_t			version;
+	vec_str_t			method;
+
+	str_t				typeDefault;
+	name_t				locationCGI;
+	name_t				fileAtidx;
+}	http_t;
 
 typedef struct config_s {
-    path_t location;
-    // str_t				server; // refer to the Server object
-    path_t root;
-    bool atidx;
-    map_method_bool_t allow;
-    size_t sizeBodyMax;
+	name_t				location;
+	path_t				root;
+	map_method_bool_t	allow;
+
+	bool				atidx;
+	size_t				sizeBodyMax;
 
     path_t file40x;
     path_t file50x;
 
-    config_s(void);
-} config_t;
+	config_s( void );
+}	config_t;
+
+typedef std::vector<config_t>		vec_config_t;
 
 typedef struct {
-    vec_str_t header_in;
-    vec_str_t header_out;
-    map_uint_str_t status;
-    map_str_str_t mime;
-} keys_t;
+	vec_str_t			header_in;
+	vec_str_t			header_out;
+	map_uint_str_t		status;
+	map_str_str_t		mime;	
+}	keys_t;
+
 
 /* STRUCT - Request */
 typedef struct {
-    methodID method;
-    path_t uri;
-    versionID version;
+	methodID			method;
+	name_t				uri;
+	versionID			version;
 
 } request_line_t;
 
 typedef struct request_header_s {
-    str_t host;
-    // date_t				date;
-    unsigned connection : 2;
-    unsigned chunked : 1;
-    size_t content_length;
-    str_t content_type;
+	str_t				host;
+	// date_t				date;
+	unsigned			connection: 2;
+	unsigned			chunked: 1;
+	size_t				content_length;
+	str_t				content_type;
+	
+	vec_uint_t			list;
 
-    vec_uint_t list;
-    request_header_s(void);
-} request_header_t;
+	request_header_s( void );
+}	request_header_t;
+
 
 /* STRUCT - Response */
 typedef struct response_line_s {
