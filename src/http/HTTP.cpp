@@ -3,10 +3,12 @@
 http_t HTTP::http;
 keys_t HTTP::key;
 
-/* METHOD - init: load keys */
-void HTTP::init(void) {
+/* METHOD - init: assign basic HTTP info and load keys */
+void HTTP::init(const str_t& type, const name_t& cgi) {
   http.signature = "HTTP";
-  http.typeDefault = "text/plain";
+  http.typeDefault = type;
+  http.locationCGI = cgi;
+  http.fileAtidx = cgi + "/autoindex.cgi";
 
   _assignVec(http.version, strVersion, CNT_VERSION);
   _assignVec(http.method, strMethod, CNT_METHOD);
@@ -19,15 +21,15 @@ void HTTP::init(void) {
 void HTTP::_assignHeader(void) {
   str_t header;
 
-  File fileIn(nameHeaderIn, R);
+  File fileIn(fileHeaderIn, R);
   while (std::getline(fileIn.fs, header)) key.header_in.push_back(header);
 
-  File fileOut(nameHeaderOut, R);
+  File fileOut(fileHeaderOut, R);
   while (std::getline(fileOut.fs, header)) key.header_out.push_back(header);
 }
 
 void HTTP::_assignStatus(void) {
-  File file(nameStatus, R);
+  File file(fileStatus, R);
 
   while (!file.fs.eof()) {
     uint_t code;
@@ -42,7 +44,7 @@ void HTTP::_assignStatus(void) {
 }
 
 void HTTP::_assignMime(void) {
-  File file(nameMime, R);
+  File file(fileMime, R);
   str_t type, exts, ext;
 
   while (!file.fs.eof()) {
@@ -54,86 +56,35 @@ void HTTP::_assignMime(void) {
   }
 }
 
-void HTTP::_assignVec(vec_str_t &target, const str_t source[], size_t cnt) {
+void HTTP::_assignVec(vec_str_t& target, const str_t source[], size_t cnt) {
   for (size_t idx = 0; idx < cnt; ++idx) target.push_back(source[idx]);
 }
 
-/* METHOD - transaction: send response message */
-void HTTP::transaction(const Request &rqst) {
-  osstream_t oss;
-  _message(Response(rqst), oss);
-
-  logfile.fs << oss.str() << std::endl;
-  ssize_t bytesSent =
-      send(rqst.client().socket(), oss.str().c_str(), oss.str().size(), 0);
-
-  if (bytesSent == ERROR) {
-    perror("send");
-    std::clog << "the errno: " << errno << '\n';
-    throw err_t("http: send: " + errMsg[FAIL_SEND]);
+/* METHOD - getLocationConf: get index of vec_config_t matching with request URI
+ */
+size_t HTTP::getLocationConf(const str_t& uri, const vec_config_t& config) {
+  if (config.size() > 1) {
+    size_t idx = 1;
+    for (vec_config_t::const_iterator iter = config.begin();
+         iter != config.end(); ++iter) {
+      if (uri.find(iter->location) == 0) return idx;
+      ++idx;
+    }
   }
+  return 0;
 }
 
-void HTTP::_message(const Response &rspn, osstream_t &oss) {
-  _msgLine(rspn, oss);
-  _msgHeader(rspn, oss);
-  if (rspn.body()) _msgBody(rspn, oss);
-}
+/* FILTER INIT */
+errstat_s::errstat_s(const uint_t& status) { code = status; }
 
-void HTTP::_msgLine(const Response &rspn, osstream_t &oss) {
-  map_uint_str_t::iterator iter = key.status.find(rspn.line().status);
-
-  oss << http.signature << '/'
-      << http.version.at(static_cast<size_t>(rspn.line().version)) << ' '
-      << iter->first << " " << iter->second << CRLF;
-}
-
-void HTTP::_msgHeader(const Response &rspn, osstream_t &oss) {
-  for (vec_uint_t::const_iterator iter = rspn.header().list.begin();
-       iter != rspn.header().list.end(); ++iter) {
-    _msgHeaderName(*iter, oss);
-    _msgHeaderValue(rspn.header(), *iter, oss);
-  }
-  oss << CRLF;
-}
-
-void HTTP::_msgHeaderName(uint_t id, osstream_t &oss) {
-  oss << key.header_out.at(id) << ": ";
-}
-
-void HTTP::_msgHeaderValue(const response_header_t &header, uint_t id,
-                           osstream_t &oss) {
-  switch (id) {
-    case OUT_SERVER:
-      oss << header.server;
-      break;
-    case OUT_DATE:
-      break;
-    case OUT_CONNECTION:
-      break;
-    case OUT_CHUNK:
-      break;
-    case OUT_CONTENT_LEN:
-      oss << header.content_length;
-      break;
-    case OUT_CONTENT_TYPE:
-      oss << header.content_type;
-      break;
-  }
-  oss << CRLF;
-}
-
-void HTTP::_msgBody(const Response &rspn, osstream_t &oss) {
-  for (size_t idx = 0; idx < rspn.header().content_length; ++idx)
-    oss << rspn.body()[idx];
-}
-
-/* STRUCT INIT */
 config_s::config_s(void) {
   location = "/";
   root = "./html";
-  file40x = "/40x.html";
-  file40x = "/50x.html";
+  file40x = "./html/40x.html";
+  file40x = "./html/50x.html";
+
+  atidx = FALSE;
+  sizeBodyMax = 1000;
 
   allow.insert(std::make_pair(GET, TRUE));
   allow.insert(std::make_pair(POST, TRUE));
@@ -155,4 +106,15 @@ response_header_s::response_header_s(void) {
   connection = KEEP_ALIVE;
   chunked = FALSE;
   content_length = 0;
+}
+
+char* dupIOBuf(std::ios& obj, size_t& size) {
+  std::streambuf* pbuf = obj.rdbuf();
+  size = pbuf->pubseekoff(0, obj.end, obj.in);
+  pbuf->pubseekpos(0, obj.in);
+
+  char* buf = new char[size];
+  pbuf->sgetn(buf, size);
+
+  return buf;
 }

@@ -31,9 +31,9 @@
 #define SP ' '
 
 /* IDs */
-enum methodID { GET, POST, DELETE, NOT_ALLOWED };
+enum methodID { GET, POST, DELETE, NOT_ALLOWED, UNKNOWN };
 
-enum versionID { VERSION_9, VERSION_10, VERSION_11, VERSION_20 };
+enum versionID { VERSION_9, VERSION_10, VERSION_11, VERSION_20, NOT_SUPPORTED };
 
 enum connectionID { KEEP_ALIVE };
 
@@ -54,6 +54,9 @@ enum headerOutID {
   OUT_CONTENT_TYPE
 };
 
+// Try default value by declaring directly
+// path_t	location = "/";
+
 /* STRUCT - Http, Config, Keys */
 typedef std::map<methodID, bool> map_method_bool_t;
 
@@ -61,27 +64,27 @@ typedef struct {
   str_t signature;
   vec_str_t version;
   vec_str_t method;
+
   str_t typeDefault;
+  name_t locationCGI;
+  name_t fileAtidx;
 } http_t;
 
-typedef struct server_s {
-  str_t server_name;
-  uint_t listen;
-  str_t sizeBodyMax;  // client_body_size
-} server_t;
-
 typedef struct config_s {
-  path_t location;  // url
-  // str_t				server; // refer to the Server object
-  path_t root;              // root
-  bool atidx;               // autoindex
-  map_method_bool_t allow;  // allowed_method
-  vec_str_t index_files;
-  //   path_t file40x;  // errordefault
-  //   path_t file50x;  // errordefault
+  name_t location;
+  path_t root;
+  map_method_bool_t allow;
+
+  bool atidx;
+  size_t sizeBodyMax;
+
+  path_t file40x;
+  path_t file50x;
 
   config_s(void);
 } config_t;
+
+typedef std::vector<config_t> vec_config_t;
 
 typedef struct {
   vec_str_t header_in;
@@ -93,7 +96,7 @@ typedef struct {
 /* STRUCT - Request */
 typedef struct {
   methodID method;
-  path_t uri;
+  name_t uri;
   versionID version;
 
 } request_line_t;
@@ -107,6 +110,7 @@ typedef struct request_header_s {
   str_t content_type;
 
   vec_uint_t list;
+
   request_header_s(void);
 } request_header_t;
 
