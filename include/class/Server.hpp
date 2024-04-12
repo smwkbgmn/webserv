@@ -6,32 +6,38 @@
 // typedef struct kevent kevent;
 
 #define MAX_EVENTS 10
+class Client;
 
 class Server : ASocket {
-  public:
-    Server(void);
-    Server(char *);
-    ~Server(void);
+ public:
+  Server(void);
+  Server(char *);
+  ~Server(void);
 
-    void change_events(uintptr_t, int16_t, uint16_t, uint32_t, intptr_t,
-                       void *);
-    void connect_sever();
-    void preSet();
+  // const config_t &config(void) const { return conf; }
 
-    size_t eventOccure();
-    void errorcheck(struct kevent &);
-    bool handleReadEvent(struct kevent *cur_event, int server_socket,
-                         std::map<int, std::string> &findClient);
-    void handleWriteEvent(struct kevent *cur_event,
-                          std::map<int, std::string> &findClient);
-    struct kevent &getEventList(int);
+  void change_events(uintptr_t, int16_t, uint16_t, uint32_t, intptr_t, void *);
+  void connect_sever();
+  void ServerPreset();
 
-  private:
-    int kq;
+  int eventOccure();
+  void errorcheck(struct kevent &);
+  bool handleReadEvent(struct kevent *, int, std::map<int, std::string> &,
+                       Client &);
+  void handleWriteEvent(struct kevent *cur_event,
+                        std::map<int, std::string> &findClient);
+  struct kevent &getEventList(int);
 
-    std::vector<struct kevent> server_list;
-    struct kevent *cur_event;
-    struct timespec timeout;
+ private:
+  int kq;
+
+  // int newEvent;
+
+  std::vector<struct kevent> server_list;
+  struct kevent *cur_event;
+  struct timespec timeout;
 };
+
+#include "Client.hpp"
 
 #endif

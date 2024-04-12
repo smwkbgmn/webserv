@@ -49,6 +49,7 @@
 /* REQUEST */
 Request::Request(const Client &client, const char *buf)
     : _client(client), _body(NULL) {
+
     str_t msgRqst(buf);
     size_t begin = 0;
     size_t end = 0;
