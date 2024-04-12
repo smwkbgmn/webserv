@@ -12,12 +12,12 @@
 class Request;
 class Response;
 
-const path_t	dirKeys			= "./src/http/key/";
-const path_t	fileStatus		= dirKeys + "keyStatus.txt";
-const path_t	fileMime		= dirKeys + "keyMime.txt";
-const path_t	fileHeaderIn	= dirKeys + "keyHeaderIn.txt";
-const path_t	fileHeaderOut	= dirKeys + "keyHeaderOut.txt";
-const path_t	fileListCGI		= dirKeys + "lstCGI.txt";
+const path_t	dirKeys			= "./key";
+const path_t	fileStatus		= dirKeys + "/keyStatus.txt";
+const path_t	fileMime		= dirKeys + "/keyMime.txt";
+const path_t	fileHeaderIn	= dirKeys + "/keyHeaderIn.txt";
+const path_t	fileHeaderOut	= dirKeys + "/keyHeaderOut.txt";
+const path_t	fileListCGI		= dirKeys + "/lstCGI.txt";
 
 const path_t	fileBadRqst		= "./html/bad_request.html";
 

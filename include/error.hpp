@@ -10,14 +10,21 @@
 
 extern int errno;
 
-typedef int errno_t;
-typedef std::runtime_error err_t;
-typedef std::exception exception_t;
+typedef int					errno_t;
+typedef std::runtime_error	err_t;
+typedef std::exception		exception_t;
 
-enum errID { INVALID_REQUEST_LINE, INVALID_REQUEST_FIELD, FAIL_SEND };
+enum errID {
+	INVALID_REQUEST_LINE,
+	INVALID_REQUEST_FIELD,
+	FAIL_SEND
+};
 
-const str_t errMsg[] = {"invalid request line", "invalid request field",
-                        "fail to send"};
+const str_t	errMsg[] = {
+	"invalid request line",
+	"invalid request field",
+    "fail to send"
+};
 
 typedef struct errstat_s: exception_t {
 	uint_t	code;
