@@ -6,7 +6,7 @@ Client::Client(Server &connect_server) : srv(connect_server) {}
 Client::~Client() {}
 
 void Client::disconnect_client(int client_fd) {
-    std::cout << "client disconnected: " << client_fd << std::endl;
+    // std::cout << "client disconnected: " << client_fd << std::endl;
     close(client_fd);
 }
 
@@ -19,12 +19,12 @@ void Client::processClientRequest(int fd,
     // if (isChunked) {
     //     handleChunkedRequest(fd, findClient);
     // } else {
-    std::cout << socket() << std::endl;
+    // std::cout << socket() << std::endl;
     handleRegularRequest(fd, findClient);
     server.change_events(server_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0,
                          NULL);
-    std::cout << server_socket << std::endl;
-    std::cout << client_socket << std::endl;
+    // std::cout << server_socket << std::endl;
+    // std::cout << client_socket << std::endl;
     HTTP::transaction( *this );
 
     // }

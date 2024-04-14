@@ -59,7 +59,7 @@ HTTP::transaction( const Client& client ) {
 	} catch ( exception_t& exc ) { logfile.fs << exc.what(); _build( Response( client ), oss ); }
 
 	// LOGGING Response Message
-	logfile.fs << oss.str() << std::endl;
+	logfile.fs << oss.str() << "\n\n";
 
 	ssize_t bytesSent = send( client.socket(), oss.str().c_str(), oss.str().size(), 0 );
 

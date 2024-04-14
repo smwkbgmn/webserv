@@ -8,7 +8,7 @@ void HTTP::init( const str_t& type, const name_t& cgi ) {
 	http.signature		= "HTTP";
 	http.typeDefault	= type;
 	http.locationCGI	= cgi;
-	http.fileAtidx		= cgi + "/autoindex.cgi";
+	http.fileAtidx		= "~/dev/webserv/html/cgi-bin/autoindex.cgi";
 
 	_assignVec( http.version, strVersion, CNT_VERSION );
 	_assignVec( http.method, strMethod, CNT_METHOD );
@@ -118,7 +118,9 @@ char* dupStreamBuffer( std::ios& obj, size_t& size ) {
 	size = pbuf->pubseekoff( 0, obj.end, obj.in );
 	pbuf->pubseekpos( 0, obj.in );
 
+	std::clog << "dupStreamBuffer: before new char[" << size << "]\n";
 	char* buf = new char[size];
+	std::clog << "dupStreamBuffer: before pbuf->sgetn\n";
 	pbuf->sgetn( buf, size );
 
 	return buf;

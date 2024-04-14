@@ -79,7 +79,7 @@ bool Server::handleReadEvent(struct kevent *cur_event, int server_socket,
 void Server::handleWriteEvent(struct kevent *cur_event,
                               std::map<int, std::string> &findClient) {
   // HTTP::transaction(Request(*this, buf));
-  std::cout << "Sent response to client: " << std::endl;
+  // std::cout << "Sent response to client: " << std::endl;
   std::map<int, std::string>::iterator it = findClient.find(cur_event->ident);
   if (it != findClient.end()) {
     const std::string &response = it->second;
@@ -87,7 +87,7 @@ void Server::handleWriteEvent(struct kevent *cur_event,
     ssize_t bytes_written =
         send(cur_event->ident, response.c_str(), response.length(), 0);
     if (bytes_written > 0) {
-      std::cout << "Sent response to client: " << cur_event->ident << std::endl;
+      // std::cout << "Sent response to client: " << cur_event->ident << std::endl;
       change_events(cur_event->ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
       findClient.erase(cur_event->ident);
     } else {

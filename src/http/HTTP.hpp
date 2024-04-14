@@ -30,9 +30,6 @@ class HTTP {
     static http_t http;
     static keys_t key;
 
-    HTTP(config_t &);
-    ~HTTP(void);
-
 		static void		init( const str_t&, const str_t& );
 		static void		transaction( const Client& );
 		static size_t	getLocationConf( const str_t&, const vec_config_t& );
