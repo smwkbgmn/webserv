@@ -25,7 +25,7 @@ void Client::processClientRequest(int fd,
                          NULL);
     std::cout << server_socket << std::endl;
     std::cout << client_socket << std::endl;
-    HTTP::transaction(Request(*this, buf));
+    HTTP::transaction( *this );
 
     // }
 }
@@ -91,7 +91,7 @@ void Client::handleRegularRequest(int fd,
         disconnect_client(fd);
     } else {
         buf[n] = '\0';
-        std::cout << "Received: " << buf << std::endl;
+        // std::cout << "Received: " << buf << std::endl;
         // HTTP::transaction(Request(*this, buf));
         findClient[fd] += buf;
     }

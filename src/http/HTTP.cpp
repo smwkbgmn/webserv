@@ -83,13 +83,13 @@ size_t HTTP::getLocationConf( const str_t& uri, const vec_config_t& config ) {
 errstat_s::errstat_s( const uint_t& status ) { code = status; }
 
 config_s::config_s( void ) {
-	location	= "/";
-	root		= "./html";
-	file40x		= "./html/40x.html";
-	file40x		= "./html/50x.html";
+	location		= "/";
+	root			= "./html";
+	file40x			= "./html/40x.html";
+	file40x			= "./html/50x.html";
 
-	atidx		= FALSE;
-	sizeBodyMax	= 1000;
+	atidx			= FALSE;
+	sizeBodyMax		= 1000;
 
 	allow.insert( std::make_pair( GET, TRUE ) );
 	allow.insert( std::make_pair( POST, TRUE ) );
@@ -113,7 +113,7 @@ response_header_s::response_header_s( void ) {
 	content_length	= 0;
 }
 
-char* dupIOBuf( std::ios& obj, size_t& size ) {
+char* dupStreamBuffer( std::ios& obj, size_t& size ) {
 	std::streambuf* pbuf = obj.rdbuf();
 	size = pbuf->pubseekoff( 0, obj.end, obj.in );
 	pbuf->pubseekpos( 0, obj.in );

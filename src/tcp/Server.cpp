@@ -3,7 +3,9 @@
 #include "HTTP.hpp"
 
 void printBuffer(const char *buff);
-Server::Server(void) : ASocket(), server_list(8) {}
+Server::Server(void) : ASocket(), server_list(8) {
+  conf.push_back( config_t() );
+}
 
 Server::~Server(void) { close(server_socket); }
 
@@ -35,7 +37,7 @@ void Server::connect_sever() {
         std::strncpy(buffcopy, tempString.c_str(), max - 1);
         buffcopy[max - 1] = '\0';
 
-        printBuffer(buffcopy);
+        // printBuffer(buffcopy);
         // HTTP::transaction(Request(*this, buff));
         // handleWriteEvent(cur_event, findClient);
       }
@@ -55,6 +57,7 @@ bool Server::handleReadEvent(struct kevent *cur_event, int server_socket,
                              std::map<int, std::string> &findClient,
                              Client &client) {
   if (cur_event->ident == static_cast<uintptr_t>(server_socket)) {
+    std::clog << "Wating for request...\n";
     client_socket = accept(server_socket, NULL, NULL);
     client.setSocket(client_socket);
     if (client_socket == -1) {

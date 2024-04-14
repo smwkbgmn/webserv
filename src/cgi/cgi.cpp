@@ -5,19 +5,34 @@ CGI::GET( const Request& rqst, char** bufptr, size_t& size ) {
 	process_t	procs;
 	vec_cstr_t	argv;
 
+	logfile.fs << "the CGI - GET invoked\n";
+
 	// autoindex
 	if ( *rqst.line().uri.rbegin() == '/' ) {
+		logfile.fs << "_argBuild start\n";
 		_argvBuild( argv, "/usr/bin/php", HTTP::http.fileAtidx );
+		logfile.fs << "_argBuild finish\n";
 		
-		_detach ( procs, &_execute, argv );
-		// _redirect( procs );
-		_wait( procs );
-		
-		if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
-			throw errstat_t( 500 );
+		logfile.fs << "_detach start\n";
+		if ( _detach ( procs, &_execute, argv ) == SUCCESS ) {
+			logfile.fs << "_detach finish\n";
+			// _redirect( procs );
+			logfile.fs << "_wait start\n";
+			_wait( procs );
+			logfile.fs << "_wait finish\n";
+			
+			if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
+				throw errstat_t( 500 );
 
-		_read( procs, bufptr, size );
+			logfile.fs << "_read start\n";
+			_read( procs, bufptr, size );
+			logfile.fs << "_read finish\n";
+		}
+		else
+			throwSysErr( "execve", 500 );
 	}
+
+	logfile.fs << "the CGI - GET has finished\n";
 
 }
 
@@ -34,13 +49,13 @@ CGI::_argvBuild( vec_cstr_t& argv, const str_t& cmd, const str_t& arg ) {
 	argv.push_back( const_cast<char*>( arg.c_str() ) );
 }
 
-void
+stat_t
 CGI::_detach( process_t& procs, fn_t execute, vec_cstr_t& argv ) {
 	if ( pipe( procs.fd ) == ERROR || ( procs.pid = fork() ) == ERROR )
 		throw errstat_t( 500 );
 	
-	if ( !procs.pid )
-		execute( procs, argv.data() );
+	if ( !procs.pid ) return execute( procs, argv.data() );
+	else return SUCCESS;
 }
 
 void
@@ -75,5 +90,12 @@ CGI::_read( process_t& procs, char** bufptr, size_t& size ) {
 	while ( read( procs.fd[R], &buf, 1024 ) )
 		oss << buf;
 	
-	*bufptr = dupIOBuf( oss, size );
+	*bufptr = dupStreamBuffer( oss, size );
+}
+
+process_s::process_s( void ) {
+	pid		= NONE;
+	fd[R]	= NONE;
+	fd[W]	= NONE;
+	stat	= NONE;
 }

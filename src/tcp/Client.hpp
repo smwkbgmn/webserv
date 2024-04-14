@@ -6,22 +6,25 @@
 
 #define max 1024
 typedef std::runtime_error err_t;
-class Server;
+// class Server;
 
 class Client : ASocket {
   private:
     std::map<int, std::string> clients;
     Server &srv;
 
-    char buf[max];
 
   public:
+    char buf[max];
+
     Client(Server &);
     ~Client();
 
+    const char* buffer( void ) const { return buf; }
     const Server &server(void) const { return srv; }
     void setSocket(const socket_t &socket) { client_socket = socket; }
     const socket_t &socket(void) const { return client_socket; }
+    
 
     void disconnect_client(int);
 

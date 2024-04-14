@@ -24,7 +24,7 @@
 // When fail to get all of default index files, set status as 403 forbidden
 void
 HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
- 	if ( _cgiGet( rqst ) )
+	if ( _invokeCGI( rqst, static_cast<methodID>( 0 ) ) )
 		CGI::GET( rqst, bufptr, size );
 
 	else {
@@ -39,7 +39,7 @@ HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
 			// pbuf->sgetn( buf, size );
 			
 			// *bufptr = buf;
-			*bufptr = dupIOBuf( target.fs, size );
+			*bufptr = dupStreamBuffer( target.fs, size );
 		} catch ( exception_t& exc ) { logfile.fs << exc.what() << '\n'; throw errstat_t( 404 ); }
 	}
 }
@@ -62,7 +62,7 @@ HTTP::GET( const str_t& uri, char** bufptr, size_t& size ) {
  
 void
 HTTP::POST( const Request& rqst, char** bufptr, size_t& size ) {
-	if ( _cgiGet( rqst ) )
+	if ( _invokeCGI( rqst, static_cast<methodID>( 1 ) ) )
 		CGI::POST( rqst, bufptr, size );
 
 	else {
@@ -86,13 +86,17 @@ HTTP::DELETE( const Request& rqst ) {
 }
 
 bool
-HTTP::_cgiGet( const Request& rqst ) {
-	return rqst.config().location == HTTP::http.locationCGI ||
-		*rqst.line().uri.rbegin() == '/';
-}
+HTTP::_invokeCGI( const Request& rqst, const methodID& method ) {
+	switch ( method ) {
+		case 0	:
+			return rqst.config().location == HTTP::http.locationCGI ||
+				*rqst.line().uri.rbegin() == '/';
 
-bool
-HTTP::_cgiPost( const Request& rqst ) {
-	size_t posDot = rqst.line().uri.rfind( '.' );
-	return rqst.line().uri.substr( posDot ) == ".exe";
+		case 1	:
+		 	return rqst.line().uri.substr( rqst.line().uri.rfind( '.' ) ) == ".exe";
+
+		default	:
+			return FALSE;
+	}
+	return FALSE;
 }

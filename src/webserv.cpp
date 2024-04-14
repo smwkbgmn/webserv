@@ -14,7 +14,8 @@ int main(void) {
 
     // Retrieve http signature and default type from config file
     HTTP::init("text/plain", "/cgi-bin");
-    server.listening();
+    // server.listening();
+    server.connect_sever();
   } catch (err_t &err) {
     std::cerr << err.what() << std::endl;
   }

@@ -7,10 +7,14 @@
 
 # include "HTTP.hpp"
 
-typedef struct {
+# define SUCCESS 0;
+
+typedef struct process_s {
 	pid_t	pid;
 	pipe_t	fd[2];
 	stat_t	stat;
+
+	process_s( void );
 }	process_t;
 
 class CGI {
@@ -25,7 +29,7 @@ class CGI {
 	private:
 		static void		_argvBuild( vec_cstr_t&, const str_t&, const str_t& );
 
-		static void		_detach( process_t&, fn_t, vec_cstr_t& );
+		static stat_t	_detach( process_t&, fn_t, vec_cstr_t& );
 		static void		_redirect( const process_t& );
 		static stat_t	_execute( const process_t&, char** );
 

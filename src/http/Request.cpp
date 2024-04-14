@@ -2,7 +2,7 @@
 
 Request::Request( const Client& client ): _client( client ), _body( NULL ) {
 	// Parse request message
-	_parse( client.buf );
+	_parse( client.buffer() );
 
 	// Set config based by location
 	_configIdx = HTTP::getLocationConf( _line.uri, client.server().config() );

@@ -58,8 +58,7 @@ class HTTP {
 		static void		_buildBody( const Response&, osstream_t& );
 
 		/* method */
-		static bool		_cgiGet( const Request& );
-		static bool		_cgiPost( const Request& );
+		static bool		_invokeCGI( const Request&, const methodID& );
 
 };
 
@@ -67,7 +66,7 @@ template<typename Container, typename Target>
 typename Container::iterator
 lookup( Container& obj, Target token ) { return std::find( obj.begin(), obj.end(), token ); }
 
-char* dupIOBuf( std::ios&, size_t& );
+char* dupStreamBuffer( std::ios&, size_t& );
 
 # include "Request.hpp"
 # include "Response.hpp"

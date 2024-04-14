@@ -2,7 +2,7 @@
 #define SERVER_HPP
 
 #include "ASocket.hpp"
-#include "Client.hpp"
+#include "log.hpp"
 // typedef struct kevent kevent;
 
 #define MAX_EVENTS 10
@@ -10,11 +10,13 @@ class Client;
 
 class Server : ASocket {
  public:
+  vec_config_t  conf;
+
   Server(void);
   Server(char *);
   ~Server(void);
 
-  // const config_t &config(void) const { return conf; }
+  const vec_config_t &config(void) const { return conf; }
 
   void change_events(uintptr_t, int16_t, uint16_t, uint32_t, intptr_t, void *);
   void connect_sever();
