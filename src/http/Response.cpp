@@ -70,6 +70,7 @@ Response::Response( const Client& client ): _body( NULL ) {
 
 void
 Response::_pageError( const uint_t& status, const config_t& config ) {
+	std::clog << "responsing with errcode " << status << "\n";
 	_line.status = status;	
 
 	if ( status == 400 )

@@ -43,6 +43,15 @@ typedef std::vector<char*>			vec_cstr_t;
 typedef std::map<str_t, str_t>		map_str_str_t;
 typedef std::map<uint_t, str_t>		map_uint_str_t;
 
+/* Struct */
+typedef struct process_s {
+	pid_t	pid;
+	pipe_t	fd[2];
+	stat_t	stat;
+
+	process_s( void );
+}	process_t;
+
 #include "File.hpp"
 #include "error.hpp"
 #include "filter.hpp"

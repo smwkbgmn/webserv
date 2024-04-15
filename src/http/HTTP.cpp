@@ -4,21 +4,24 @@ http_t HTTP::http;
 keys_t HTTP::key;
 
 /* METHOD - init: assign basic HTTP info and load keys */
-void HTTP::init( const str_t& type, const name_t& cgi ) {
+void
+HTTP::init( const str_t& type, const name_t& cgi ) {
 	http.signature		= "HTTP";
 	http.typeDefault	= type;
 	http.locationCGI	= cgi;
-	http.fileAtidx		= cgi + "/autoindex.cgi";
+	http.fileAtidx		= cgi + "/autoindex_v2.cgi";
 
 	_assignVec( http.version, strVersion, CNT_VERSION );
 	_assignVec( http.method, strMethod, CNT_METHOD );
 
+	_assignCWD();
 	_assignHeader();
 	_assignStatus();
 	_assignMime();
 }
 
-void HTTP::_assignHeader( void ) {
+void
+HTTP::_assignHeader( void ) {
 	str_t header;
 
 	File fileIn( fileHeaderIn, R );
@@ -29,7 +32,8 @@ void HTTP::_assignHeader( void ) {
 	while ( std::getline( fileOut.fs, header ) ) key.header_out.push_back( header );
 }
 
-void HTTP::_assignStatus( void ) {
+void
+HTTP::_assignStatus( void ) {
 	File file( fileStatus, R );
 
 	while ( !file.fs.eof() ) {
@@ -44,7 +48,8 @@ void HTTP::_assignStatus( void ) {
 	}
 }
 
-void HTTP::_assignMime(void) {
+void
+HTTP::_assignMime(void) {
 	File	file( fileMime, R );
 	str_t	type, exts, ext;
 
@@ -57,10 +62,20 @@ void HTTP::_assignMime(void) {
 	}
 }
 
-void HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
+void
+HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 	for ( size_t idx = 0; idx < cnt; ++idx )
 		target.push_back(source[idx]);
 }
+
+
+void
+HTTP::_assignCWD( void ) {
+	// char buf[1024];
+	// http.absolute.assign( getcwd( buf, 1024 ) );
+	http.absolute = ".";
+}
+
 
 /* METHOD - getLocationConf: get index of vec_config_t matching with request URI
  */
@@ -84,7 +99,7 @@ errstat_s::errstat_s( const uint_t& status ) { code = status; }
 
 config_s::config_s( void ) {
 	location		= "/";
-	root			= "/Users/donghyu2/dev/webserv/html";
+	root			= HTTP::http.absolute + "/html";
 	file40x			= root + "/40x.html";
 	file50x			= root + "/50x.html";
 

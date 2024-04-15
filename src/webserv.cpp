@@ -9,6 +9,7 @@
 	- Redirect the error case to URI for error page
 	- Implement cookies
 	- Apply corrected config structures
+	- Add retrived location to Request obj after replace uri with real path
 
 	Improve
     - For efficiency, try replace the body type with stream 
@@ -19,10 +20,11 @@
 
 int main(void) {
 	try {
+		HTTP::init("text/plain", "/cgi-bin");
+		
 		Server server;
 
 		// Retrieve http signature and default type from config file
-		HTTP::init("text/plain", "/cgi-bin");
 		// server.listening();
 		server.connect_sever();
 	} catch (err_t &err) { std::cerr << err.what() << std::endl; }

@@ -21,14 +21,23 @@ const path_t	fileListCGI		= dirKeys + "/lstCGI.txt";
 
 const path_t	fileBadRqst		= "./html/bad_request.html";
 
-const str_t strMethod[] = {"GET", "POST", "DELETE"};
+const str_t strMethod[] = {
+	"GET",
+	"POST",
+	"DELETE"
+};
 
-const str_t strVersion[] = {"0.9", "1.0", "1.1", "2.0"};
+const str_t strVersion[] = {
+	"0.9",
+	"1.0",
+	"1.1",
+	"2.0"
+};
 
 class HTTP {
-  public:
-    static http_t http;
-    static keys_t key;
+	public:
+		static http_t	http;
+		static keys_t	key;
 
 		static void		init( const str_t&, const str_t& );
 		static void		transaction( const Client& );
@@ -39,12 +48,13 @@ class HTTP {
 		static void		POST( const Request&, char**, size_t& );
 		static void		DELETE( const Request& );
 
-  private:
-    /* init */
-    static void _assignHeader(void);
-    static void _assignStatus(void);
-    static void _assignMime(void);
-    static void _assignVec(vec_str_t &, const str_t[], size_t);
+	private:
+		/* init */
+		static void		_assignHeader(void);
+		static void		_assignStatus(void);
+		static void		_assignMime(void);
+		static void		_assignVec(vec_str_t &, const str_t[], size_t);
+		static void		_assignCWD( void );
 
 		/* transaction */
 		static void		_build( const Response&, osstream_t& );

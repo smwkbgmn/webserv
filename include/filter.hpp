@@ -79,6 +79,8 @@ typedef struct {
 	vec_str_t			method;
 
 	str_t				typeDefault;
+	
+	path_t				absolute;
 	name_t				locationCGI;
 	name_t				fileAtidx;
 }	http_t;

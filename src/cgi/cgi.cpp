@@ -7,26 +7,19 @@
 void
 CGI::GET( const Request& rqst, char** bufptr, size_t& size ) {
 	process_t	procs;
-	vec_str_t	argv;
-	// argv.push_back( "/usr/bin/php" );
-	// argv.push_back( rqst.config().root + HTTP::http.fileAtidx );
-	vec_cstr_t	cargv;
+	fnptr_t		act = NULL;
+	
+	if ( *rqst.line().uri.rbegin() == '/' )
+		act = &_autoindex;
 
-
-	// autoindex.cgi
-	if ( *rqst.line().uri.rbegin() == '/' ) {
-		// for ( vec_str_t::const_iterator iter = argv.begin(); iter != argv.end(); ++iter )
-		// 	cargv.push_back( const_cast<char*>( iter->c_str() ) );
-		// cargv.push_back( NULL );
-
-		if ( _detach( rqst, procs, &_autoindex ) == SUCCESS ) {
-			_wait( procs );
-			_read( procs, bufptr, size );
-			
-			if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS ) throw errstat_t( 500 );
-		}
-		else throwSysErr( "execve", 500 );
+	if ( _detach( rqst, procs, act ) == SUCCESS ) {
+		_wait( procs );
+		_read( procs, bufptr, size );
+		
+		if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
+			throw errstat_t( 500 );
 	}
+	else throwSysErr( "execve", 500 );
 }
 
 void
@@ -49,22 +42,30 @@ CGI::_detach( const Request& rqst, process_t& procs, fnptr_t execute ) {
 bool
 CGI::_redirect( const process_t& procs ) {
 	if ( dup2( procs.fd[W], STDOUT_FILENO ) == ERROR  ||
-		close( procs.fd[R] ) == ERROR || close( procs.fd[W] ) == ERROR ) {
-			perror( "_redirect" );
-			return FALSE;
-	}
+		close( procs.fd[R] ) == ERROR ||
+		close( procs.fd[W] ) == ERROR )
+		return FALSE;
 	return TRUE;	
 }
 
 stat_t
-CGI::_execve( const process_t& procs, char* argv[] ) {
-	// std::cerr << "child > _redirect\n";
-	if ( _redirect( procs ) ) return execve( *argv, argv, NULL );
+CGI::_execve( const process_t& procs, char* argv[], char* env[] ) {
+	// std::clog << "received argv\n";
+	// for ( size_t ptr = 0; argv[ptr]; ++ptr )
+	// 	std::clog << argv[ptr] << "\n";
+
+	std::clog << "received env\n";
+	for ( size_t ptr = 0; env[ptr]; ++ptr )
+		std::clog << env[ptr] << "\n";
+
+	if ( _redirect( procs ) )
+		return execve( *argv, argv, env );
 	return EXIT_FAILURE;
 }
 
 void
 CGI::_wait( process_t& procs ) {
+	// Should be replaced the NONE with WNOHANG after restruct the flow
 	if ( waitpid( procs.pid, &procs.stat, NONE ) == ERROR )
 		throwSysErr( "wait", 500 );
 }
@@ -108,25 +109,26 @@ CGI::_read( process_t& procs, char** bufptr, size_t& size ) {
 	// *bufptr = dupStreamBuffer( oss, size );
 }
 
-
-void
-CGI::_argvBuild( vec_cstr_t& argv, const str_t& cmd, const str_t& arg ) {
-	argv.push_back( const_cast<char*>( cmd.c_str() ) );
-	argv.push_back( const_cast<char*>( arg.c_str() ) );
-}
-
-
 stat_t
 CGI::_autoindex( const Request& rqst, const process_t& procs ) {
-	// std::cerr << "child > _autoindex\n";
-	if ( chdir( argv[2] ) != ERROR ) {
-		// argv[2] = NULL;
-		// std::cerr << "child > _execve\n";
-		return _execve( procs, argv );
-	}
-	return EXIT_FAILURE;
-}
+	vec_str_t	argv;
+	vec_cstr_t	argv_c;
+	vec_cstr_t	env_c;
 
+	argv.push_back( binPHP );
+	argv.push_back( rqst.config().root + HTTP::http.fileAtidx );
+
+	for ( vec_str_t::const_iterator iter = argv.begin(); iter != argv.end(); ++iter )
+		argv_c.push_back( const_cast<char*>( iter->c_str() ) );
+	argv_c.push_back( NULL );
+
+	str_t	path_info = varPATH_INFO + rqst.config().root + rqst.line().uri;
+	// env_c.push_back( const_cast<char*>( ( varPATH_INFO + rqst.config().root + rqst.line().uri ).c_str() ) ); 
+	env_c.push_back( const_cast<char*>( path_info.c_str() ) ); 
+	env_c.push_back( NULL );
+	
+	return _execve( procs, argv_c.data(), env_c.data() );
+}
 
 process_s::process_s( void ) {
 	pid		= NONE;

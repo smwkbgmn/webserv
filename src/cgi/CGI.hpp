@@ -9,21 +9,14 @@
 
 # define SUCCESS 0
 
-typedef struct process_s {
-	pid_t	pid;
-	pipe_t	fd[2];
-	stat_t	stat;
-
-	process_s( void );
-}	process_t;
-
 typedef stat_t	( *fnptr_t )( const Request&, const process_t& );
+
+const str_t	varPATH_INFO	= "PATH_INFO=";
+
+const str_t	binPHP			= "/usr/bin/php";
 
 class CGI {
 	public:
-
-		static void		init( const name_t& );
-
 		static void		GET( const Request&, char**, size_t& );
 		static void		POST( const Request&, char**, size_t& );
 
@@ -36,10 +29,8 @@ class CGI {
 
 		/* CHILD */
 		static bool		_redirect( const process_t& );
-		static stat_t	_execve( const process_t&, char** );
+		static stat_t	_execve( const process_t&, char**, char** );
 
-
-		static void		_argvBuild( vec_cstr_t&, const str_t&, const str_t& );
 		static stat_t	_autoindex( const Request&, const process_t& );
 
 };
