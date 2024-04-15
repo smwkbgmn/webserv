@@ -53,10 +53,8 @@ void
 HTTP::transaction( const Client& client ) {
 	osstream_t oss;
 
-	try {
-		Request rqst( client );
-		_build( Response( rqst ), oss );
-	} catch ( exception_t& exc ) { logfile.fs << exc.what(); _build( Response( client ), oss ); }
+	try { _build( Response( Request( client ) ), oss ); }
+	catch ( exception_t& exc ) { logfile.fs << exc.what(); _build( Response( client ), oss ); }
 
 	// LOGGING Response Message
 	logfile.fs << oss.str() << "\n\n";

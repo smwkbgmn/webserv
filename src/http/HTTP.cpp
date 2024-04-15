@@ -8,7 +8,7 @@ void HTTP::init( const str_t& type, const name_t& cgi ) {
 	http.signature		= "HTTP";
 	http.typeDefault	= type;
 	http.locationCGI	= cgi;
-	http.fileAtidx		= "~/dev/webserv/html/cgi-bin/autoindex.cgi";
+	http.fileAtidx		= cgi + "/autoindex.cgi";
 
 	_assignVec( http.version, strVersion, CNT_VERSION );
 	_assignVec( http.method, strMethod, CNT_METHOD );
@@ -84,9 +84,9 @@ errstat_s::errstat_s( const uint_t& status ) { code = status; }
 
 config_s::config_s( void ) {
 	location		= "/";
-	root			= "./html";
-	file40x			= "./html/40x.html";
-	file40x			= "./html/50x.html";
+	root			= "/Users/donghyu2/dev/webserv/html";
+	file40x			= root + "/40x.html";
+	file50x			= root + "/50x.html";
 
 	atidx			= FALSE;
 	sizeBodyMax		= 1000;
@@ -118,9 +118,9 @@ char* dupStreamBuffer( std::ios& obj, size_t& size ) {
 	size = pbuf->pubseekoff( 0, obj.end, obj.in );
 	pbuf->pubseekpos( 0, obj.in );
 
-	std::clog << "dupStreamBuffer: before new char[" << size << "]\n";
+	// std::clog << "dupStreamBuffer: before new char[" << size << "]\n";
 	char* buf = new char[size];
-	std::clog << "dupStreamBuffer: before pbuf->sgetn\n";
+	// std::clog << "dupStreamBuffer: before pbuf->sgetn\n";
 	pbuf->sgetn( buf, size );
 
 	return buf;

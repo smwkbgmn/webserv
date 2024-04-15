@@ -17,9 +17,10 @@ typedef struct process_s {
 	process_s( void );
 }	process_t;
 
+typedef stat_t	( *fnptr_t )( const Request&, const process_t& );
+
 class CGI {
 	public:
-		typedef stat_t	( *fn_t )( const process_t&, char** );
 
 		static void		init( const name_t& );
 
@@ -27,17 +28,20 @@ class CGI {
 		static void		POST( const Request&, char**, size_t& );
 
 	private:
-		static void		_argvBuild( vec_cstr_t&, const str_t&, const str_t& );
+		static stat_t	_detach( const Request&, process_t&, fnptr_t );
 
-		
-		static stat_t	_detach( process_t&, fn_t, char** );
+		/* PARENT */
+		static void		_wait( process_t& );
+		static void		_read( process_t&, char**, size_t& );
+
+		/* CHILD */
 		static bool		_redirect( const process_t& );
 		static stat_t	_execve( const process_t&, char** );
 
-		static stat_t	_autoindex( const process_t&, char** );
 
-		static void		_wait( process_t& );
-		static void		_read( process_t&, char**, size_t& );
+		static void		_argvBuild( vec_cstr_t&, const str_t&, const str_t& );
+		static stat_t	_autoindex( const Request&, const process_t& );
+
 };
 
 

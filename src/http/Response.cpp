@@ -17,7 +17,6 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 		case GET:
 			try {
 				HTTP::GET( rqst, &_body, _header.content_length );
-				logfile.fs << "the GET have done\n";
 				_mime( rqst.line().uri, _header.content_type, HTTP::http.typeDefault );
 				_header.list.push_back( OUT_CONTENT_LEN );
 				_header.list.push_back( OUT_CONTENT_TYPE );
@@ -43,6 +42,7 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 		case NOT_ALLOWED:
 			_pageError( 405, rqst.config() );
 			break;
+			  
 
 		default:
 			_pageError( 400, rqst.config() );
