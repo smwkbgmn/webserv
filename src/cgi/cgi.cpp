@@ -1,11 +1,9 @@
 #include "CGI.hpp"
 
-#include <cstring>
-
 // autoindexing (GET/.php), RPN calculator (POST/.exe), sorting (POST/.cpp)
 
 void
-CGI::proceed( const Request& rqst, char** bufptr, size_t& size ) {
+CGI::proceed( const Request& rqst, osstream_t& oss ) {
 	process_t	procs;
 	fnptr_t		act = NULL;
 	
@@ -14,7 +12,7 @@ CGI::proceed( const Request& rqst, char** bufptr, size_t& size ) {
 
 	if ( _detach( rqst, procs, act ) == SUCCESS ) {
 		_wait( procs );
-		_read( procs, bufptr, size );
+		_read( procs, oss );
 		
 		if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
 			throw errstat_t( 500 );
@@ -64,42 +62,18 @@ CGI::_wait( process_t& procs ) {
 }
  
 void
-CGI::_read( process_t& procs, char** bufptr, size_t& size ) {
-	// osstream_t	oss;
-	char		buf[1024];
+CGI::_read( process_t& procs, osstream_t& oss ) {
+	char	buf[1024];
+	ssize_t	bytes = 0;
 
-	// close( procs.fd[W] );
-
-	// std::clog << "_read start read\n";
-	ssize_t byteRead = 0;
-
-	if ( close( procs.fd[W] ) == ERROR ) throwSysErr( "close", 500 );
-	// while ( LOOP ) {
-		byteRead = read( procs.fd[R], &buf, 1024 );
-		buf[byteRead] = '\0';
-		// close ( procs.fd[R] );
-
-		// if ( byteRead == NONE ) break;
-		// else if ( byteRead == ERROR ) throwSysErr( "read", 500 );
-		if ( byteRead == ERROR ) throwSysErr( "read", 500 );
-
-		*bufptr = strdup( buf );
-		size = byteRead;
-
-		if ( close( procs.fd[R] ) == ERROR ) throwSysErr( "close", 500 );
-
-		// std::clog << "[read data from CGI]\n" << buf << ";\n";
-		// oss << buf;
-		// std::clog << "[copied data from buf]\n" << oss.str() << ";\n";
-	// }
+	if ( ( bytes = read(procs.fd[R], buf, 1024 ) ) == ERROR )
+		throwSysErr( "read", 500 );
 	
-	// while ( read( procs.fd[R], &buf, 1024 ) != NONE ) {
-	// 	oss << buf;
-	// 	if ( oss.fail() ) throwSysErr( "read", 500 );
-	// }
-	 
-	// std::clog << "_read start dupStreamBuffer\n";
-	// *bufptr = dupStreamBuffer( oss, size );
+	oss << "HTTP/1.1 200 OK\r\n";
+    oss << "Content-Type: text/html\r\n";
+	oss << "Content-Length: " << bytes << CRLF;
+	oss << CRLF;
+	oss << buf;
 }
 
 stat_t
@@ -116,7 +90,7 @@ CGI::_autoindex( const Request& rqst, const process_t& procs ) {
 	argv_c.push_back( NULL );
 
 	str_t	path_info = varPATH_INFO + rqst.config().root + rqst.line().uri;
-	// env_c.push_back( const_cast<char*>( ( varPATH_INFO + rqst.config().root + rqst.line().uri ).c_str() ) ); 
+	// str_t	path_info = varPATH_TRANSLATED + rqst.config().root + rqst.line().uri;
 	env_c.push_back( const_cast<char*>( path_info.c_str() ) ); 
 	env_c.push_back( NULL );
 	

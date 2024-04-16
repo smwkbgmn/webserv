@@ -25,7 +25,14 @@ void Client::processClientRequest(int fd,
                          NULL);
     // std::cout << server_socket << std::endl;
     // std::cout << client_socket << std::endl;
-    HTTP::transaction( *this );
+    osstream_t  oss;
+    HTTP::transaction( *this, oss );
+
+    std::clog << "try to send...\n";
+    ssize_t bytesSent = send( client_socket, oss.str().c_str(), oss.str().size(), 0 );
+
+	if ( bytesSent == ERROR )
+		throw err_t( "http: send: " + errMsg[FAIL_SEND] );
 
     // }
 }

@@ -40,11 +40,10 @@ class HTTP {
 		static keys_t	key;
 
 		static void		init( const str_t&, const str_t& );
-		static void		transaction( const Client& );
+		static void		transaction( const Client&, osstream_t& );
 		static size_t	getLocationConf( const str_t&, const vec_config_t& );
 	
 		static void		GET( const Request&, char**, size_t& );
-		static void		GET( const str_t&, char**, size_t& ); // For getting body of error page
 		static void		POST( const Request&, char**, size_t& );
 		static void		DELETE( const Request& );
 
@@ -74,6 +73,8 @@ typename Container::iterator
 lookup( Container& obj, Target token ) { return std::find( obj.begin(), obj.end(), token ); }
 
 char* dupStreamBuffer( std::ios&, size_t& );
+
+# include "CGI.hpp"
 
 # include "Request.hpp"
 # include "Response.hpp"

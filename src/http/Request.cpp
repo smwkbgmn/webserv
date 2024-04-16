@@ -32,7 +32,7 @@ Request::_parse( const char* buf ) {
 		_parseBody( msgRqst.substr( begin ) );
 
 	// LOGGING Request Message
-	logfile.fs << msgRqst << std::endl;
+	logging.fs << msgRqst << std::endl;
 } 
 
 void

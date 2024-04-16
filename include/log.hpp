@@ -5,7 +5,7 @@
 
 # include "structure.hpp"
 
-extern File logfile;
+extern File logging;
 
 std::string	logFname( void );
 std::string	strTime( void );

@@ -1,4 +1,4 @@
-#!/usr/bin/php-cgi
+#!/usr/bin/php
 <?php
 
 // Get the path information from PATH_INFO

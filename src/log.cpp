@@ -1,7 +1,7 @@
 #include "log.hpp"
 /* remotehost, timestamp, request-line, response-code, response-size */
 
-File logfile( "log/" + logFname(), W );
+File logging( "log/" + logFname(), W );
 // File logfile( logFname(), W );
 
 std::string logFname( void ) {

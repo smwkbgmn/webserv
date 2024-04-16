@@ -60,13 +60,13 @@ Response::_mime( const str_t& uri, str_t& typeHeader, const str_t& typeUnrecog )
 		try { typeHeader = HTTP::key.mime.at( ext ); }
 		catch ( exception_t &exc ) { typeHeader = typeUnrecog; }
 	}
-	std::clog << "constructed response for case of failure of construct request\n";
 }
 
 Response::Response( const Client& client ): _body( NULL ) { 
 	const config_t&	config = client.server().config().at( 0 );
 
 	_pageError( 400, config );
+	std::clog << "constructed response for case of failure of construct request\n";
 }
 
 void
@@ -75,9 +75,9 @@ Response::_pageError( const uint_t& status, const config_t& config ) {
 	_line.status = 303;	
 
 	if ( status == 400 )
-		_header.location = fileBadRqst;
+		_header.location = "http://127.0.0.1:8080" + fileBadRqst;
 	else if ( status < 500 )
-		_header.location = config.file40x;
+		_header.location = "http://127.0.0.1:8080" + config.file40x;
 	else
 		_header.location = config.file50x;
 

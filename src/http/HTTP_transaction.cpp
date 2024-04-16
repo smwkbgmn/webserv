@@ -50,19 +50,17 @@
 
 /* METHOD - transaction: send response message */
 void
-HTTP::transaction( const Client& client ) {
-	osstream_t oss;
-
-	try { _build( Response( Request( client ) ), oss ); }
-	catch ( exception_t& exc ) { std::clog << "HTTP::transaction: " << exc.what() << "\n"; _build( Response( client ), oss ); }
+HTTP::transaction( const Client& client, osstream_t& oss ) {
+	try {
+		Request	rqst( client );
+		
+		if ( _invokeCGI( rqst ) ) CGI::proceed( rqst, oss );
+		else _build( Response( rqst ), oss );
+	}
+	catch ( errstat_t& exc ) { std::clog << "HTTP::transaction: " << exc.what() << "\n"; _build( Response( client ), oss ); }
 
 	// LOGGING Response Message
-	logfile.fs << oss.str() << "\n\n";
-
-	ssize_t bytesSent = send( client.socket(), oss.str().c_str(), oss.str().size(), 0 );
-
-	if ( bytesSent == ERROR )
-		throw err_t( "http: send: " + errMsg[FAIL_SEND] );
+	logging.fs << oss.str() << "\n" << std::endl;
 }
 
 void
