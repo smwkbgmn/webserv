@@ -65,7 +65,7 @@ class HTTP {
 		static void		_buildBody( const Response&, osstream_t& );
 
 		/* method */
-		static bool		_invokeCGI( const Request&, const methodID& );
+		static bool		_invokeCGI( const Request& );
 
 };
 

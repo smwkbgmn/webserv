@@ -17,8 +17,9 @@ const str_t	binPHP			= "/usr/bin/php";
 
 class CGI {
 	public:
-		static void		GET( const Request&, char**, size_t& );
-		static void		POST( const Request&, char**, size_t& );
+		static void		proceed( const Request&, char**, size_t& );
+		// static void		GET( const Request&, char**, size_t& );
+		// static void		POST( const Request&, char**, size_t& );
 
 	private:
 		static stat_t	_detach( const Request&, process_t&, fnptr_t );

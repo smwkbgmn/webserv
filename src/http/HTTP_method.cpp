@@ -24,8 +24,8 @@
 // When fail to get all of default index files, set status as 403 forbidden
 void
 HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
-	if ( _invokeCGI( rqst, static_cast<methodID>( 0 ) ) )
-		CGI::GET( rqst, bufptr, size );
+	if ( _invokeCGI( rqst ) )
+		CGI::proceed( rqst, bufptr, size );
 
 	else {
 		try {
@@ -62,8 +62,8 @@ HTTP::GET( const str_t& uri, char** bufptr, size_t& size ) {
  
 void
 HTTP::POST( const Request& rqst, char** bufptr, size_t& size ) {
-	if ( _invokeCGI( rqst, static_cast<methodID>( 1 ) ) )
-		CGI::POST( rqst, bufptr, size );
+	if ( _invokeCGI( rqst ) )
+		CGI::proceed( rqst, bufptr, size );
 
 	else {
 		try {
@@ -86,17 +86,8 @@ HTTP::DELETE( const Request& rqst ) {
 }
 
 bool
-HTTP::_invokeCGI( const Request& rqst, const methodID& method ) {
-	switch ( method ) {
-		case 0	:
-			return rqst.config().location == HTTP::http.locationCGI ||
-				*rqst.line().uri.rbegin() == '/';
-
-		case 1	:
-		 	return rqst.line().uri.substr( rqst.line().uri.rfind( '.' ) ) == ".exe";
-
-		default	:
-			return FALSE;
-	}
-	return FALSE;
+HTTP::_invokeCGI( const Request& rqst ) {
+	return rqst.config().location == HTTP::http.locationCGI ||
+		*rqst.line().uri.rbegin() == '/' ||
+		rqst.line().uri.substr( rqst.line().uri.rfind( '.' ) ) == ".exe";
 }

@@ -2,10 +2,10 @@
 
 #include <cstring>
 
-// autoindexing (GET/.php), RPN calculator (GET/.exe), sorting (POST/.cpp)
+// autoindexing (GET/.php), RPN calculator (POST/.exe), sorting (POST/.cpp)
 
 void
-CGI::GET( const Request& rqst, char** bufptr, size_t& size ) {
+CGI::proceed( const Request& rqst, char** bufptr, size_t& size ) {
 	process_t	procs;
 	fnptr_t		act = NULL;
 	
@@ -20,13 +20,6 @@ CGI::GET( const Request& rqst, char** bufptr, size_t& size ) {
 			throw errstat_t( 500 );
 	}
 	else throwSysErr( "execve", 500 );
-}
-
-void
-CGI::POST( const Request& rqst, char** bufptr, size_t& size ) {
-	( void )rqst;
-	( void )bufptr;
-	( void )size;
 }
 
 stat_t
@@ -50,11 +43,11 @@ CGI::_redirect( const process_t& procs ) {
 
 stat_t
 CGI::_execve( const process_t& procs, char* argv[], char* env[] ) {
-	// std::clog << "received argv\n";
-	// for ( size_t ptr = 0; argv[ptr]; ++ptr )
-	// 	std::clog << argv[ptr] << "\n";
+	std::clog << "CGI - received argv\n";
+	for ( size_t ptr = 0; argv[ptr]; ++ptr )
+		std::clog << argv[ptr] << "\n";
 
-	std::clog << "received env\n";
+	std::clog << "CGI - received env\n";
 	for ( size_t ptr = 0; env[ptr]; ++ptr )
 		std::clog << env[ptr] << "\n";
 
@@ -104,7 +97,7 @@ CGI::_read( process_t& procs, char** bufptr, size_t& size ) {
 	// 	oss << buf;
 	// 	if ( oss.fail() ) throwSysErr( "read", 500 );
 	// }
-	
+	 
 	// std::clog << "_read start dupStreamBuffer\n";
 	// *bufptr = dupStreamBuffer( oss, size );
 }
