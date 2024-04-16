@@ -64,7 +64,8 @@ enum headerOutID {
 	OUT_CONNECTION,
 	OUT_CHUNK,
 	OUT_CONTENT_LEN,
-	OUT_CONTENT_TYPE
+	OUT_CONTENT_TYPE,
+	OUT_LOCATION
 };
 
 // Try default value by declaring directly
@@ -145,6 +146,7 @@ typedef struct response_header_s {
 	unsigned			chunked : 1;
 	size_t				content_length;
 	str_t				content_type;
+	str_t				location;
 
 	vec_uint_t			list;
 

@@ -31,6 +31,7 @@ HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
 		try {
 			File target( rqst.config().root + rqst.line().uri, R_BINARY );
 
+			// std::clog << "HTTP::GET: file is opened well with target " << rqst.config().root << rqst.line().uri << "\n";
 			// std::filebuf* pbuf = target.fs.rdbuf();
 			// size = pbuf->pubseekoff( 0, target.fs.end, target.fs.in );
 			// pbuf->pubseekpos( 0, target.fs.in );
@@ -40,7 +41,7 @@ HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
 			
 			// *bufptr = buf;
 			*bufptr = dupStreamBuffer( target.fs, size );
-		} catch ( exception_t& exc ) { logfile.fs << exc.what() << '\n'; throw errstat_t( 404 ); }
+		} catch ( err_t& exc ) { std::clog << "HTTP::GET: " << exc.what() << '\n'; throw errstat_t( 404 ); }
 	}
 }
 
@@ -88,6 +89,6 @@ HTTP::DELETE( const Request& rqst ) {
 bool
 HTTP::_invokeCGI( const Request& rqst ) {
 	return rqst.config().location == HTTP::http.locationCGI ||
-		*rqst.line().uri.rbegin() == '/' ||
-		rqst.line().uri.substr( rqst.line().uri.rfind( '.' ) ) == ".exe";
+		*rqst.line().uri.rbegin() == '/';
+		// rqst.line().uri.substr( rqst.line().uri.rfind( '.' ) ) == ".exe";
 }

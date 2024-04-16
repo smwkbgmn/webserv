@@ -32,7 +32,7 @@
 		Sec-Fetch-Dest: document
 		Sec-Fetch-Mode: navigate
 		Sec-Fetch-Site: none
-		Sec-Fetch-User: ?1
+		Sec-Fetch-User: ?
 		Upgrade-Insecure-Requests: 1
 		User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
 		sec-ch-ua: "Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"
@@ -54,7 +54,7 @@ HTTP::transaction( const Client& client ) {
 	osstream_t oss;
 
 	try { _build( Response( Request( client ) ), oss ); }
-	catch ( exception_t& exc ) { logfile.fs << exc.what(); _build( Response( client ), oss ); }
+	catch ( exception_t& exc ) { std::clog << "HTTP::transaction: " << exc.what() << "\n"; _build( Response( client ), oss ); }
 
 	// LOGGING Response Message
 	logfile.fs << oss.str() << "\n\n";
@@ -106,6 +106,7 @@ HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, osstream_t&
 		case OUT_CHUNK			: break;
 		case OUT_CONTENT_LEN	: oss << header.content_length; break;
 		case OUT_CONTENT_TYPE	: oss << header.content_type; break;
+		case OUT_LOCATION		: oss << header.location; break;
 	}
 	oss << CRLF;
 }

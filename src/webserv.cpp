@@ -7,15 +7,14 @@
 	To do
     - Handle chunked request/response
 	- Redirect the error case to URI for error page
-	- Implement cookies
 	- Apply corrected config structures
 	- Add retrived location to Request obj after replace uri with real path
+	- Implement cookies
 
 	Improve
     - For efficiency, try replace the body type with stream 
 	- Would it fit well if make header as map of enum header key and header value?
 	it makes the working of header list and values as combined one
-
 */
 
 int main(void) {

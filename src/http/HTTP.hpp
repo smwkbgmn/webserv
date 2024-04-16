@@ -19,7 +19,7 @@ const path_t	fileHeaderIn	= dirKeys + "/keyHeaderIn.txt";
 const path_t	fileHeaderOut	= dirKeys + "/keyHeaderOut.txt";
 const path_t	fileListCGI		= dirKeys + "/lstCGI.txt";
 
-const path_t	fileBadRqst		= "./html/bad_request.html";
+const path_t	fileBadRqst		= "/bad_request.html";
 
 const str_t strMethod[] = {
 	"GET",

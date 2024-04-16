@@ -100,8 +100,8 @@ errstat_s::errstat_s( const uint_t& status ) { code = status; }
 config_s::config_s( void ) {
 	location		= "/";
 	root			= HTTP::http.absolute + "/html";
-	file40x			= root + "/40x.html";
-	file50x			= root + "/50x.html";
+	file40x			= "/40x.html";
+	file50x			= "/50x.html";
 
 	atidx			= FALSE;
 	sizeBodyMax		= 1000;
