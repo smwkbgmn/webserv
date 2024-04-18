@@ -41,7 +41,7 @@ class HTTP {
 
 		static void		init( const str_t&, const str_t& );
 		static void		transaction( const Client&, osstream_t& );
-		static size_t	getLocationConf( const str_t&, const vec_config_t& );
+		static size_t	getLocationConf( const str_t&, const vec_location_t& );
 	
 		static void		GET( const Request&, char**, size_t& );
 		static void		POST( const Request&, char**, size_t& );

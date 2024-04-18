@@ -4,6 +4,7 @@
 #include <string>
 
 typedef int							socket_t;
+typedef int							port_t;
 typedef int							pipe_t;
 typedef int							stat_t;
 
@@ -37,6 +38,7 @@ typedef std::istringstream 			isstream_t;
 
 typedef std::vector<uint_t>			vec_uint_t;
 typedef std::vector<str_t>			vec_str_t;
+typedef vec_str_t					vec_name_t;
 typedef vec_str_t::iterator			vec_str_iter_t;
 typedef std::vector<char*>			vec_cstr_t;
 

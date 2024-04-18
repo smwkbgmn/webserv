@@ -86,21 +86,44 @@ typedef struct {
 	name_t				fileAtidx;
 }	http_t;
 
+typedef struct location_s {
+	str_t				name;
+	str_t				root;
+	// map_method_bool_t	allow;
+	vec_str_t			allow;
+	bool 				atidx;
+	vec_name_t			indexFiles;
+
+	location_s( void );
+}	location_t;
+
+typedef std::vector<location_t>	vec_location_t;
+
 typedef struct config_s {
-	name_t				location;
-	path_t				root;
-	map_method_bool_t	allow;
+	str_t				name;
+	port_t				listen;
+	size_t				clientBodySize;
+	name_t				file40x;
+	name_t				file50x;
 
-	bool				atidx;
-	size_t				sizeBodyMax;
-
-	path_t				file40x;
-	path_t				file50x;
-
-	config_s(void);
+	vec_location_t		locations;
 }	config_t;
 
-typedef std::vector<config_t> vec_config_t;
+// typedef struct config_s {
+// 	name_t				location;
+// 	path_t				root;
+// 	map_method_bool_t	allow;
+
+// 	bool				atidx;
+// 	size_t				sizeBodyMax;
+
+// 	path_t				file40x;
+// 	path_t				file50x;
+
+// 	config_s(void);
+// }	config_t;
+
+// typedef std::vector<config_t> vec_config_t;
 
 typedef struct {
 	vec_str_t			header_in;
