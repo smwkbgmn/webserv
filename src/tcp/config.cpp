@@ -1,207 +1,255 @@
 #include "structure.hpp"
-/*
-    fstream ( input )
-    parse > key, value
-    construct struct server_t
-    construct sturct vec_config_t
-    construct Server ( server_t, vec_config_t )
-    construct Client( Server )
-    HTTP::transaction( Client )
-*/
 
-// PARSE
-#include "config.hpp"
+unsigned int parseSize(const std::string& sizeStr) {
+  unsigned long long size = 0;
+  int multiplier = 1;
+  size_t i = 0;
 
-location::location() : autoindex(off) {}
+  for (; i < sizeStr.size() && std::isdigit(sizeStr[i]); ++i)
+    ;
 
-void location::set_root(const std::string& r) { root = r; }
-void location::add_method(const std::string& method) {
-  allowed_methods.push_back(method);
-}
-void location::set_autoindex(bool trun) { autoindex = trun; }
-void location::add_index_file(const std::string& file) {
-  index_files.push_back(file);
-}
-void location::set_url(const std::string& u) { url = u; }
-void Serv_config::set_listen(int l) { listen = l; }
-void Serv_config::set_server_name(const std::string& name) {
-  server_name = name;
-}
-void Serv_config::add_location(const location& loc) {
-  locations.push_back(loc);
-}
-void Serv_config::set_worker_connections(int wc) { worker_connections = wc; }
-void Serv_config::set_client_body_size(const std::string& size) {
-  client_body_size = size;
-}
-void Serv_config::set_error_pages(const std::string& pages) {
-  error_pages = pages;
+  std::istringstream iss(sizeStr.substr(0, i));
+  iss >> size;
+
+  if (i != sizeStr.size()) {
+    std::string suffix = sizeStr.substr(i);
+    if (suffix == "K") {
+      multiplier = 1024;
+    } else if (suffix == "M") {
+      multiplier = 1024 * 1024;
+    } else if (suffix == "G") {
+      multiplier = 1024 * 1024 * 1024;
+    }
+  }
+
+  unsigned long long result = size * multiplier;
+  if (result > static_cast<unsigned long long>(UINT_MAX)) {
+    return static_cast<size_t> UINT_MAX;
+  }
+  return static_cast<size_t>(result);
 }
 
-void server::add_serv_config(const Serv_config& config) {
-  serv_configs.push_back(config);
+
+std::string toLower(const std::string& str) {
+    std::string lowerStr = str;
+    std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(),
+                   static_cast<int(*)(int)>(std::tolower)); 
+    return lowerStr;
 }
 
-bool server::open_config_file(const std::string& filename,
-                              std::ifstream& config_file) {
-  config_file.open(filename.c_str());
-  if (!config_file.is_open()) {
+
+bool parseConfig(std::vector<config_t>& serv,const std::string& filename) {
+  std::ifstream configFile(filename.c_str());
+  if (!configFile.is_open()) {
     std::cerr << "Failed to open file: " << filename << std::endl;
     return false;
   }
-  return true;
-}
 
-// void server::parse_server_block(std::istringstream& iss, Serv_config& config)
-// {
-//   std::string key, value;
-//   // std::cout << "iss: " << iss.str() << std::endl << std::endl;
-//   // iss >> key;
-//   // std::cout << "Key read: " << key << std::endl;
+  config_t currentConfig;
+  location_t currentLocation;
+  bool inLocation = false;
+//   bool listenSet = false;
+//   bool serverNameSet = false;
+ std::string line, accumulated;
 
-//   // while (iss >> key) {
-//   if (key == "listen") {
-//     std::cout << "check if its coming" << std::endl;
-//     iss >> value;
-//     config.set_listen(atoi(value.c_str()));
-//   } else if (key == "server_name") {
-//     iss >> value;
-//     config.set_server_name(value);
-//   } else if (key == "Client_body_size") {
-//     iss >> value;
-//     config.set_client_body_size(value);
-//   } else if (key == "error_pages") {
-//     iss >> value;
-//     config.set_error_pages(value);
-//   } else if (key == "Worker_connections") {
-//     iss >> value;
-//     config.set_worker_connections(atoi(value.c_str()));
-//   }
-//   // }
-// }
+  while (std::getline(configFile, line)) {
 
-// void server::parse_location_block(std::istringstream& iss, location& loc) {
-//   std::string key, value;
-
-//   while (iss >> key) {
-//     if (key == "root") {
-//       iss >> value;
-//       loc.set_root(value);
-//     } else if (key == "allowed_method") {
-//       while (iss >> value) {
-//         loc.add_method(value);
-//       }
-//     } else if (key == "autoindex") {
-//       iss >> value;
-//       loc.set_autoindex(value == "on");
-//     } else if (key == "index") {
-//       while (iss >> value) {
-//         loc.add_index_file(value);
-//       }
-//     }
-//   }
-// }
-
-bool server::parse_config(const std::string& filename, server& srv) {
-  std::ifstream config_file;
-  if (!open_config_file(filename, config_file)) {
-    return false;
-  }
-  std::string line;
-  Serv_config current_config;
-  location current_location;
-  bool in_location = false;
-
-  while (std::getline(config_file, line)) {
+    // line.erase(0, line.find_first_not_of(" \t"));
+    // line.erase(line.find_last_not_of(" \t") + 1);
+    
     std::istringstream iss(line);
-    std::string key, value;
+    std::string key;
     iss >> key;
 
-    if (key == "server{") {
-      continue;
-    } else if (key == "location") {
-      in_location = true;
-      current_location = location();
-      iss >> value;
-      current_location.set_url(value);
-    } else if (key == "}") {
-      if (in_location) {
-        current_config.add_location(current_location);
-        in_location = false;
-      } else {
-        srv.add_serv_config(current_config);
-        current_config = Serv_config();
+    if (key == "server") {
+    char nextChar = iss.get();
+      while (iss && isspace(nextChar)) nextChar = iss.get(); 
+      if (nextChar != '{' || iss.get() != EOF) { 
+        std::cerr << "Server config not found" << line << "'" << std::endl;
+        return false;
       }
-    } else if (in_location) {
-      // parse_location_block(iss, current_location);
+    //    listenSet =false;
+    //   serverNameSet =false;
+      currentConfig = config_t();
+     
+    } else if (key == "location") {
+      inLocation = true;
+      currentLocation =   location_t();
+      iss >> currentLocation.name;
+    } else if (key == "}") {
+      if (inLocation) {
+        inLocation = false;
+        currentConfig.locations.push_back(currentLocation);
+      } else {
+        serv.push_back(currentConfig);
+        // listenSet =false;
+    //   serverNameSet =false;
+      }
+    } else if (inLocation) {
       if (key == "root") {
-        iss >> value;
-        current_location.set_root(value);
+            std::string rootValue;
+    iss>>rootValue;
+    iss >> std::ws; 
+    if (iss.peek() != EOF) { 
+        std::cerr << "Invalid 'root' format: Only one argument expected." << std::endl;
+        return false;
+    }
+    if (!currentLocation.root.empty()) {
+        std::cerr << "Duplicate 'root' directive in location." << std::endl;
+        return false;
+    }
+    currentLocation.root = rootValue;
       } else if (key == "allowed_method") {
-        while (iss >> value) {
-          current_location.add_method(value);
+      std::string method;
+    std::set<std::string> validMethods;
+    validMethods.insert(toLower("GET"));
+    validMethods.insert(toLower("POST"));
+    validMethods.insert(toLower("PUT"));
+    validMethods.insert(toLower("PATCH"));
+    validMethods.insert(toLower("DELETE"));
+    while (iss >> method) {
+        std::string lowerMethod = toLower(method);
+        if (validMethods.find(lowerMethod) == validMethods.end()) {
+            std::cerr << "Invalid method: " << method << ". Only GET, POST, PUT, PATCH, DELETE are allowed." << std::endl;
+            return false;
         }
+        currentLocation.allow.push_back(method); 
+    }
       } else if (key == "autoindex") {
+        std::string value;
         iss >> value;
-        current_location.set_autoindex(value == "on");
+        currentLocation.atidx = (value == "on");
       } else if (key == "index") {
-        while (iss >> value) {
-          current_location.add_index_file(value);
+        std::string indexFile;
+        while (iss >> indexFile) {
+          currentLocation.indexFiles.push_back(indexFile);
         }
       }
     } else {
-      // parse_server_block(iss, current_config);
       if (key == "listen") {
-        iss >> value;
-        current_config.set_listen(atoi(value.c_str()));
+        //   if (listenSet) {
+        //   std::cerr << "Duplicate 'listen' directive in config: " << line << std::endl;
+        //   return false;
+        // }
+        if (currentConfig.listen != 0) {  
+        std::cerr << "Duplicate 'listen' directive in config: " << line << std::endl;
+        return false;
+    }
+    int port;
+    if (!(iss >> port)) {  
+        std::cerr << "Invalid 'listen' format, should be a single number: " << line << std::endl;
+        return false;
+    }
+    iss >> std::ws;  
+    if (iss.peek() != EOF) {
+        std::cerr << "Invalid 'listen' format, should be a single number: " << line << std::endl;
+        return false;
+    }
+    currentConfig.listen = port;
+        // listenSet = true;  
       } else if (key == "server_name") {
-        iss >> value;
-        current_config.set_server_name(value);
+    //     if (serverNameSet) {
+    //     std::cerr << "Duplicate 'server_name' directive in config: " << line << std::endl;
+    //     return false;
+    //    }
+    if (!currentConfig.name.empty()) {
+    std::cerr << "Duplicate 'server_name' directive in config: " << line << std::endl;
+    return false;
+}
+        std::string serverName;
+        if (!(iss >> serverName)) {
+        std::cerr << "Invalid 'server_name' format, should be a single name: " << line << std::endl;
+        return false;
+        }
+        iss >> std::ws; 
+        if (iss.peek() != EOF) {  
+        std::cerr << "Invalid 'server_name' format, should be a single name: " << line << std::endl;
+        return false;
+    }
+        currentConfig.name = serverName;
+    // serverNameSet = true;
       } else if (key == "Client_body_size") {
-        iss >> value;
-        current_config.set_client_body_size(value);
-      } else if (key == "error_pages") {
-        iss >> value;
-        current_config.set_error_pages(value);
-      } else if (key == "Worker_connections") {
-        iss >> value;
-        current_config.set_worker_connections(atoi(value.c_str()));
+        std::string clientbody;
+        if (!(iss >> clientbody)) {
+        std::cerr << "No value provided for 'Client_body_size'." << std::endl;
+        return false; 
+    }
+    iss >> std::ws;
+    if (iss.peek() != EOF) {
+        std::cerr << "Invalid 'Client_body_size' format: Expected a single value." << std::endl;
+        return false;
+    }
+
+    if (currentConfig.clientBodySize != 0) {
+        std::cerr << "Duplicate 'Client_body_size' directive." << std::endl;
+        return false; 
+    }
+        currentConfig.clientBodySize = parseSize(clientbody);
+      }
+    //   } else if (key == "error_pages") {
+    //     std::string errorPages;
+    // if (!(iss >> errorPages)) { 
+    //     std::cerr << "Invalid 'error_pages' format: No value provided." << std::endl;
+    //     return false;
+    // }
+    
+    // iss >> std::ws; 
+    // if (iss.peek() != EOF) {
+    //     std::cerr << "Invalid 'error_pages' format: Should be a single path." << std::endl;
+    //     return false;
+    // }
+
+    // currentConfig.errorPages = errorPages;
+    // } 
+    // else if (key == "Worker_connections") {
+    //     iss >> currentConfig.workerConnections;
+    //   }
+
+    else if (key == "file40x") {
+        iss >> currentConfig.file40x;
+      } else if (key == "file50x") {
+        iss >> currentConfig.file50x;
       }
     }
   }
+
   return true;
 }
 
-void location::print() const {
-  std::cout << "Location URL: " << url << std::endl;
-  std::cout << "Location root: " << root << std::endl;
-  std::cout << "Autoindex: " << (autoindex ? "on" : "off") << std::endl;
-  std::cout << "Allowed methods: ";
-  for (size_t i = 0; i < allowed_methods.size(); ++i) {
-    std::cout << allowed_methods[i]
-              << (i < allowed_methods.size() - 1 ? ", " : "");
-  }
-  std::cout << std::endl;
-  std::cout << "Index files: ";
-  for (size_t i = 0; i < index_files.size(); ++i) {
-    std::cout << index_files[i] << (i < index_files.size() - 1 ? ", " : "");
-  }
-  std::cout << std::endl;
-}
+// void print(std::vector<config_t> serv)  {
+//   for (size_t i = 0; i < serv.size(); ++i) {
+//     const config_t& config = serv[i];
+//     std::cout << "Server listen: " << config.listen << "\n"
+//               << "Server name: " << config.name << "\n"
+//               << "Client body size: " << config.clientBodySize << "\n";
+//               // << "Error pages: " << config.errorPages << "\n";
+//             //   << "Worker connections: " << config.workerConnections << "\n";
+//     for (const  location_t& loc : config.locations) {
+//       std::cout <<    "location_t name: " << loc.name << "\n"
+//                 <<    "location_t root: " << loc.root << "\n"
+//                 << "Autoindex: " << (loc.atidx ? "on" : "off") << "\n"
+//                 << "Allowed methods: ";
+//       for (const std::string& method : loc.allow) {
+//         std::cout << method << " ";
+//       }
+//       std::cout << "\nIndex files: ";
+//       for (const std::string& file : loc.indexFiles) {
+//         std::cout << file << " ";
+//       }
+//       std::cout << "\n--------------------------------\n";
+//     }
+//     std::cout<<i<<"--server------------------finsished"<<std::endl;
+//   }
+// }
 
-void Serv_config::print() const {
-  std::cout << "Server listen: " << listen << std::endl;
-  std::cout << "Server name: " << server_name << std::endl;
-  std::cout << "Client body size: " << client_body_size << std::endl;
-  std::cout << "Error pages: " << error_pages << std::endl;
-  std::cout << "Worker connections: " << worker_connections << std::endl;
-  for (size_t i = 0; i < locations.size(); ++i) {
-    locations[i].print();
-  }
-}
 
-void server::print() const {
-  for (size_t i = 0; i < serv_configs.size(); ++i) {
-    serv_configs[i].print();
-  }
-}
+
+// int main() {
+//   std::vector<config_t> myServer;
+//   if (parseConfig(myServer,"default1.config")) {
+//     print(myServer);
+//   } else {
+//     std::cerr << "Error parsing configuration file." << std::endl;
+//   }
+//   return 0;
+// }
