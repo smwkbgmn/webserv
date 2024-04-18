@@ -33,10 +33,10 @@ void ASocket::setNonBlocking(int fd) {
 }
 
 void ASocket::socketOpen(void) {
-    this->server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    this->client_socket = 0;
+    this->server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (this->server_socket == -1)
         throw err_t("fail to create socket");
+    this->client_socket = 0;
 }
 
 void ASocket::preSet(void) {

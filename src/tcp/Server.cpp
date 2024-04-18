@@ -3,47 +3,57 @@
 #include "HTTP.hpp"
 
 void printBuffer(const char *buff);
-Server::Server(void) : ASocket(), server_list(8) {
-  conf.push_back( config_t() );
+Server::Server(void) : ASocket(), server_list(8), dataReceived(false),server_event("serv"),				
+																client_event("client") {
+  this->kq = kqueue();
+  if (kq == -1) throw err_t("Fail to create kqueue");
+  timeout.tv_sec = 5;
+  timeout.tv_nsec = 0;
+ 
 }
 
 Server::~Server(void) { close(server_socket); }
 
-void Server::connect_sever() {
+void Server::connect_sever(std::vector<config_t> &myServerConfigs) {
   int newEvent;
 
+  std::vector<config_t>::iterator start = myServerConfigs.begin();
+  std::vector<config_t>::iterator finish = myServerConfigs.end();
   std::map<int, std::string> findClient;
-  char buffcopy[max];
-  this->openSocket();
 
-  ServerPreset();
+  char buffcopy[max];
+  for (; start != finish; start++) {
+    ServerPreset();
+  }
 
   Client client(*this);
   while (1) {
     newEvent = eventOccure();
-
+    
     for (int i = 0; i < newEvent; i++) {
-      cur_event = &getEventList(i);
+      occur_event = &getEventList(i);
 
-      errorcheck(*cur_event);
-
-      if (cur_event->filter == EVFILT_READ) {
-        if (!handleReadEvent(cur_event, server_socket, findClient, client)) {
-          std::cout << "if its not working" << std::endl;
-          continue;
+      errorcheck(*occur_event);
+      if (occur_event->filter == EVFILT_TIMER) {
+        if (!dataReceived) {
+          throw std::runtime_error("Data was not received within 30 seconds");
         }
-      } else if (cur_event->filter == EVFILT_WRITE) {
-        std::string tempString = client.getBufferContents();
-        std::strncpy(buffcopy, tempString.c_str(), max - 1);
-        buffcopy[max - 1] = '\0';
-
-        printBuffer(buffcopy);
-        // HTTP::transaction(Request(*this, buff));
-        // handleWriteEvent(cur_event, findClient);
+        dataReceived = false;
+        if (occur_event->filter == EVFILT_READ) {
+          if (!handleReadEvent(occur_event, server_socket, findClient, client)) {
+            dataReceived = true;
+            continue;
+          }
+        } else if (occur_event->filter == EVFILT_WRITE) {
+          
+        }
+        } else if (occur_event->filter == EVFILT_PROC) {
+          //request read 하고 cgi면 fork -> event 등록 -> execve
+        }
       }
     }
   }
-}
+
 
 int Server::eventOccure() {
   int occure;
@@ -53,11 +63,11 @@ int Server::eventOccure() {
   return occure;
 }
 
-bool Server::handleReadEvent(struct kevent *cur_event, int server_socket,
+bool Server::handleReadEvent(struct kevent *occur_event, int server_socket,
                              std::map<int, std::string> &findClient,
                              Client &client) {
-  if (cur_event->ident == static_cast<uintptr_t>(server_socket)) {
-    clog( "Wating for request..." );
+  char *check_type =  static_cast<char*>(occur_event->udata);              
+ if (std::strcmp(check_type, "serv") == 0) {
     client_socket = accept(server_socket, NULL, NULL);
     client.setSocket(client_socket);
     if (client_socket == -1) {
@@ -65,33 +75,30 @@ bool Server::handleReadEvent(struct kevent *cur_event, int server_socket,
     }
     this->setNonBlocking(client_socket);
     findClient = client.getClients();
-    change_events(client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+    change_events(client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client_event);
 
     findClient[client_socket] = "";
-  } else if (findClient.find(cur_event->ident) != findClient.end()) {
-    client.processClientRequest(cur_event->ident, findClient, *this);
-    // change_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0,
-    //   &timeout);
+  } else if(std::strcmp(check_type, "client") == 0){
+    client.processClientRequest(occur_event->ident, findClient, *this);
   }
   return true;
 }
 
-void Server::handleWriteEvent(struct kevent *cur_event,
+void Server::handleWriteEvent(struct kevent *occur_event,
                               std::map<int, std::string> &findClient) {
-  // HTTP::transaction(Request(*this, buf));
-  // std::cout << "Sent response to client: " << std::endl;
-  std::map<int, std::string>::iterator it = findClient.find(cur_event->ident);
+  std::cout << "Sent response to client: " << std::endl;
+  std::map<int, std::string>::iterator it = findClient.find(occur_event->ident);
   if (it != findClient.end()) {
     const std::string &response = it->second;
 
     ssize_t bytes_written =
-        send(cur_event->ident, response.c_str(), response.length(), 0);
+        send(occur_event->ident, response.c_str(), response.length(), 0);
     if (bytes_written > 0) {
-      // std::cout << "Sent response to client: " << cur_event->ident << std::endl;
-      change_events(cur_event->ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-      findClient.erase(cur_event->ident);
+      std::cout << "Sent response to client: " << occur_event->ident << std::endl;
+      change_events(occur_event->ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+      findClient.erase(occur_event->ident);
     } else {
-      close(cur_event->ident);
+      close(occur_event->ident);
       throw std::runtime_error("Failed to write");
     }
   }
@@ -108,14 +115,10 @@ void Server::errorcheck(struct kevent &event) {
     }
   }
 }
+
 void Server::ServerPreset() {
-  this->kq = kqueue();
-  if (kq == -1) throw err_t("Fail to create kqueue");
-  change_events(server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-  // change_events(server_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0,
-  // NULL);
-  timeout.tv_sec = 5;
-  timeout.tv_nsec = 0;
+  this->openSocket();
+  change_events(server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &server_event);
 }
 
 void Server::change_events(uintptr_t ident, int16_t filter, uint16_t flags,
@@ -127,15 +130,3 @@ void Server::change_events(uintptr_t ident, int16_t filter, uint16_t flags,
 }
 
 struct kevent &Server::getEventList(int idx) { return server_list[idx]; }
-
-void printBuffer(const char *buff) {
-  if (buff == nullptr) {
-    std::cout << "Buffer is null." << std::endl;
-    return;
-  }
-
-  for (int i = 0; buff[i] != '\0'; ++i) {
-    std::cout << buff[i];
-  }
-  std::cout << std::endl;  // 줄바꿈 추가
-}
