@@ -13,13 +13,32 @@ CGI::proceed( const Request& rqst, osstream_t& oss ) {
 	else act = &_script;
 
 	if ( _detach( rqst, procs, act ) == SUCCESS ) {
+		clog( "_write" );
+		_write( procs, rqst );
+
+		clog( "_wait" );
 		_wait( procs );
+
+		clog( "_read" );
 		_read( procs, oss );
 		
 		if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
 			throw errstat_t( 500 );
 	}
 	else throwSysErr( "execve", 500 );
+}
+
+void
+CGI::_write( const process_t& procs, const Request& rqst ) {
+	if ( rqst.line().method == POST ) {
+		ssize_t sizeMsg = strlen( rqst.client().buffer() );
+
+		// Should the size of buf be checked
+		for ( ssize_t pos = 0; pos < sizeMsg; pos = write( procs.fd[W], rqst.client().buf, 1024 ) )
+			if ( pos == ERROR )
+				throwSysErr( "write", 500 );
+	}
+	close( procs.fd[W] );
 }
 
 stat_t
@@ -34,7 +53,9 @@ CGI::_detach( const Request& rqst, process_t& procs, fnptr_t execute ) {
 // Be aware that functions under _detach are running on subprocess
 bool
 CGI::_redirect( const process_t& procs ) {
-	if ( dup2( procs.fd[W], STDOUT_FILENO ) == ERROR  ||
+	if ( dup2( procs.fd[R], STDIN_FILENO ) == ERROR ||
+		dup2( procs.fd[W], STDOUT_FILENO ) == ERROR ||
+	// if ( dup2( procs.fd[W], STDOUT_FILENO ) == ERROR ||
 		close( procs.fd[R] ) == ERROR ||
 		close( procs.fd[W] ) == ERROR )
 		return FALSE;
@@ -68,27 +89,46 @@ CGI::_read( process_t& procs, osstream_t& oss ) {
 	char	buf[1024];
 	ssize_t	bytes = 0;
 
-	if ( ( bytes = read(procs.fd[R], buf, 1024 ) ) == ERROR )
-		throwSysErr( "read", 500 );
+	// if ( ( bytes = read(procs.fd[R], buf, 1024 ) ) == ERROR )
+	// 	throwSysErr( "read", 500 );
+
+	while ( ( bytes = read( procs.fd[R], buf, 1024 ) ) > 0 )
+		if ( bytes == ERROR )
+			throwSysErr( "read", 500 );
+
+	close( procs.fd[R] );
 	
-	oss << "HTTP/1.1 200 OK\r\n";
-    oss << "Content-Type: text/html\r\n";
-	oss << "Content-Length: " << bytes << CRLF;
-	oss << CRLF;
+	// oss << "HTTP/1.1 200 OK\r\n";
+    // oss << "Content-Type: text/html\r\n";
+	// oss << "Content-Length: " << bytes << CRLF;
+	// oss << CRLF;
 	oss << buf;
+	clog ( "CGI - received data\n" + oss.str() );
 }
 
 stat_t
 CGI::_script( const Request& rqst, const process_t& procs ) {
-	str_t		script_path = "./html" + rqst.line().uri;
+	str_t		script_path = "html" + rqst.line().uri;
 	vec_cstr_t	argv_c;
 	vec_cstr_t	env_c;
 
 	argv_c.push_back( const_cast<char*>( script_path.c_str() ) );
 	argv_c.push_back( NULL );
 
-	env_c.push_back( const_cast<char*>( "CONTENT_LENGTH=1234" ) );
-	env_c.push_back( const_cast<char*>( "CONTENT_TYPE=text/plain" ) );
+	env_c.push_back( const_cast<char*>( "REQUEST_METHOD=POST" ) );
+	env_c.push_back( const_cast<char*>( "SERVER_PROTOCOL=HTTP/1.1" ) );
+	env_c.push_back( const_cast<char*>( "SCRIPT_FILENAME=upload.cgi" ) );
+	env_c.push_back( const_cast<char*>( "SERVER_PORT=8080" ) );
+	env_c.push_back( const_cast<char*>( "SERVER_NAME=webserv" ) );
+	// env_c.push_back( const_cast<char*>( "CONTENT_LENGTH=123" ) );
+	// env_c.push_back( const_cast<char*>( "CONTENT_LENGTH=6607" ) );
+	osstream_t	oss;
+	oss << "CONTENT_LENGTH=";
+	oss << rqst.header().content_length;
+	env_c.push_back( const_cast<char*>( oss.str().c_str() ) );
+	// env_c.push_back( const_cast<char*>( "CONTENT_LENGTH=1024" ) );
+	env_c.push_back( const_cast<char*>( "CONTENT_TYPE=multipart/form-data" ) );
+	// env_c.push_back( const_cast<char*>( "CONTENT_TYPE=text/plain" ) );
 	env_c.push_back( NULL );
 
 	return _execve( procs, argv_c.data(), env_c.data() );

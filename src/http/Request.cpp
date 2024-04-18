@@ -73,16 +73,20 @@ Request::_assignVersion( str_t token ) {
 
 void
 Request::_parseHeader( str_t field ) {
-	vec_str_iter_t iter = lookup( HTTP::key.header_in, field );
+	osstream_t		oss( field );
+	vec_str_iter_t	iter = lookup( HTTP::key.header_in, field );
+
 
 	// if ( iter == HTTP::header_in.end() )
 	// 	throw err_t( "_parseHeader: " + errMsg[INVALID_REQUEST_FIELD] + " " + field );
 
+	// std::clog << "rqst - header: " << field << std::endl;
+
 	switch ( std::distance( HTTP::key.header_in.begin(), iter ) ) {
-		case IN_HOST		: _header.host = field; _add( _header.list, 0 ); break;
-		case IN_CONNECTION	: _header.connection = KEEP_ALIVE; _add( _header.list, 2 ); break;
+		case IN_HOST		: _header.host = field; _add( _header.list, IN_HOST ); break;
+		case IN_CONNECTION	: _header.connection = KEEP_ALIVE; _add( _header.list, IN_CONNECTION ); break;
 		case IN_CHUNK		: break;
-		case IN_CONTENT_LEN	: break;
+		case IN_CONTENT_LEN	: _header.content_length = 1024; _add( _header.list, IN_CONTENT_LEN );
 		case IN_CONTENT_TYPE: break;
 		// default: throw err_t( "_parseHeader: " + errMsg[INVALID_REQUEST_FIELD] + " " + field );
 	}

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use CGI;
 
-$upload_dir = "./html/storage";
+$upload_dir = "/Users/donghyu2/dev/webserv/html/upload";
 
 $query = new CGI;
 

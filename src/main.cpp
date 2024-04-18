@@ -16,17 +16,22 @@
     - For efficiency, try replace the body type with stream 
 	- Would it fit well if make header as map of enum header key and header value?
 	it makes the working of header list and values as combined one
+
+	Correction
+	- filter.hpp
+		allow type
+	
 */
 
 int main( void ) {
 	try {
-		HTTP::init( "text/plain", "./html/cgi-bin" );
+		HTTP::init( "text/plain", "html/cgi-bin" );
 		
 		Server server;
 
 		// Retrieve http signature and default type from config file
-		// server.listening();
-		server.connect_sever();
+		server.listening();
+		// server.connect_sever();
 	} catch ( err_t &err ) { clog( str_t( err.what() ) ); }
 
   return 0;
