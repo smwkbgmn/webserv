@@ -13,7 +13,14 @@ Client::receiving( void ) {
 		throw err_t( "fail to read from socket" );
 	
 	this->buf = buf;
-	HTTP::transaction( *this );
+
+	osstream_t	oss;
+	HTTP::transaction( *this, oss );
+
+	ssize_t bytesSent = send( sock, oss.str().c_str(), oss.str().size(), 0 );
+
+	if ( bytesSent == ERROR )
+		throw err_t( "http: send: " + errMsg[FAIL_SEND] );
 }
 
 void

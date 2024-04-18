@@ -1,8 +1,9 @@
-#include "log.hpp"
-/* remotehost, timestamp, request-line, response-code, response-size */
+#include <ctime>
 
-File logfile( "log/" + logFname(), W );
-// File logfile( logFname(), W );
+#include "log.hpp"
+
+const std::time_t	begin	= std::time( NULL );
+File				logging( "log/" + logFname(), W );
 
 std::string logFname( void ) {
 	std::string	fname = strTime() + ".log";
@@ -18,6 +19,23 @@ std::string strTime( void ) {
 	
 	return std::string( buf );
 }
+
+void timestamp( void ) {
+	std::time_t	now			= std::time( NULL );
+	std::time_t	elapse		= now - begin;
+	std::tm*	timeinfo	= std::localtime( &elapse );
+
+	char buf[100];
+	timeinfo->tm_hour -= 9;
+	std::strftime( buf, 100, "[%H:%M:%S]", timeinfo );
+	std::clog << buf << " ";
+}
+
+void clog( const str_t& msg ) {
+	timestamp();
+	std::clog << msg << std::endl;
+}
+
 
 
 //////////////// DEBUGGING ///////////////////

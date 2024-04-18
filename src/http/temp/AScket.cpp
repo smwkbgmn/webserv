@@ -9,13 +9,14 @@ ASocket::ASocket( void ) {
 	addr.sin_addr.s_addr = INADDR_ANY;
 	addr.sin_port = htons( 8080 );
 
+		
+	int optval = 1;
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval,
+               sizeof(optval));
 
 	if ( bind( sock, ( const struct sockaddr* )&addr, sizeof( addr ) ) == ERROR )
 		throw err_t( "fail to bind" );
 
-	// int optval = 1;
-    // setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval,
-    //            sizeof(optval));
 }
 
 ASocket::ASocket( socket_t sockServer ) {
@@ -25,7 +26,7 @@ ASocket::ASocket( socket_t sockServer ) {
 	if ( sock == ERROR )
 		throw err_t( "fail to accepting connection" );
 
-	std::clog << "Wating for request...\n";
+	clog( "Wating for request..." );
 }
 
 ASocket::~ASocket( void ) {}

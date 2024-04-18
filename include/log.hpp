@@ -5,10 +5,14 @@
 
 # include "structure.hpp"
 
-extern File logfile;
+extern const std::time_t	begin;
+extern File					logging;
 
 std::string	logFname( void );
 std::string	strTime( void );
+
+void		timestamp( void );
+void		clog( const str_t& );
 
 void		printVec( vec_str_t&, const str_t );
 

@@ -42,6 +42,7 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 		case NOT_ALLOWED:
 			_pageError( 405, rqst.config() );
 			break;
+			  
 
 		default:
 			_pageError( 400, rqst.config() );
@@ -64,22 +65,25 @@ Response::Response( const Client& client ): _body( NULL ) {
 	const config_t&	config = client.server().config().at( 0 );
 
 	_pageError( 400, config );
-	_mime( fileBadRqst, _header.content_type, HTTP::http.typeDefault );
 }
 
 void
 Response::_pageError( const uint_t& status, const config_t& config ) {
-	_line.status = status;	
+	timestamp();
+	std::clog << "HTTP - responsing with errcode " << status << "\n";
+
+	_line.status = 303;	
 
 	if ( status == 400 )
-		HTTP::GET( fileBadRqst, &_body, _header.content_length );
+		_header.location = "http://localhost:8080" + fileBadRqst;
+		// _header.location = fileBadRqst;
 	else if ( status < 500 )
-		HTTP::GET( config.file40x, &_body, _header.content_length );
+		_header.location = "http://localhost:8080" + config.file40x;
+		// _header.location = config.file40x;
 	else
-		HTTP::GET( config.file50x, &_body, _header.content_length );
+		_header.location = config.file50x;
 
-	_header.list.push_back( OUT_CONTENT_TYPE );
-	_header.list.push_back( OUT_CONTENT_LEN );
+	_header.list.push_back( OUT_LOCATION );
 }
 
 Response::~Response( void ) { if ( _body ) delete _body; }

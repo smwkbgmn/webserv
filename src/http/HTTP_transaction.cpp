@@ -32,7 +32,7 @@
 		Sec-Fetch-Dest: document
 		Sec-Fetch-Mode: navigate
 		Sec-Fetch-Site: none
-		Sec-Fetch-User: ?1
+		Sec-Fetch-User: ?
 		Upgrade-Insecure-Requests: 1
 		User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
 		sec-ch-ua: "Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"
@@ -50,22 +50,35 @@
 
 /* METHOD - transaction: send response message */
 void
-HTTP::transaction( const Client& client ) {
-	osstream_t oss;
-
+HTTP::transaction( const Client& client, osstream_t& oss ) {
 	try {
-		Request rqst( client );
-		_build( Response( rqst ), oss );
-	} catch ( exception_t& exc ) { logfile.fs << exc.what(); _build( Response( client ), oss ); }
+		Request	rqst( client );
+		
+		if ( _invokeCGI( rqst ) ) CGI::proceed( rqst, oss );
+		else _build( Response( rqst ), oss );
+	}
+	// Replace the action of error case with building of response for redirection to error page
+	catch ( errstat_t& exc ) { clog( "HTTP - transaction: " + str_t( exc.what() ) ); _build( Response( client ), oss ); }
 
 	// LOGGING Response Message
-	logfile.fs << oss.str() << std::endl;
-
-	ssize_t bytesSent = send( client.socket(), oss.str().c_str(), oss.str().size(), 0 );
-
-	if ( bytesSent == ERROR )
-		throw err_t( "http: send: " + errMsg[FAIL_SEND] );
+	logging.fs << oss.str() << "\n" << std::endl;
 }
+
+
+bool
+HTTP::_invokeCGI( const Request& rqst ) {
+	size_t	dot = rqst.line().uri.rfind( "." );
+	str_t	ext;
+
+	if ( dot != str_t::npos ) 
+		ext = rqst.line().uri.substr( dot );
+
+	return ext == ".cgi" || *rqst.line().uri.rbegin() == '/';
+	// return rqst.config().location == HTTP::http.locationCGI ||
+	// 	*rqst.line().uri.rbegin() == '/';
+		// rqst.line().uri.substr( rqst.line().uri.rfind( '.' ) ) == ".exe";
+}
+
 
 void
 HTTP::_build( const Response& rspn, osstream_t& oss ) {
@@ -108,6 +121,7 @@ HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, osstream_t&
 		case OUT_CHUNK			: break;
 		case OUT_CONTENT_LEN	: oss << header.content_length; break;
 		case OUT_CONTENT_TYPE	: oss << header.content_type; break;
+		case OUT_LOCATION		: oss << header.location; break;
 	}
 	oss << CRLF;
 }
@@ -117,4 +131,3 @@ HTTP::_buildBody( const Response& rspn, osstream_t& oss ) {
 	for ( size_t idx = 0; idx < rspn.header().content_length; ++idx )
 		oss << rspn.body()[idx];
 }
-

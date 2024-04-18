@@ -24,54 +24,32 @@
 // When fail to get all of default index files, set status as 403 forbidden
 void
 HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
- 	if ( _cgiGet( rqst ) )
-		CGI::GET( rqst, bufptr, size );
-
-	else {
-		try {
-			File target( rqst.config().root + rqst.line().uri, R_BINARY );
-
-			// std::filebuf* pbuf = target.fs.rdbuf();
-			// size = pbuf->pubseekoff( 0, target.fs.end, target.fs.in );
-			// pbuf->pubseekpos( 0, target.fs.in );
-
-			// char *buf = new char[size];
-			// pbuf->sgetn( buf, size );
-			
-			// *bufptr = buf;
-			*bufptr = dupIOBuf( target.fs, size );
-		} catch ( exception_t& exc ) { logfile.fs << exc.what() << '\n'; throw errstat_t( 404 ); }
-	}
-}
-
-void
-HTTP::GET( const str_t& uri, char** bufptr, size_t& size ) {
 	try {
-		File target( uri, R_BINARY );
+		File target( rqst.config().root + rqst.line().uri, R_BINARY );
 
-		std::filebuf* pbuf = target.fs.rdbuf();
-		size = pbuf->pubseekoff( 0, target.fs.end, target.fs.in );
-		pbuf->pubseekpos( 0, target.fs.in );
+		// std::clog << "HTTP::GET: file is opened well with target " << rqst.config().root << rqst.line().uri << "\n";
+		// std::filebuf* pbuf = target.fs.rdbuf();
+		// size = pbuf->pubseekoff( 0, target.fs.end, target.fs.in );
+		// pbuf->pubseekpos( 0, target.fs.in );
 
-		char *buf = new char[size];
-		pbuf->sgetn( buf, size );
+		// char *buf = new char[size];
+		// pbuf->sgetn( buf, size );
 		
-		*bufptr = buf;
-	} catch ( exception_t& exc ) { logfile.fs << exc.what() << '\n'; throw errstat_t( 204 ); }
+		// *bufptr = buf;
+		*bufptr = dupStreamBuffer( target.fs, size );
+	} catch ( err_t& exc ) { clog( "HTTP - GET: " + str_t( exc.what() ) ); throw errstat_t( 404 ); }
 }
  
 void
 HTTP::POST( const Request& rqst, char** bufptr, size_t& size ) {
-	if ( _cgiGet( rqst ) )
-		CGI::POST( rqst, bufptr, size );
+	( void )bufptr;
+	( void )size;
 
-	else {
-		try {
-			File target( rqst.config().root + rqst.line().uri, W );
+	try {
+		File target( rqst.config().root + rqst.line().uri, W );
 
-			target.fs << rqst.body();
-		} catch ( exception_t& exc ) { logfile.fs << exc.what() << '\n'; throw errstat_t( 400 ); }
-	}
+		target.fs << rqst.body();
+	} catch ( exception_t& exc ) { clog( str_t( exc.what() ) ); throw errstat_t( 400 ); }
 }
 
 void
@@ -83,16 +61,4 @@ HTTP::DELETE( const Request& rqst ) {
 		throw errstat_t( 404 );
 
 	// return FALSE;
-}
-
-bool
-HTTP::_cgiGet( const Request& rqst ) {
-	return rqst.config().location == HTTP::http.locationCGI ||
-		*rqst.line().uri.rbegin() == '/';
-}
-
-bool
-HTTP::_cgiPost( const Request& rqst ) {
-	size_t posDot = rqst.line().uri.rfind( '.' );
-	return rqst.line().uri.substr( posDot ) == ".exe";
 }

@@ -8,14 +8,14 @@ void ASocket::openSocket() {
 
     socketOpen();
     setAddr();
-    preSet();
-    setNonBlocking(this->server_socket);
-    std::clog << "Listening on port 8080\n";
-
     // socket timeout 설정
     int optval = 1;
     setsockopt(this->server_socket, SOL_SOCKET, SO_REUSEADDR, &optval,
                sizeof(optval));
+    preSet();
+    setNonBlocking(this->server_socket);
+    clog( "Listening on port 8080" );
+
 }
 
 void ASocket::setAddr() {

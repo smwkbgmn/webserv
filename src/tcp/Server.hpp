@@ -11,6 +11,8 @@ class Client;
 
 class Server : ASocket {
  public:
+  vec_config_t  conf;
+
   Server(void);
   Server(char *);
   ~Server(void);

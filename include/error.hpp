@@ -5,6 +5,7 @@
 #include <sys/errno.h>
 
 #include "structure.hpp"
+#include "log.hpp"
 
 #define ERROR -1
 
@@ -31,6 +32,8 @@ typedef struct errstat_s: exception_t {
 
 	errstat_s( const uint_t& );
 }	errstat_t;
+
+void	throwSysErr( const str_t&, uint_t );
 
 #endif
 

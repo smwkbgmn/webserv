@@ -1,79 +1,123 @@
 #include "CGI.hpp"
 
-void
-CGI::GET( const Request& rqst, char** bufptr, size_t& size ) {
-	process_t	procs;
-	vec_cstr_t	argv;
+// autoindexing (GET/.php), RPN calculator (POST/.exe), sorting (POST/.cpp)
 
-	// autoindex
-	if ( *rqst.line().uri.rbegin() == '/' ) {
-		_argvBuild( argv, "/usr/bin/php", HTTP::http.fileAtidx );
-		
-		_detach ( procs, &_execute, argv );
-		// _redirect( procs );
+void
+CGI::proceed( const Request& rqst, osstream_t& oss ) {
+	process_t	procs;
+	fnptr_t		act = NULL;
+	
+	clog( "CGI - proceed" );
+
+	if ( *rqst.line().uri.rbegin() == '/' ) act = &_autoindex;
+	else act = &_script;
+
+	if ( _detach( rqst, procs, act ) == SUCCESS ) {
 		_wait( procs );
+		_read( procs, oss );
 		
 		if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
 			throw errstat_t( 500 );
-
-		_read( procs, bufptr, size );
 	}
-
-}
-
-void
-CGI::POST( const Request& rqst, char** bufptr, size_t& size ) {
-	( void )rqst;
-	( void )bufptr;
-	( void )size;
-}
-
-void
-CGI::_argvBuild( vec_cstr_t& argv, const str_t& cmd, const str_t& arg ) {
-	argv.push_back( const_cast<char*>( cmd.c_str() ) );
-	argv.push_back( const_cast<char*>( arg.c_str() ) );
-}
-
-void
-CGI::_detach( process_t& procs, fn_t execute, vec_cstr_t& argv ) {
-	if ( pipe( procs.fd ) == ERROR || ( procs.pid = fork() ) == ERROR )
-		throw errstat_t( 500 );
-	
-	if ( !procs.pid )
-		execute( procs, argv.data() );
-}
-
-void
-CGI::_redirect( const process_t& procs ) {
-	if ( dup2( procs.fd[W], STDOUT_FILENO ) == ERROR  ||
-		close( procs.fd[R] ) == ERROR || close( procs.fd[W] ) == ERROR )
-		throw errstat_t( 500 );
-
-	// if ( ( procs.pid && dup2( procs.fd[R], STDIN_FILENO ) == ERROR ) ||
-	// 	( !procs.pid && dup2( procs.fd[W], STDOUT_FILENO ) == ERROR ) ||
-	// 	( close( procs.fd[R] ) == ERROR || close( procs.fd[W] ) == ERROR ) )
-	// 	throw errstat_t( 500 );
+	else throwSysErr( "execve", 500 );
 }
 
 stat_t
-CGI::_execute( const process_t& procs, char* argv[] ) {
-	try { _redirect( procs ); return execve( *argv, argv, NULL ); }
-	catch ( errstat_t& erstat ) { return EXIT_FAILURE; }
+CGI::_detach( const Request& rqst, process_t& procs, fnptr_t execute ) {
+	if ( pipe( procs.fd ) == ERROR || ( procs.pid = fork() ) == ERROR )
+		throwSysErr( "_detach", 500 );
+	
+	if ( !procs.pid ) return execute( rqst, procs );
+	else return SUCCESS;
+}
+
+// Be aware that functions under _detach are running on subprocess
+bool
+CGI::_redirect( const process_t& procs ) {
+	if ( dup2( procs.fd[W], STDOUT_FILENO ) == ERROR  ||
+		close( procs.fd[R] ) == ERROR ||
+		close( procs.fd[W] ) == ERROR )
+		return FALSE;
+	return TRUE;	
+}
+
+stat_t
+CGI::_execve( const process_t& procs, char* argv[], char* env[] ) {
+	clog( "CGI - received argv" );
+	for ( size_t ptr = 0; argv[ptr]; ++ptr )
+		std::clog << argv[ptr] << "\n";
+
+	clog ( "CGI - received env" );
+	for ( size_t ptr = 0; env[ptr]; ++ptr )
+		std::clog << env[ptr] << "\n";
+
+	if ( _redirect( procs ) )
+		return execve( *argv, argv, env );
+	return EXIT_FAILURE;
 }
 
 void
 CGI::_wait( process_t& procs ) {
+	// Should be replaced the NONE with WNOHANG after restruct the flow
 	if ( waitpid( procs.pid, &procs.stat, NONE ) == ERROR )
-		throw errstat_t( 500 );
+		throwSysErr( "wait", 500 );
 }
  
 void
-CGI::_read( process_t& procs, char** bufptr, size_t& size ) {
-	osstream_t	oss;
-	char		buf[1024];
+CGI::_read( process_t& procs, osstream_t& oss ) {
+	char	buf[1024];
+	ssize_t	bytes = 0;
 
-	while ( read( procs.fd[R], &buf, 1024 ) )
-		oss << buf;
+	if ( ( bytes = read(procs.fd[R], buf, 1024 ) ) == ERROR )
+		throwSysErr( "read", 500 );
 	
-	*bufptr = dupIOBuf( oss, size );
+	oss << "HTTP/1.1 200 OK\r\n";
+    oss << "Content-Type: text/html\r\n";
+	oss << "Content-Length: " << bytes << CRLF;
+	oss << CRLF;
+	oss << buf;
+}
+
+stat_t
+CGI::_script( const Request& rqst, const process_t& procs ) {
+	str_t		script_path = "./html" + rqst.line().uri;
+	vec_cstr_t	argv_c;
+	vec_cstr_t	env_c;
+
+	argv_c.push_back( const_cast<char*>( script_path.c_str() ) );
+	argv_c.push_back( NULL );
+
+	env_c.push_back( const_cast<char*>( "CONTENT_LENGTH=1234" ) );
+	env_c.push_back( const_cast<char*>( "CONTENT_TYPE=text/plain" ) );
+	env_c.push_back( NULL );
+
+	return _execve( procs, argv_c.data(), env_c.data() );
+}
+
+stat_t
+CGI::_autoindex( const Request& rqst, const process_t& procs ) {
+	vec_str_t	argv;
+	vec_cstr_t	argv_c;
+	vec_cstr_t	env_c;
+
+	argv.push_back( binPHP );
+	argv.push_back( HTTP::http.fileAtidx );
+
+	for ( vec_str_t::const_iterator iter = argv.begin(); iter != argv.end(); ++iter )
+		argv_c.push_back( const_cast<char*>( iter->c_str() ) );
+	argv_c.push_back( NULL );
+
+	str_t	path_info = varPATH_INFO + rqst.config().root + rqst.line().uri;
+	// str_t	path_info = varPATH_TRANSLATED + rqst.config().root + rqst.line().uri;
+	env_c.push_back( const_cast<char*>( path_info.c_str() ) ); 
+	env_c.push_back( NULL );
+	
+	return _execve( procs, argv_c.data(), env_c.data() );
+}
+
+process_s::process_s( void ) {
+	pid		= NONE;
+	fd[R]	= NONE;
+	fd[W]	= NONE;
+	stat	= NONE;
 }

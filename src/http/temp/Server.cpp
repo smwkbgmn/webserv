@@ -10,14 +10,14 @@ void Server::listening( void ) {
 	if ( listen( sock, 10 ) == ERROR )
 		throw err_t( "fail to listening" );
 		
-	std::clog << "Listening on port 8080\n";
-
+	clog( "Listening on port 8080" );
+ 
 	while ( LOOP ) {
 		try {
 			Client	connection( sock, *this );
 			
 			connection.receiving();
 			// connection.sending();
-		} catch( err_t &err ) { std::clog << err.what() << std::endl; }
+		} catch( err_t &err ) { clog( str_t( err.what() ) ); }
 	}
 }

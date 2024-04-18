@@ -19,35 +19,41 @@ const path_t	fileHeaderIn	= dirKeys + "/keyHeaderIn.txt";
 const path_t	fileHeaderOut	= dirKeys + "/keyHeaderOut.txt";
 const path_t	fileListCGI		= dirKeys + "/lstCGI.txt";
 
-const path_t	fileBadRqst		= "./html/bad_request.html";
+const path_t	fileBadRqst		= "/bad_request.html";
 
-const str_t strMethod[] = {"GET", "POST", "DELETE"};
+const str_t strMethod[] = {
+	"GET",
+	"POST",
+	"DELETE"
+};
 
-const str_t strVersion[] = {"0.9", "1.0", "1.1", "2.0"};
+const str_t strVersion[] = {
+	"0.9",
+	"1.0",
+	"1.1",
+	"2.0"
+};
 
 class HTTP {
-  public:
-    static http_t http;
-    static keys_t key;
-
-    HTTP(config_t &);
-    ~HTTP(void);
+	public:
+		static http_t	http;
+		static keys_t	key;
 
 		static void		init( const str_t&, const str_t& );
-		static void		transaction( const Client& );
-		static size_t	getLocationConf( const str_t&, const vec_config_t& );
+		static void		transaction( const Client&, osstream_t& );
+		static size_t	getLocationConf( const str_t&, const vec_location_t& );
 	
 		static void		GET( const Request&, char**, size_t& );
-		static void		GET( const str_t&, char**, size_t& ); // For getting body of error page
 		static void		POST( const Request&, char**, size_t& );
 		static void		DELETE( const Request& );
 
-  private:
-    /* init */
-    static void _assignHeader(void);
-    static void _assignStatus(void);
-    static void _assignMime(void);
-    static void _assignVec(vec_str_t &, const str_t[], size_t);
+	private:
+		/* init */
+		static void		_assignHeader(void);
+		static void		_assignStatus(void);
+		static void		_assignMime(void);
+		static void		_assignVec(vec_str_t &, const str_t[], size_t);
+		static void		_assignCWD( void );
 
 		/* transaction */
 		static void		_build( const Response&, osstream_t& );
@@ -58,8 +64,7 @@ class HTTP {
 		static void		_buildBody( const Response&, osstream_t& );
 
 		/* method */
-		static bool		_cgiGet( const Request& );
-		static bool		_cgiPost( const Request& );
+		static bool		_invokeCGI( const Request& );
 
 };
 
@@ -67,7 +72,9 @@ template<typename Container, typename Target>
 typename Container::iterator
 lookup( Container& obj, Target token ) { return std::find( obj.begin(), obj.end(), token ); }
 
-char* dupIOBuf( std::ios&, size_t& );
+char* dupStreamBuffer( std::ios&, size_t& );
+
+# include "CGI.hpp"
 
 # include "Request.hpp"
 # include "Response.hpp"
