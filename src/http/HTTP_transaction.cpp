@@ -57,11 +57,28 @@ HTTP::transaction( const Client& client, osstream_t& oss ) {
 		if ( _invokeCGI( rqst ) ) CGI::proceed( rqst, oss );
 		else _build( Response( rqst ), oss );
 	}
-	catch ( errstat_t& exc ) { std::clog << "HTTP::transaction: " << exc.what() << "\n"; _build( Response( client ), oss ); }
+	// Replace the action of error case with building of response for redirection to error page
+	catch ( errstat_t& exc ) { clog( "HTTP - transaction: " + str_t( exc.what() ) ); _build( Response( client ), oss ); }
 
 	// LOGGING Response Message
 	logging.fs << oss.str() << "\n" << std::endl;
 }
+
+
+bool
+HTTP::_invokeCGI( const Request& rqst ) {
+	size_t	dot = rqst.line().uri.rfind( "." );
+	str_t	ext;
+
+	if ( dot != str_t::npos ) 
+		ext = rqst.line().uri.substr( dot );
+
+	return ext == ".cgi" || *rqst.line().uri.rbegin() == '/';
+	// return rqst.config().location == HTTP::http.locationCGI ||
+	// 	*rqst.line().uri.rbegin() == '/';
+		// rqst.line().uri.substr( rqst.line().uri.rfind( '.' ) ) == ".exe";
+}
+
 
 void
 HTTP::_build( const Response& rspn, osstream_t& oss ) {
@@ -114,4 +131,3 @@ HTTP::_buildBody( const Response& rspn, osstream_t& oss ) {
 	for ( size_t idx = 0; idx < rspn.header().content_length; ++idx )
 		oss << rspn.body()[idx];
 }
-

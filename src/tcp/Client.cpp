@@ -28,7 +28,7 @@ void Client::processClientRequest(int fd,
     osstream_t  oss;
     HTTP::transaction( *this, oss );
 
-    std::clog << "try to send...\n";
+    clog( "try to send..." );
     ssize_t bytesSent = send( client_socket, oss.str().c_str(), oss.str().size(), 0 );
 
 	if ( bytesSent == ERROR )

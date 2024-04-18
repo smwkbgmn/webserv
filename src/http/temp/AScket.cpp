@@ -26,7 +26,7 @@ ASocket::ASocket( socket_t sockServer ) {
 	if ( sock == ERROR )
 		throw err_t( "fail to accepting connection" );
 
-	std::clog << "Wating for request...\n";
+	clog( "Wating for request..." );
 }
 
 ASocket::~ASocket( void ) {}

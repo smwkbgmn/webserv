@@ -1,0 +1,70 @@
+GET /upload.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+sec-ch-ua: "Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7
+
+
+HTTP/1.1 200 OK
+Content-Length: 460
+Content-Type: text/html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Upload</title>
+</head>
+<body>
+<h1>File Upload</h1>
+<form action="/cgi-bin/upload.cgi" method="post" enctype="multipart/form-data">
+    <label for="file">Select a file to upload:</label><br>
+    <input type="file" id="file" name="file"><br><br>
+    <input type="submit" value="Upload File">
+</form>
+</body>
+</html>
+
+
+POST /cgi-bin/upload.cgi HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Content-Length: 772
+Cache-Control: max-age=0
+sec-ch-ua: "Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Upgrade-Insecure-Requests: 1
+Origin: http://localhost:8080
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryGfwJ4GZ8FQIU3A06
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Referer: http://localhost:8080/upload.html
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7
+
+
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 66
+
+Content-Type: text/plain; charset=ISO-8859-1
+
+No file uploaded.
+ïn
+

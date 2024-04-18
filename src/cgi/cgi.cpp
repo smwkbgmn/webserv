@@ -7,8 +7,10 @@ CGI::proceed( const Request& rqst, osstream_t& oss ) {
 	process_t	procs;
 	fnptr_t		act = NULL;
 	
-	if ( *rqst.line().uri.rbegin() == '/' )
-		act = &_autoindex;
+	clog( "CGI - proceed" );
+
+	if ( *rqst.line().uri.rbegin() == '/' ) act = &_autoindex;
+	else act = &_script;
 
 	if ( _detach( rqst, procs, act ) == SUCCESS ) {
 		_wait( procs );
@@ -41,11 +43,11 @@ CGI::_redirect( const process_t& procs ) {
 
 stat_t
 CGI::_execve( const process_t& procs, char* argv[], char* env[] ) {
-	std::clog << "CGI - received argv\n";
+	clog( "CGI - received argv" );
 	for ( size_t ptr = 0; argv[ptr]; ++ptr )
 		std::clog << argv[ptr] << "\n";
 
-	std::clog << "CGI - received env\n";
+	clog ( "CGI - received env" );
 	for ( size_t ptr = 0; env[ptr]; ++ptr )
 		std::clog << env[ptr] << "\n";
 
@@ -77,13 +79,29 @@ CGI::_read( process_t& procs, osstream_t& oss ) {
 }
 
 stat_t
+CGI::_script( const Request& rqst, const process_t& procs ) {
+	str_t		script_path = "./html" + rqst.line().uri;
+	vec_cstr_t	argv_c;
+	vec_cstr_t	env_c;
+
+	argv_c.push_back( const_cast<char*>( script_path.c_str() ) );
+	argv_c.push_back( NULL );
+
+	env_c.push_back( const_cast<char*>( "CONTENT_LENGTH=1234" ) );
+	env_c.push_back( const_cast<char*>( "CONTENT_TYPE=text/plain" ) );
+	env_c.push_back( NULL );
+
+	return _execve( procs, argv_c.data(), env_c.data() );
+}
+
+stat_t
 CGI::_autoindex( const Request& rqst, const process_t& procs ) {
 	vec_str_t	argv;
 	vec_cstr_t	argv_c;
 	vec_cstr_t	env_c;
 
 	argv.push_back( binPHP );
-	argv.push_back( rqst.config().root + HTTP::http.fileAtidx );
+	argv.push_back( HTTP::http.fileAtidx );
 
 	for ( vec_str_t::const_iterator iter = argv.begin(); iter != argv.end(); ++iter )
 		argv_c.push_back( const_cast<char*>( iter->c_str() ) );

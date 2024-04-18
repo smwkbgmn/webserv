@@ -47,7 +47,6 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 		default:
 			_pageError( 400, rqst.config() );
 	}
-	std::clog << "constructed response for general case\n";
 }
 
 void
@@ -66,18 +65,21 @@ Response::Response( const Client& client ): _body( NULL ) {
 	const config_t&	config = client.server().config().at( 0 );
 
 	_pageError( 400, config );
-	std::clog << "constructed response for case of failure of construct request\n";
 }
 
 void
 Response::_pageError( const uint_t& status, const config_t& config ) {
-	std::clog << "responsing with errcode " << status << "\n";
+	timestamp();
+	std::clog << "HTTP - responsing with errcode " << status << "\n";
+
 	_line.status = 303;	
 
 	if ( status == 400 )
-		_header.location = "http://127.0.0.1:8080" + fileBadRqst;
+		_header.location = "http://localhost:8080" + fileBadRqst;
+		// _header.location = fileBadRqst;
 	else if ( status < 500 )
-		_header.location = "http://127.0.0.1:8080" + config.file40x;
+		_header.location = "http://localhost:8080" + config.file40x;
+		// _header.location = config.file40x;
 	else
 		_header.location = config.file50x;
 

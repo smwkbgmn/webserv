@@ -32,6 +32,7 @@ class CGI {
 		static stat_t	_execve( const process_t&, char**, char** );
 
 		static stat_t	_autoindex( const Request&, const process_t& );
+		static stat_t	_script( const Request&, const process_t& );
 
 };
 

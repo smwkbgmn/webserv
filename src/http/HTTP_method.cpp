@@ -37,7 +37,7 @@ HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
 		
 		// *bufptr = buf;
 		*bufptr = dupStreamBuffer( target.fs, size );
-	} catch ( err_t& exc ) { std::clog << "HTTP::GET: " << exc.what() << '\n'; throw errstat_t( 404 ); }
+	} catch ( err_t& exc ) { clog( "HTTP - GET: " + str_t( exc.what() ) ); throw errstat_t( 404 ); }
 }
  
 void
@@ -49,7 +49,7 @@ HTTP::POST( const Request& rqst, char** bufptr, size_t& size ) {
 		File target( rqst.config().root + rqst.line().uri, W );
 
 		target.fs << rqst.body();
-	} catch ( exception_t& exc ) { std::clog << exc.what() << '\n'; throw errstat_t( 400 ); }
+	} catch ( exception_t& exc ) { clog( str_t( exc.what() ) ); throw errstat_t( 400 ); }
 }
 
 void
@@ -61,11 +61,4 @@ HTTP::DELETE( const Request& rqst ) {
 		throw errstat_t( 404 );
 
 	// return FALSE;
-}
-
-bool
-HTTP::_invokeCGI( const Request& rqst ) {
-	return rqst.config().location == HTTP::http.locationCGI ||
-		*rqst.line().uri.rbegin() == '/';
-		// rqst.line().uri.substr( rqst.line().uri.rfind( '.' ) ) == ".exe";
 }

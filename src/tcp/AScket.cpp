@@ -14,7 +14,7 @@ void ASocket::openSocket() {
                sizeof(optval));
     preSet();
     setNonBlocking(this->server_socket);
-    std::clog << "Listening on port 8080\n";
+    clog( "Listening on port 8080" );
 
 }
 

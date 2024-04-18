@@ -5,6 +5,7 @@
 	- See if the query and environ vars are must be used
 
 	To do
+	- File upload
     - Handle chunked request/response
 	- Redirect the error case to URI for error page
 	- Apply corrected config structures
@@ -17,16 +18,16 @@
 	it makes the working of header list and values as combined one
 */
 
-int main(void) {
+int main( void ) {
 	try {
-		HTTP::init("text/plain", "/cgi-bin");
+		HTTP::init( "text/plain", "./html/cgi-bin" );
 		
 		Server server;
 
 		// Retrieve http signature and default type from config file
 		// server.listening();
 		server.connect_sever();
-	} catch (err_t &err) { std::cerr << err.what() << std::endl; }
+	} catch ( err_t &err ) { clog( str_t( err.what() ) ); }
 
   return 0;
 }
