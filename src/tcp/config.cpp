@@ -53,9 +53,6 @@ bool parseConfig(std::vector<config_t>& serv,const std::string& filename) {
  std::string line, accumulated;
 
   while (std::getline(configFile, line)) {
-
-    // line.erase(0, line.find_first_not_of(" \t"));
-    // line.erase(line.find_last_not_of(" \t") + 1);
     
     std::istringstream iss(line);
     std::string key;
@@ -101,19 +98,20 @@ bool parseConfig(std::vector<config_t>& serv,const std::string& filename) {
     currentLocation.root = rootValue;
       } else if (key == "allowed_method") {
       std::string method;
-    std::set<std::string> validMethods;
-    validMethods.insert(toLower("GET"));
-    validMethods.insert(toLower("POST"));
-    validMethods.insert(toLower("PUT"));
-    validMethods.insert(toLower("PATCH"));
-    validMethods.insert(toLower("DELETE"));
+      std::map<std::string, methodID> validMethods;
+      validMethods["get"] = GET;
+      validMethods["post"] = POST;
+      validMethods["delete"] = DELETE;
+  
     while (iss >> method) {
         std::string lowerMethod = toLower(method);
-        if (validMethods.find(lowerMethod) == validMethods.end()) {
-            std::cerr << "Invalid method: " << method << ". Only GET, POST, PUT, PATCH, DELETE are allowed." << std::endl;
+        std::map<std::string, methodID>::iterator it = validMethods.find(lowerMethod);
+        if (it == validMethods.end()) {
+            std::cerr << "Invalid method: " << method << ". Only GET, POST, DELETE are allowed." << std::endl;
             return false;
         }
-        currentLocation.allow.push_back(method); 
+        currentLocation.allow[it->second] = true;
+    }
     }
       } else if (key == "autoindex") {
         std::string value;
@@ -125,7 +123,7 @@ bool parseConfig(std::vector<config_t>& serv,const std::string& filename) {
           currentLocation.indexFiles.push_back(indexFile);
         }
       }
-    } else {
+    else {
       if (key == "listen") {
         //   if (listenSet) {
         //   std::cerr << "Duplicate 'listen' directive in config: " << line << std::endl;
