@@ -2,7 +2,11 @@
 
 ASocket::ASocket(void) {}
 
-ASocket::~ASocket(void) { close(this->server_socket); }
+ASocket::~ASocket(void) {
+    for (unsigned int i = 0; i < socket_list.size(); i++)
+		close(socket_list[i]);
+	
+ }
 
 void ASocket::openSocket() {
 
@@ -32,10 +36,12 @@ void ASocket::setNonBlocking(int fd) {
     }
 }
 
+
 void ASocket::socketOpen(void) {
     this->server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (this->server_socket == -1)
         throw err_t("fail to create socket");
+    socket_list.push_back(server_socket);
     this->client_socket = 0;
 }
 
