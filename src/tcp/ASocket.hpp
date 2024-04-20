@@ -57,6 +57,7 @@ class ASocket {
     socket_t client_socket;
     socket_t  sock;
 
+    std::vector<socket_t> socket_list;
 
     ASocket(void);
     ASocket(int);
