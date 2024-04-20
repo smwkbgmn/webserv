@@ -20,6 +20,7 @@ CGI::proceed( const Request& rqst, osstream_t& oss ) {
 		_wait( procs );
 
 		clog( "_read" );
+		close( procs.fd[W] );
 		_read( procs, oss );
 		
 		if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
@@ -37,6 +38,61 @@ CGI::_write( const process_t& procs, const Request& rqst ) {
 		for ( ssize_t pos = 0; pos < sizeMsg; pos = write( procs.fd[W], rqst.client().buf, 1024 ) )
 			if ( pos == ERROR )
 				throwSysErr( "write", 500 );
+
+
+		for ( int cnt = 0; cnt < 3; ++cnt ) {
+			char	buf[100];
+			ssize_t	byte	= read( rqst.client().socket(), buf, 100 );
+
+			if ( byte == ERROR )
+				throwSysErr( "read", 500 );
+
+			buf[byte] = NONE;
+			write( procs.fd[W], buf, byte );
+
+
+			clog( "CGI - written data" );
+			std::clog << buf;
+		}
+
+
+			
+
+		// char	buf[1024];
+		// ssize_t	bytes = 1;
+
+		// while ( bytes > 0) {
+		// 	sizeMsg = 0;
+		// 	while ( ( bytes = read( rqst.client().socket(), &buf[sizeMsg], 1 ) ) > 0 && sizeMsg < 1024 ) {
+		// 		sizeMsg += bytes;
+		// 		std::clog << sizeMsg << "\n";
+		// 	}
+
+		
+		// 	buf[sizeMsg] = '\0';
+		// 	clog( "CGI - received data size " );
+		// 	std::clog << sizeMsg << std::endl;
+
+		// 	write( procs.fd[W], buf, sizeMsg );
+
+		// 	clog( "CGI - read data" );
+		// 	std::clog << buf;
+		// }
+
+		// char	buf[20000];
+		// ssize_t	bytes = read( rqst.client().socket(), buf, 20000 );
+		// buf[bytes] = NONE;
+
+		// clog( "CGI - received data size" );
+		// std::clog << bytes << std::endl;
+
+		// write( procs.fd[W], buf, bytes );
+
+		// clog( "CGI - read data" );
+		// std::clog << buf;
+			
+		// dup2( rqst.client().socket(), procs.fd[W] );
+		// dup2( rqst.client().socket(), STDOUT_FILENO );
 	}
 	close( procs.fd[W] );
 }
@@ -102,7 +158,7 @@ CGI::_read( process_t& procs, osstream_t& oss ) {
     // oss << "Content-Type: text/html\r\n";
 	// oss << "Content-Length: " << bytes << CRLF;
 	// oss << CRLF;
-	oss << buf;
+	oss << buf << '\0';
 	clog ( "CGI - received data\n" + oss.str() );
 }
 

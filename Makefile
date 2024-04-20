@@ -16,6 +16,9 @@ OBJ			= $(SRC:.cpp=.o)
 
 all			: $(NAME)
 
+run			: $(NAME)
+			./$(NAME)
+
 $(NAME)		: $(OBJ)
 			$(CPP) $(FLAG) $(OBJ) -o $@
 
