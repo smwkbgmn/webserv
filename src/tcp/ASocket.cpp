@@ -1,32 +1,55 @@
 #include "ASocket.hpp"
 
-ASocket::ASocket( void ) {
-	sock = socket( AF_INET, SOCK_STREAM, 0 );
-	if ( sock == ERROR )
-		throw err_t( "fail to create socket" );
+ASocket::ASocket(void) {}
+
+ASocket::~ASocket(void) {
+    for (unsigned int i = 0; i < socket_list.size(); i++)
+		close(socket_list[i]);
 	
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = INADDR_ANY;
-	addr.sin_port = htons( 8080 );
+ }
 
-		
-	int optval = 1;
-    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval,
+void ASocket::openSocket() {
+
+    socketOpen();
+    setAddr();
+    // socket timeout 설정
+    int optval = 1;
+    setsockopt(this->server_socket, SOL_SOCKET, SO_REUSEADDR, &optval,
                sizeof(optval));
-
-	if ( bind( sock, ( const struct sockaddr* )&addr, sizeof( addr ) ) == ERROR )
-		throw err_t( "fail to bind" );
+    preSet();
+    setNonBlocking(this->server_socket);
+    clog( "Listening on port 8080" );
 
 }
 
-ASocket::ASocket( socket_t sockServer ) {
-	addrSize = sizeof( addr );
-	sock = accept( sockServer, ( struct sockaddr* )&addr, &addrSize );
-
-	if ( sock == ERROR )
-		throw err_t( "fail to accepting connection" );
-
-	clog( "Wating for request..." );
+void ASocket::setAddr() {
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(8080);
 }
 
-ASocket::~ASocket( void ) {}
+void ASocket::setNonBlocking(int fd) {
+    if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) {
+        close(fd);
+        throw err_t("Failed to change status");
+    }
+}
+
+
+void ASocket::socketOpen(void) {
+    this->server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (this->server_socket == -1)
+        throw err_t("fail to create socket");
+    socket_list.push_back(server_socket);
+    this->client_socket = 0;
+}
+
+void ASocket::preSet(void) {
+
+    if (bind(this->server_socket, (const struct sockaddr *)&addr,
+             sizeof(addr)) == ERROR)
+        throw err_t("fail to bind");
+    if (listen(this->server_socket, 10) == ERROR)
+        throw err_t("fail to listening");
+}
