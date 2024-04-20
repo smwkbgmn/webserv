@@ -1,24 +1,26 @@
 #ifndef CLIENT_HPP
-#define CLIENT_HPP
+# define CLIENT_HPP
 
-#include "ASocket.hpp"
-#include "Server.hpp"
-
-#define max 1024
-typedef std::runtime_error err_t;
-// class Server;
+# include "ASocket.hpp"
+# include "Server.hpp"
 
 class Client : ASocket {
   private:
     std::map<int, std::string> clients;
     Server &srv;
+    std::vector<config_t> nginxConfigs;
 
+    std::string sav_msg;
 
   public:
     char buf[max];
 
     Client(Server &);
     ~Client();
+
+
+  const std::vector<config_t>& getServerConfigs() const { return nginxConfigs; }
+  void setServerConfigs(const std::vector<config_t>& configs) { nginxConfigs = configs; }
 
     const char* buffer( void ) const { return buf; }
     const Server &server(void) const { return srv; }
@@ -36,6 +38,8 @@ class Client : ASocket {
     const std::map<int, std::string> &getClients() const;
     const Server &getserver(void) const;
     const std::string getBufferContents() const { return std::string(buf); }
+    bool isRequestComplete(const std::string& request);
+    void Client::processFullRequest(int fd, const std::string& request);
 };
 
 #endif

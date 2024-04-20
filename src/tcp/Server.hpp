@@ -2,7 +2,7 @@
 #define SERVER_HPP
 
 #include "ASocket.hpp"
-#include "Client.hpp"
+// #include "Client.hpp"
 #include "structure.hpp"
 // typedef struct kevent kevent;
 
@@ -11,7 +11,7 @@ class Client;
 
 class Server : ASocket {
  public:
-  config_t  conf;
+  vec_config_t  conf;
 
   Server(void);
   Server(char * );
@@ -20,17 +20,17 @@ class Server : ASocket {
   // vec_config_t  locationConfs;
 
 
-  const config_t &config(void) const { return serverConf; }
+  const vec_config_t &config(void) const { return conf; }
 
   void change_events(uintptr_t, int16_t, uint16_t, uint32_t, intptr_t, void *);
-  void connect_sever(std::vector<config_t> &);
+  void connect_sever( void );
   void ServerPreset();
 
   int eventOccure();
   bool errorcheck(struct kevent &);
 
   bool handleReadEvent(struct kevent *, int, std::map<int, std::string> &,
-                       Client &);
+                       Client &, osstream_t&, size_t&, size_t& );
   void handleWriteEvent(struct kevent *, std::map<int, std::string> &);
   struct kevent &getEventList(int);
 
@@ -39,7 +39,7 @@ class Server : ASocket {
  private:
   int kq;
 
-  config_t serverConf;
+  // config_t serverConf;
   bool dataReceived;
   std::vector<struct kevent> server_list;
   struct kevent *occur_event;

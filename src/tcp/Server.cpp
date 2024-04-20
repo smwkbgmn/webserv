@@ -4,12 +4,14 @@
 // vec_config_t  confs;
 
 void printBuffer(const char *buff);
-Server::Server(void) : ASocket(), server_list(8), dataReceived(false),server_event("serv"),				
-																client_event("client") {
+Server::Server(void) : ASocket(), server_list(8), client_event("client"), server_event("serv")				
+																 {
   this->kq = kqueue();
   if (kq == -1) throw err_t("Fail to create kqueue");
   timeout.tv_sec = 5;
   timeout.tv_nsec = 0;
+  
+  conf.push_back( config_t() );
  
 }
 
@@ -19,19 +21,27 @@ Server::~Server(void) {
   close(kq);  
   }
 
-void Server::connect_sever(std::vector<config_t> &myServerConfigs) {
+void Server::connect_sever( void ) {
   int newEvent;
 
-  std::vector<config_t>::iterator start = myServerConfigs.begin();
-  std::vector<config_t>::iterator finish = myServerConfigs.end();
+//  std::vector<config_t> myServerConfigs;
+//   std::vector<config_t>::iterator start = myServerConfigs.begin();
+//   std::vector<config_t>::iterator finish = myServerConfigs.end();
   std::map<int, std::string> findClient;
 
-  for (; start != finish; start++) {
+  // for (int i =0; i <10; i++)
+  // {
     ServerPreset();
-  }
+  // }
+  // for (; start != finish; start++) {
+  //   ServerPreset();
+  // }
 
-  Client client(*this);
-  client.setServerConfigs(myServerConfigs);
+  osstream_t  oss;
+  size_t      bodysize = 0;
+  size_t      total = 0;
+  Client client(*this, findClient);
+  // client.setServerConfigs(myServerConfigs);
   while (1) {
     newEvent = eventOccure();
     
@@ -39,24 +49,26 @@ void Server::connect_sever(std::vector<config_t> &myServerConfigs) {
       occur_event = &getEventList(i);
 
       errorcheck(*occur_event);
-      if (occur_event->filter == EVFILT_TIMER) {
-        if (!dataReceived) {
-          throw std::runtime_error("Data was not received within 30 seconds");
-        }
-        dataReceived = false;
+
         if (occur_event->filter == EVFILT_READ) {
-          if (!handleReadEvent(occur_event, server_socket, findClient, client)) {
-            dataReceived = true;
+          if (!handleReadEvent(occur_event, server_socket, findClient, client, oss, bodysize, total)) {
+            // transasction > respond msg compl > oss( resonse msg )
             continue;
           }
         } else if (occur_event->filter == EVFILT_WRITE) {
-          
+
+          // clog( "respond to client with message below" );
+          // std::clog << oss.str() << std::endl;
+
+          if ( send( client_socket, oss.str().c_str(), oss.str().size(), 0 ) == ERROR )
+            throw err_t( "fail to send" );
+
+          oss.flush();
+          oss.clear();
         }
-        } else if (occur_event->filter == EVFILT_PROC) {
-          //request read 하고 cgi면 fork -> event 등록 -> execve
-        }
+        } 
       }
-    }
+    
   }
 
 
@@ -70,7 +82,7 @@ int Server::eventOccure() {
 
 bool Server::handleReadEvent(struct kevent *occur_event, int server_socket,
                              std::map<int, std::string> &findClient,
-                             Client &client) {
+                             Client &client, osstream_t& oss, size_t& bodysize, size_t& total) {
   char *check_type =  static_cast<char*>(occur_event->udata);              
  if (std::strcmp(check_type, "serv") == 0) {
     client_socket = accept(server_socket, NULL, NULL);
@@ -84,7 +96,7 @@ bool Server::handleReadEvent(struct kevent *occur_event, int server_socket,
 
     findClient[client_socket] = "";
   } else if(std::strcmp(check_type, "client") == 0){
-    client.processClientRequest(occur_event->ident, findClient, *this);
+    client.processClientRequest(occur_event->ident, findClient, oss, bodysize, total);
   }
   return true;
 }

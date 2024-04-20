@@ -1,6 +1,7 @@
 #include "Server.hpp"
-
 #include "HTTP.hpp"
+
+// vec_config_t  confs;
 
 void printBuffer(const char *buff);
 Server::Server(void) : ASocket(), server_list(8), dataReceived(false),server_event("serv"),				
@@ -12,7 +13,11 @@ Server::Server(void) : ASocket(), server_list(8), dataReceived(false),server_eve
  
 }
 
-Server::~Server(void) { close(server_socket); }
+Server::~Server(void) {   
+  for (unsigned int i = 0; i < socket_list.size(); i++)
+		close(socket_list[i]); 
+  close(kq);  
+  }
 
 void Server::connect_sever(std::vector<config_t> &myServerConfigs) {
   int newEvent;
@@ -21,12 +26,12 @@ void Server::connect_sever(std::vector<config_t> &myServerConfigs) {
   std::vector<config_t>::iterator finish = myServerConfigs.end();
   std::map<int, std::string> findClient;
 
-  char buffcopy[max];
   for (; start != finish; start++) {
     ServerPreset();
   }
 
   Client client(*this);
+  client.setServerConfigs(myServerConfigs);
   while (1) {
     newEvent = eventOccure();
     
@@ -104,16 +109,16 @@ void Server::handleWriteEvent(struct kevent *occur_event,
   }
 }
 
-void Server::errorcheck(struct kevent &event) {
-  if (event.flags & EV_ERROR) {
-    if (event.ident == static_cast<uintptr_t>(server_socket)) {
-      close(server_socket);
-      throw err_t("Server socket Error");
-    } else {
-      close(client_socket);
-      throw err_t("client socket Error");
+bool Server::errorcheck(struct kevent & kevent) {
+    bool isEof = (kevent.flags & EV_EOF) && (kevent.filter != EVFILT_PROC);
+    bool hasError = (kevent.flags & EV_ERROR);
+
+    if (isEof || hasError) {
+        close(kevent.ident);  
+        return true; 
     }
-  }
+
+    return false;  
 }
 
 void Server::ServerPreset() {

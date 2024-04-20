@@ -1,7 +1,7 @@
 #include "Client.hpp"
 #include "HTTP.hpp"
 
-Client::Client(Server &connect_server) : srv(connect_server) {}
+Client::Client(Server &connect_server, std::map<int, std::string>& buf ) : clients(buf), srv(connect_server) {}
 
 Client::~Client() {}
 
@@ -13,26 +13,22 @@ void Client::disconnect_client(int client_fd) {
 
 void Client::processClientRequest(int fd,
                                   std::map<int, std::string> &findClient,
-                                  Server &server) {
+                                  osstream_t& oss, size_t& bodysize, size_t& total) {
   // bool isChunked = false;
 
   // if (isChunked) {
   //     handleChunkedRequest(fd, findClient);
   // } else {
 
-  handleRegularRequest(fd, findClient);
-  server.change_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0,
-                       NULL);
+  handleRegularRequest(fd, findClient, oss, bodysize, total);
+
   
-  osstream_t oss;
 
-  HTTP::transaction(*this);
-
-
-  // }
+  
 }
 
 void handledSend(const Client &client) {
+  (void)client;
   // checking
   // sending
   // checking
@@ -84,8 +80,9 @@ void Client::handleChunkedRequest(int fd,
   }
 }
 
-void Client::handleRegularRequest(int fd, std::map<int, std::string> &findClient) {
-    const size_t bufferSize = sizeof(buf) - 1;
+void Client::handleRegularRequest(int fd, std::map<int, std::string> &findClient, osstream_t& oss, size_t& bodysize, size_t& total) {
+    const size_t bufferSize = sizeof( buf ) - 1;
+    clog( "handleRegularRequest - recv" );
     int n = recv(fd, buf, bufferSize, 0);
     if (n < 0) {
         std::cerr << "Client receive error on file descriptor " << fd << ": " << strerror(errno) << std::endl;
@@ -95,51 +92,84 @@ void Client::handleRegularRequest(int fd, std::map<int, std::string> &findClient
         std::cout << "Client disconnected on file descriptor " << fd << std::endl;
         disconnect_client(fd);
     } else {
+      // clog("handleRegularRequest");
+      // std::clog << fd << '\n';
         buf[n] = '\0';
-        findClient[fd] += buf;
+        findClient[fd] += str_t(buf);
+        // std::cout << "buff contetnts " << fd << " : " << findClient[fd] <<std::endl;
+        if (isRequestComplete(str_t( buf ), bodysize, total)) {
+          clog( "Have done Request msg" );
+          HTTP::transaction( *this, oss );
+          srv.change_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 
-        if (isRequestComplete(findClient[fd])) {
-            processFullRequest(fd, findClient[fd]);
-            // findClient[fd].clear();
-            
+          bodysize = 0;
+          total = 0;
         }
     }
 }
 
 
-bool Client::isRequestComplete(const std::string& request) {
-    size_t headerEnd = request.find("\r\n\r\n");
-    if (headerEnd == std::string::npos) {
-        return false;  
+bool Client::isRequestComplete(const std::string& request, size_t& bodysize, size_t& total) {
+   size_t  begin = request.find( "Content-Length" );
+  
+  if ( begin != str_t::npos ) {
+    size_t  end = request.find( CRLF, begin );
+    if ( end != str_t::npos ) {
+      // std::clog << "content length begin and end" << begin << ", " << end << std::endl;
+      isstream_t  iss( request.substr( begin + 16, end ) );
+      iss >> bodysize;
+      // total += request.size();
+      // clog( "isRequestComplete - the POST request (start line)" );
+      // std::clog << request;
     }
+    return total >= bodysize;
+  }
 
-    size_t pos = request.find("Content-Length:");
-    if (pos != std::string::npos) {
-        size_t start = pos + 16;
-        size_t end = request.find("\r\n", start);
-        if (end == std::string::npos) {
-            return false; 
-        }
-        int contentLength = std::stoi(request.substr(start, end - start));
-        size_t contentStart = headerEnd + 4;
-        return request.length() >= contentStart + contentLength;
+  else {
+    if ( bodysize ) {
+      total += request.size();
+      clog( "isRequestComplete - the POST request" );
+      std::clog << request << std::endl;
+      std::clog << total << " / " << bodysize << std::endl;
     }
+    return total >= bodysize;
+  }
 
-    pos = request.find("Transfer-Encoding: chunked");
-    if (pos != std::string::npos) {
+
+  
+    // size_t headerEnd = request.find("\r\n\r\n");
+    // if (headerEnd == std::string::npos) {
+    //     return false;  
+    // }
+
+    // size_t pos = request.find("Content-Length:");
+    // if (pos != std::string::npos) {
+    //     size_t start = pos + 16;
+    //     size_t end = request.find("\r\n", start);
+    //     if (end == std::string::npos) {
+    //         return false; 
+    //     }
+    //     int contentLength = std::stoi(request.substr(start, end - start));
+    //     size_t contentStart = headerEnd + 4;
+    //     return request.length() >= contentStart + contentLength;
+    // }
+
+    // pos = request.find("Transfer-Encoding: chunked");
+    // if (pos != std::string::npos) {
        
-        if (request.find("0\r\n\r\n", headerEnd) != std::string::npos) {
-            return true;  
-        }
-        return false; 
-    }
+    //     if (request.find("0\r\n\r\n", headerEnd) != std::string::npos) {
+    //         return true;  
+    //     }
+    //     return false; 
+    // }
 
-    return true; 
+    // return true; 
 }
 
 void Client::processFullRequest(int fd, const std::string& request) {
-    
-    std::cout << "Full request received from fd " << fd << ": " << request << std::endl;
+  (void)fd;
+    (void) request;
+    // std::cout << "Full request received from fd " << fd << ": " << request << std::endl;
     
 }
 

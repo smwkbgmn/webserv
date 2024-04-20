@@ -1,6 +1,10 @@
 #include "Request.hpp"
 
 Request::Request( const Client& client ): _client( client ), _body( NULL ) {
+	// timestamp();
+	// std::clog << "constructing rqst - " << client.socket() << std::endl;
+	// std::clog << client.buffer() << std::endl;
+
 	// Parse request message
 	_parse( client.buffer() );
 
@@ -10,6 +14,7 @@ Request::Request( const Client& client ): _client( client ), _body( NULL ) {
 	// If the method is not allowed at this location config, set methodID as NOT_ALLOWED
 	if ( _line.method != UNKNOWN && !config().allow.at( _line.method ) )
 		_line.method = NOT_ALLOWED;
+	// clog("constructing rqst");
 }
 
 void
