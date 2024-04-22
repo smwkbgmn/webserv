@@ -24,7 +24,7 @@ void Server::connect_sever(std::vector<config_t> &myServerConfigs) {
 
   std::vector<config_t>::iterator start = myServerConfigs.begin();
   std::vector<config_t>::iterator finish = myServerConfigs.end();
-  std::map<int, std::string> findClient;
+  std::map<int, std::stringstream> findClient;
 
   for (; start != finish; start++) {
     ServerPreset();
@@ -69,7 +69,7 @@ int Server::eventOccure() {
 }
 
 bool Server::handleReadEvent(struct kevent *occur_event, int server_socket,
-                             std::map<int, std::string> &findClient,
+                             std::map<int, std::stringstream> &findClient,
                              Client &client) {
   char *check_type =  static_cast<char*>(occur_event->udata);              
  if (std::strcmp(check_type, "serv") == 0) {
@@ -90,9 +90,9 @@ bool Server::handleReadEvent(struct kevent *occur_event, int server_socket,
 }
 
 void Server::handleWriteEvent(struct kevent *occur_event,
-                              std::map<int, std::string> &findClient) {
+                              std::map<int, std::stringstream> &findClient) {
   std::cout << "Sent response to client: " << std::endl;
-  std::map<int, std::string>::iterator it = findClient.find(occur_event->ident);
+  std::map<int, std::stringstream>::iterator it = findClient.find(occur_event->ident);
   if (it != findClient.end()) {
     const std::string &response = it->second;
 

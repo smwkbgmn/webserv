@@ -6,7 +6,7 @@
 
 class Client : ASocket {
   private:
-    std::map<int, std::string> clients;
+    std::map<int, std::stringstream> clients;
     Server &srv;
     std::vector<config_t> nginxConfigs;
 
@@ -31,11 +31,11 @@ class Client : ASocket {
     void disconnect_client(int);
 
     // bool changeProperty(int);
-    void processClientRequest(int, std::map<int, std::string> &, Server &);
-    void handleChunkedRequest(int, std::map<int, std::string> &);
-    void handleRegularRequest(int, std::map<int, std::string> &);
+    void processClientRequest(int, std::map<int, std::stringstream> &, Server &);
+    void handleChunkedRequest(int, std::map<int, std::stringstream> &);
+    void handleRegularRequest(int, std::map<int, std::stringstream> &);
 
-    const std::map<int, std::string> &getClients() const;
+    const std::map<int, std::stringstream> &getClients() const;
     const Server &getserver(void) const;
     const std::string getBufferContents() const { return std::string(buf); }
     bool isRequestComplete(const std::string& request);

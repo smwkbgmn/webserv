@@ -12,7 +12,7 @@ void Client::disconnect_client(int client_fd) {
 }
 
 void Client::processClientRequest(int fd,
-                                  std::map<int, std::string> &findClient,
+                                  std::map<int, std::stringstream> &findClient,
                                   Server &server) {
   // bool isChunked = false;
 
@@ -39,7 +39,7 @@ void handledSend(const Client &client) {
 }
 
 void Client::handleChunkedRequest(int fd,
-                                  std::map<int, std::string> &findClient) {
+                                  std::map<int, std::stringstream> &findClient) {
   bool check_chunked = true;
   std::string chunkData;
   unsigned int chunkSize = 0;
@@ -84,7 +84,7 @@ void Client::handleChunkedRequest(int fd,
   }
 }
 
-void Client::handleRegularRequest(int fd, std::map<int, std::string> &findClient) {
+void Client::handleRegularRequest(int fd, std::map<int, std::stringstream> &findClient) {
     const size_t bufferSize = sizeof(buf) - 1;
     int n = recv(fd, buf, bufferSize, 0);
     if (n < 0) {
@@ -143,5 +143,5 @@ void Client::processFullRequest(int fd, const std::string& request) {
     
 }
 
-const std::map<int, std::string> &Client::getClients() const { return clients; }
+const std::map<int, std::stringstream> &Client::getClients() const { return clients; }
 const Server &Client::getserver(void) const { return srv; };

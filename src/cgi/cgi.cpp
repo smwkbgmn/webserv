@@ -13,14 +13,10 @@ CGI::proceed( const Request& rqst, osstream_t& oss ) {
 	else act = &_script;
 
 	if ( _detach( rqst, procs, act ) == SUCCESS ) {
-		clog( "_write" );
-		_write( procs, rqst );
-
-		clog( "_wait" );
+		// _write( procs, rqst );
+		close( procs.fd[W] );
 		_wait( procs );
 
-		clog( "_read" );
-		close( procs.fd[W] );
 		_read( procs, oss );
 		
 		if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
@@ -31,20 +27,27 @@ CGI::proceed( const Request& rqst, osstream_t& oss ) {
 
 void
 CGI::_write( const process_t& procs, const Request& rqst ) {
+	clog( "_write" );
+	(void)procs;
 	if ( rqst.line().method == POST ) {
 		// const char* data = rqst.client()
-		ssize_t sizeMsg = strlen( rqst.client().buffer() );
+		const char* data = rqst.client().buffer();
+		ssize_t sizeMsg = rqst.client().byte_read;
 
 		// Should the size of buf be checked
 		// for ( ssize_t pos = 0; pos < sizeMsg; pos = write( procs.fd[W], rqst.client().buf, 1024 ) )
 		// 	if ( pos == ERROR )
 		// 		throwSysErr( "write", 500 );
 	
-		write( procs.fd[W], rqst.client().buffer(), sizeMsg );
+		// write( procs.fd[W], data, sizeMsg );
+		write( STDIN_FILENO, data, sizeMsg );
+		close( STDIN_FILENO );
 
 
 		// clog( "CGI - written data" );
-		// std::clog << rqst.client().buffer();
+		// std::clog << sizeMsg << "bytes\n";
+		// for ( ssize_t idx = 0; idx < sizeMsg; ++idx ) std::clog << data[idx];
+		// std::clog << std::endl;
 
 		// for ( int cnt = 0; cnt < 3; ++cnt ) {
 		// 	char	buf[100];
@@ -106,13 +109,19 @@ CGI::_write( const process_t& procs, const Request& rqst ) {
 		// dup2( rqst.client().socket(), procs.fd[W] );
 		// dup2( rqst.client().socket(), STDOUT_FILENO );
 	}
-	close( procs.fd[W] );
+	// close( procs.fd[W] );
 }
 
 stat_t
 CGI::_detach( const Request& rqst, process_t& procs, fnptr_t execute ) {
-	if ( pipe( procs.fd ) == ERROR || ( procs.pid = fork() ) == ERROR )
-		throwSysErr( "_detach", 500 );
+	pipe( procs.fd );
+	procs.pid = fork();
+
+	_write( procs, rqst );
+
+	
+	// if ( pipe( procs.fd ) == ERROR || ( procs.pid = fork() ) == ERROR )
+	// 	throwSysErr( "_detach", 500 );
 	
 	if ( !procs.pid ) return execute( rqst, procs );
 	else return SUCCESS;
@@ -121,8 +130,8 @@ CGI::_detach( const Request& rqst, process_t& procs, fnptr_t execute ) {
 // Be aware that functions under _detach are running on subprocess
 bool
 CGI::_redirect( const process_t& procs ) {
-	if ( dup2( procs.fd[R], STDIN_FILENO ) == ERROR ||
-		dup2( procs.fd[W], STDOUT_FILENO ) == ERROR ||
+	// if ( dup2( procs.fd[R], STDIN_FILENO ) == ERROR ||
+		if ( dup2( procs.fd[W], STDOUT_FILENO ) == ERROR ||
 		close( procs.fd[R] ) == ERROR ||
 		close( procs.fd[W] ) == ERROR )
 		return FALSE;
@@ -146,6 +155,7 @@ CGI::_execve( const process_t& procs, char* argv[], char* env[] ) {
 
 void
 CGI::_wait( process_t& procs ) {
+	clog( "_wait" );
 	// Should be replaced the NONE with WNOHANG after restruct the flow
 	if ( waitpid( procs.pid, &procs.stat, NONE ) == ERROR )
 		throwSysErr( "wait", 500 );
@@ -155,6 +165,8 @@ void
 CGI::_read( process_t& procs, osstream_t& oss ) {
 	char	buf[10000];
 	ssize_t	bytes = 0;
+
+	clog( "_read" );
 
 	// if ( ( bytes = read(procs.fd[R], buf, 1024 ) ) == ERROR )
 	// 	throwSysErr( "read", 500 );

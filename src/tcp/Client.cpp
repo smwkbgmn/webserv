@@ -1,7 +1,7 @@
 #include "Client.hpp"
 #include "HTTP.hpp"
 
-Client::Client(Server &connect_server, std::map<int, std::string>& buf ) : clients(buf), srv(connect_server) {}
+Client::Client(Server &connect_server, std::map<int, std::stringstream>& buf ) : clients(buf), msg(NULL) ,srv(connect_server), byte_read(0) {}
 
 Client::~Client() {}
 
@@ -12,7 +12,7 @@ void Client::disconnect_client(int client_fd) {
 }
 
 void Client::processClientRequest(int fd,
-                                  std::map<int, std::string> &findClient,
+                                  std::map<int, std::stringstream> &findClient,
                                   osstream_t& oss, size_t& bodysize, size_t& total) {
   // bool isChunked = false;
 
@@ -27,89 +27,114 @@ void Client::processClientRequest(int fd,
   
 }
 
-void handledSend(const Client &client) {
-  (void)client;
-  // checking
-  // sending
-  // checking
-}
+// void handledSend(const Client &client) {
+//   (void)client;
+//   // checking
+//   // sending
+//   // checking
+// }
 
-void Client::handleChunkedRequest(int fd,
-                                  std::map<int, std::string> &findClient) {
-  bool check_chunked = true;
-  std::string chunkData;
-  unsigned int chunkSize = 0;
-  std::string tempBuf;
+// void Client::handleChunkedRequest(int fd,
+//                                   std::map<int, std::stringstream> &findClient) {
+//   bool check_chunked = true;
+//   std::string chunkData;
+//   unsigned int chunkSize = 0;
+//   std::string tempBuf;
 
-  while (true) {
-    if (check_chunked) {
-      char sizeBuf[10];
-      std::memset(sizeBuf, 0, sizeof(sizeBuf));
-      int bytesRead = read(fd, sizeBuf, sizeof(sizeBuf) - 2);
-      if (bytesRead <= 0) {
-        throw err_t("read error");
-      }
-      std::string sizeStr(sizeBuf);
-      std::size_t pos = sizeStr.find("\r\n");
-      if (pos != std::string::npos) {
-        sizeStr = sizeStr.substr(0, pos);
-        std::istringstream(sizeStr) >> std::hex >> chunkSize;
-        if (chunkSize == 0) break;
-        check_chunked = false;
-      }
-    } else {
-      char dataBuf[chunkSize + 3];
-      std::memset(dataBuf, 0, sizeof(dataBuf));
-      int bytesRead = read(fd, dataBuf, chunkSize + 2);
-      if (bytesRead <= 0) {
-        throw err_t("Server socket Error");
-      }
-      dataBuf[bytesRead - 2] = '\0';
-      chunkData = dataBuf;
-      findClient[fd] += chunkData;
-      check_chunked = true;
+//   while (true) {
+//     if (check_chunked) {
+//       char sizeBuf[10];
+//       std::memset(sizeBuf, 0, sizeof(sizeBuf));
+//       int bytesRead = read(fd, sizeBuf, sizeof(sizeBuf) - 2);
+//       if (bytesRead <= 0) {
+//         throw err_t("read error");
+//       }
+//       std::string sizeStr(sizeBuf);
+//       std::size_t pos = sizeStr.find("\r\n");
+//       if (pos != std::string::npos) {
+//         sizeStr = sizeStr.substr(0, pos);
+//         std::istringstream(sizeStr) >> std::hex >> chunkSize;
+//         if (chunkSize == 0) break;
+//         check_chunked = false;
+//       }
+//     } else {
+//       char dataBuf[chunkSize + 3];
+//       std::memset(dataBuf, 0, sizeof(dataBuf));
+//       int bytesRead = read(fd, dataBuf, chunkSize + 2);
+//       if (bytesRead <= 0) {
+//         throw err_t("Server socket Error");
+//       }
+//       dataBuf[bytesRead - 2] = '\0';
+//       chunkData = dataBuf;
+//       findClient[fd] += chunkData;
+//       check_chunked = true;
+//     }
+//   }
+
+//   if (!chunkData.empty()) {
+//     std::cout << "Received chunked data from " << fd << ": " << findClient[fd]
+//               << std::endl;
+//   } else {
+//     std::cout << "No chunked data received or connection closed prematurely."
+//               << std::endl;
+//   }
+// }
+
+#include <cstring>
+
+void Client::handleRegularRequest(int fd, std::map<int, std::stringstream> &findClient, osstream_t& oss, size_t& bodysize, size_t& total) {
+    if ( msg ) {
+      byte_read = 0;
+      delete[] msg;
     }
-  }
 
-  if (!chunkData.empty()) {
-    std::cout << "Received chunked data from " << fd << ": " << findClient[fd]
-              << std::endl;
-  } else {
-    std::cout << "No chunked data received or connection closed prematurely."
-              << std::endl;
-  }
-}
+    clog( "handleRegularRequest - recv start" );
+    byte_read = recv(fd, buf, SIZE_BUF, 0);
+    clog( "handleRegularRequest - recv done read by " );
+    std::clog << byte_read << std::endl;
 
-void Client::handleRegularRequest(int fd, std::map<int, std::string> &findClient, osstream_t& oss, size_t& bodysize, size_t& total) {
-    const size_t bufferSize = sizeof( buf ) - 1;
-    clog( "handleRegularRequest - recv" );
-    int n = recv(fd, buf, bufferSize, 0);
-    if (n < 0) {
+    // char* data_receive = new char[byte_read];
+    msg = new char[byte_read];
+    memcpy( msg, buf, byte_read );
+
+    // clog( "handleRegularRequest - recv data" );
+    // for ( ssize_t idx = 0; idx < byte_read; ++idx ) std::clog << msg[idx];
+    // std::clog << std::endl;
+
+    if (byte_read < 0) {
         std::cerr << "Client receive error on file descriptor " << fd << ": " << strerror(errno) << std::endl;
         disconnect_client(fd);
         throw err_t("Server socket error on receive");
-    } else if (n == 0) {
+    }
+    
+    else if (byte_read == 0) {
         std::cout << "Client disconnected on file descriptor " << fd << std::endl;
         disconnect_client(fd);
-    } else {
-      // clog("handleRegularRequest");
-      // std::clog << fd << '\n';
-        buf[n] = '\0';
-        findClient[fd] += str_t(buf);
+    }
+    
+    else {
+        findClient[fd].write( msg, byte_read );
+        clog( "handleRegularRequest - copied msg\n" );
+        for ( ssize_t idx = 0; idx < byte_read; ++idx ) std::clog << findClient[fd].str().at(idx);
+        std::clog << std::endl;
+
         // std::cout << "buff contetnts " << fd << " : " << findClient[fd] <<std::endl;
-        if (isRequestComplete(str_t( buf ), bodysize, total)) {
-          clog( "Have done Request msg" );
+        // if (isRequestComplete(msg, n, bodysize, total)) {
+        //   clog( "Have done Request msg" );
           HTTP::transaction( *this, oss );
           srv.change_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 
           bodysize = 0;
           total = 0;
-        }
+        // }
     }
+
+    // delete[] msg;
 }
 
 
-bool Client::isRequestComplete(const std::string& request, size_t& bodysize, size_t& total) {
+bool Client::isRequestComplete(const char* data_receive, const size_t& n, size_t& bodysize, size_t& total) {
+  str_t request( data_receive );
    size_t  begin = request.find( "Content-Length" );
   
   if ( begin != str_t::npos ) {
@@ -127,9 +152,9 @@ bool Client::isRequestComplete(const std::string& request, size_t& bodysize, siz
 
   else {
     if ( bodysize ) {
-      total += request.size();
-      clog( "isRequestComplete - the POST request" );
-      std::clog << request << std::endl;
+      total += n;
+      // clog( "isRequestComplete - the POST request" );
+      // std::clog << data_receive << std::endl;
       std::clog << total << " / " << bodysize << std::endl;
     }
     return total >= bodysize;
@@ -166,12 +191,12 @@ bool Client::isRequestComplete(const std::string& request, size_t& bodysize, siz
     // return true; 
 }
 
-void Client::processFullRequest(int fd, const std::string& request) {
-  (void)fd;
-    (void) request;
-    // std::cout << "Full request received from fd " << fd << ": " << request << std::endl;
+// void Client::processFullRequest(int fd, const std::string& request) {
+//   (void)fd;
+//     (void) request;
+//     // std::cout << "Full request received from fd " << fd << ": " << request << std::endl;
     
-}
+// }
 
-const std::map<int, std::string> &Client::getClients() const { return clients; }
+const std::map<int, std::stringstream> &Client::getClients() const { return clients; }
 const Server &Client::getserver(void) const { return srv; };

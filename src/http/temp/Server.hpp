@@ -29,9 +29,9 @@ class Server : ASocket {
   int eventOccure();
   bool errorcheck(struct kevent &);
 
-  bool handleReadEvent(struct kevent *, int, std::map<int, std::string> &,
+  bool handleReadEvent(struct kevent *, int, std::map<int, std::stringstream> &,
                        Client &);
-  void handleWriteEvent(struct kevent *, std::map<int, std::string> &);
+  void handleWriteEvent(struct kevent *, std::map<int, std::stringstream> &);
   struct kevent &getEventList(int);
 
 

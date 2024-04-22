@@ -27,7 +27,6 @@ void Server::connect_sever( void ) {
 //  std::vector<config_t> myServerConfigs;
 //   std::vector<config_t>::iterator start = myServerConfigs.begin();
 //   std::vector<config_t>::iterator finish = myServerConfigs.end();
-  std::map<int, std::string> findClient;
 
   // for (int i =0; i <10; i++)
   // {
@@ -40,6 +39,7 @@ void Server::connect_sever( void ) {
   osstream_t  oss;
   size_t      bodysize = 0;
   size_t      total = 0;
+  std::map<int, std::stringstream> findClient;
   Client client(*this, findClient);
   // client.setServerConfigs(myServerConfigs);
   while (1) {
@@ -81,7 +81,7 @@ int Server::eventOccure() {
 }
 
 bool Server::handleReadEvent(struct kevent *occur_event, int server_socket,
-                             std::map<int, std::string> &findClient,
+                             std::map<int, std::stringstream> &findClient,
                              Client &client, osstream_t& oss, size_t& bodysize, size_t& total) {
   char *check_type =  static_cast<char*>(occur_event->udata);              
  if (std::strcmp(check_type, "serv") == 0) {
@@ -91,10 +91,10 @@ bool Server::handleReadEvent(struct kevent *occur_event, int server_socket,
       return false;
     }
     this->setNonBlocking(client_socket);
-    findClient = client.getClients();
+    // findClient = client.getClients();
     change_events(client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client_event);
 
-    findClient[client_socket] = "";
+    // findClient[client_socket] = "";
   } else if(std::strcmp(check_type, "client") == 0){
     client.processClientRequest(occur_event->ident, findClient, oss, bodysize, total);
   }
@@ -102,11 +102,11 @@ bool Server::handleReadEvent(struct kevent *occur_event, int server_socket,
 }
 
 void Server::handleWriteEvent(struct kevent *occur_event,
-                              std::map<int, std::string> &findClient) {
+                              std::map<int, std::stringstream> &findClient) {
   std::cout << "Sent response to client: " << std::endl;
-  std::map<int, std::string>::iterator it = findClient.find(occur_event->ident);
+  std::map<int, std::stringstream>::iterator it = findClient.find(occur_event->ident);
   if (it != findClient.end()) {
-    const std::string &response = it->second;
+    const std::string &response = it->second.str();
 
     ssize_t bytes_written =
         send(occur_event->ident, response.c_str(), response.length(), 0);
