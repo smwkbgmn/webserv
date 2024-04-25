@@ -58,8 +58,8 @@ HTTP::transaction( const Client& client, osstream_t& oss ) {
 		else _build( Response( rqst ), oss );
 	}
 	// Replace the action of error case with building of response for redirection to error page
-	catch ( err_t& exc ) { clog( "HTTP - Request: " + str_t( exc.what() ) ); _build( Response( client, 400 ), oss ); }
 	catch ( errstat_t& exc ) { clog( "HTTP - transaction: " + str_t( exc.what() ) ); _build( Response( client, exc.code ), oss ); }
+	catch ( err_t& exc ) { clog( "HTTP - Request: " + str_t( exc.what() ) ); _build( Response( client, 400 ), oss ); }
 
 	// LOGGING Response Message
 	logging.fs << oss.str() << "\n" << std::endl;

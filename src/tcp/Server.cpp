@@ -57,8 +57,10 @@ void Server::connect_sever( void ) {
           }
         } else if (occur_event->filter == EVFILT_WRITE) {
 
-          // clog( "respond to client with message below" );
-          // std::clog << oss.str() << std::endl;
+          if ( oss.str().length() < 2000 ) {
+            clog( "TCP - respond to client with message below" );
+            std::clog << oss.str() << std::endl;
+          }
 
           if ( send( client_socket, oss.str().c_str(), oss.str().size(), 0 ) == ERROR )
             throw err_t( "fail to send" );

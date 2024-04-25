@@ -21,10 +21,6 @@ void Client::processClientRequest(int fd,
   // } else {
 
   handleRegularRequest(fd, findClient, oss, bodysize, total);
-
-  
-
-  
 }
 
 // void handledSend(const Client &client) {
@@ -83,43 +79,46 @@ void Client::processClientRequest(int fd,
 #include <cstring>
 
 void Client::handleRegularRequest(int fd, std::map<int, std::stringstream> &findClient, osstream_t& oss, size_t& bodysize, size_t& total) {
+    byte_read = 0;
+
     if ( msg ) {
-      byte_read = 0;
       delete[] msg;
+      msg = NULL;
     }
 
     clog( "handleRegularRequest - recv start" );
     byte_read = recv(fd, buf, SIZE_BUF, 0);
+  
     clog( "handleRegularRequest - recv done read by " );
     std::clog << byte_read << std::endl;
-
-    // char* data_receive = new char[byte_read];
-    if ( byte_read > 0 ) { 
-      msg = new char[byte_read];
-      memcpy( msg, buf, byte_read );
-    }
 
     // clog( "handleRegularRequest - recv data" );
     // for ( ssize_t idx = 0; idx < byte_read; ++idx ) std::clog << msg[idx];
     // std::clog << std::endl;
 
-    // if (byte_read < 0) {
-    //     std::cerr << "Client receive error on file descriptor " << fd << ": " << strerror(errno) << std::endl;
-    //     disconnect_client(fd);
-    //     throw err_t("Server socket error on receive");
-    // }
+    if (byte_read < 0) {
+      msg = NULL;
+      std::cerr << "Client receive error on file descriptor " << fd << ": " << strerror(errno) << std::endl;
+      disconnect_client(fd);
+      throw err_t("Server socket error on receive");
+    }
     
-    // else if (byte_read == 0) {
-    if (byte_read == 0) {
-        std::cout << "Client disconnected on file descriptor " << fd << std::endl;
-        disconnect_client(fd);
+    else if (byte_read == 0) {
+      msg = NULL;
+      std::cout << "Client disconnected on file descriptor " << fd << std::endl;
+      disconnect_client(fd);
     }
     
     else {
+        msg = new char[byte_read];
+        memcpy( msg, buf, byte_read );
+
         findClient[fd].write( msg, byte_read );
-        clog( "handleRegularRequest - copied msg\n" );
-        for ( ssize_t idx = 0; idx < byte_read; ++idx ) std::clog << findClient[fd].str().at(idx);
-        std::clog << std::endl;
+        
+        // clog( "handleRegularRequest - copied msg\n" );
+        // for ( ssize_t idx = 0; idx < byte_read; ++idx )
+        //   std::clog << findClient[fd].str().at(idx);
+        // std::clog << std::endl;
 
         // std::cout << "buff contetnts " << fd << " : " << findClient[fd] <<std::endl;
         // if (isRequestComplete(msg, n, bodysize, total)) {
@@ -127,12 +126,12 @@ void Client::handleRegularRequest(int fd, std::map<int, std::stringstream> &find
           HTTP::transaction( *this, oss );
           srv.change_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 
-          bodysize = 0;
-          total = 0;
+          (void)bodysize;
+          (void)total;
+          // bodysize = 0;
+          // total = 0;
         // }
     }
-
-    // delete[] msg;
 }
 
 

@@ -13,14 +13,12 @@ CGI::proceed( const Request& rqst, osstream_t& oss ) {
 	else act = &_script;
 
 	if ( _detach( rqst, procs, act ) == SUCCESS ) {
-		// _write( procs, rqst );
+		_write( procs, rqst );
 		_wait( procs );
 		_read( procs, oss );
-		close( procs.fd[W] );
-		close( procs.fd[R] );
 
 		if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
-			throw errstat_t( 500 );
+			throw errstat_t( 500, "the CGI fail to exit as SUCCESS" );
 	}
 	else throwSysErr( "execve", 500 );
 }
@@ -28,24 +26,17 @@ CGI::proceed( const Request& rqst, osstream_t& oss ) {
 
 stat_t
 CGI::_detach( const Request& rqst, process_t& procs, fnptr_t execute ) {
-	clog( "CGI - pipe" );
-	pipe( procs.fd );
+	clog( "CGI - _detach" );
 
-	clog( "CGI - fork" );
-	procs.pid = fork();
-
-	// if ( pipe( procs.fd ) == ERROR || ( procs.pid = fork() ) == ERROR )
-	// 	throwSysErr( "_detach", 500 );
+	if ( pipe( procs.fd ) == ERROR || ( procs.pid = fork() ) == ERROR )
+		throwSysErr( "_detach", 500 );
 	
 	if ( !procs.pid ) {
-		const char* msg = rqst.client().buffer();
+		// const char* msg = rqst.client().buffer();
 
-		clog( "CIG - data script would be read" );
-		write( STDERR_FILENO, msg, rqst.client().byte_read );
+		// write( procs.fd[R], msg, rqst.client().byte_read );
 
-		write( procs.fd[R], msg, rqst.client().byte_read );
-
-		delete[] msg;
+		// delete[] msg;
 		return execute( rqst, procs );
 	}
 	else return SUCCESS;
@@ -116,13 +107,13 @@ CGI::_redirect( const process_t& procs ) {
 
 stat_t
 CGI::_execve( const process_t& procs, char* argv[], char* env[] ) {
-	clog( "CGI - _execve" );
+	// clog( "CGI - _execve" );
 
 	// clog( "CGI - argv" );
 	// for ( size_t ptr = 0; argv[ptr]; ++ptr )
 	// 	std::clog << argv[ptr] << "\n";
 
-	// clog ( "CGI - env" );
+	// clog( "CGI - env" );
 	// for ( size_t ptr = 0; env[ptr]; ++ptr )
 	// 	std::clog << env[ptr] << "\n";
 
@@ -137,15 +128,10 @@ CGI::_write( const process_t& procs, const Request& rqst ) {
 	clog( "CGI - _write" );
 
 	if ( rqst.line().method == POST ) {
-		const char* data = rqst.client().buffer();
-		ssize_t sizeMsg = rqst.client().byte_read;
-
-		if ( write( procs.fd[W], data, sizeMsg ) == ERROR )
+		if ( write( procs.fd[W], rqst.body(), rqst.header().content_length ) == ERROR)
 			throwSysErr( "write", 500 );
-		
-		delete[] data;
 	}
-	// close( procs.fd[W] );
+	close( procs.fd[W] );
 }
 
 void
@@ -153,29 +139,34 @@ CGI::_wait( process_t& procs ) {
 	clog( "CGI - _wait" );
 	// Should be replaced the NONE with WNOHANG after restruct the flow
 	if ( waitpid( procs.pid, &procs.stat, NONE ) == ERROR )
+	// if ( waitpid( procs.pid, &procs.stat, WNOHANG ) == ERROR )
 		throwSysErr( "wait", 500 );
 }
  
 void
 CGI::_read( process_t& procs, osstream_t& oss ) {
-	char	buf[10000];
+	char	buf[1500] = { NONE };
+	// char	buf[1] = { NONE };
 	ssize_t	bytes = 0;
 
 	clog( "CGI - _read" );
 
-	// if ( ( bytes = read(procs.fd[R], buf, 1024 ) ) == ERROR )
-	// 	throwSysErr( "read", 500 );
+	if ( ( bytes = read( procs.fd[R], buf, 1500 ) ) == ERROR )
+		throwSysErr( "read", 500 );
 
-	while ( ( bytes = read( procs.fd[R], buf, 10000 ) ) > 0 )
-		if ( bytes == ERROR )
-			throwSysErr( "read", 500 );
+	// while ( ( bytes = read( procs.fd[R], buf, 1 ) ) > 0 )
+	// 	oss << buf;
 
-	// oss << "HTTP/1.1 200 OK\r\n";
+	if ( bytes == ERROR )
+		throwSysErr( "read", 500 );
+
+	oss << "HTTP/1.1 200 OK\r\n";
     // oss << "Content-Type: text/html\r\n";
-	// oss << "Content-Length: " << bytes << CRLF;
+	oss << "Content-Length: " << bytes << CRLF;
 	// oss << CRLF;
-	// oss << buf << '\0';
-	clog ( "CGI - produced data\n" + oss.str() );
+	oss << str_t( buf );
+
+	close( procs.fd[R] );
 }
 
 process_s::process_s( void ) {
