@@ -94,20 +94,23 @@ void Client::handleRegularRequest(int fd, std::map<int, std::stringstream> &find
     std::clog << byte_read << std::endl;
 
     // char* data_receive = new char[byte_read];
-    msg = new char[byte_read];
-    memcpy( msg, buf, byte_read );
+    if ( byte_read > 0 ) { 
+      msg = new char[byte_read];
+      memcpy( msg, buf, byte_read );
+    }
 
     // clog( "handleRegularRequest - recv data" );
     // for ( ssize_t idx = 0; idx < byte_read; ++idx ) std::clog << msg[idx];
     // std::clog << std::endl;
 
-    if (byte_read < 0) {
-        std::cerr << "Client receive error on file descriptor " << fd << ": " << strerror(errno) << std::endl;
-        disconnect_client(fd);
-        throw err_t("Server socket error on receive");
-    }
+    // if (byte_read < 0) {
+    //     std::cerr << "Client receive error on file descriptor " << fd << ": " << strerror(errno) << std::endl;
+    //     disconnect_client(fd);
+    //     throw err_t("Server socket error on receive");
+    // }
     
-    else if (byte_read == 0) {
+    // else if (byte_read == 0) {
+    if (byte_read == 0) {
         std::cout << "Client disconnected on file descriptor " << fd << std::endl;
         disconnect_client(fd);
     }
