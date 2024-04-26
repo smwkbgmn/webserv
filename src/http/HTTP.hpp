@@ -30,7 +30,7 @@ const str_t strMethod[] = {
 const str_t strVersion[] = {
 	"0.9",
 	"1.0",
-	"1.1",
+"1.1",
 	"2.0"
 };
 
