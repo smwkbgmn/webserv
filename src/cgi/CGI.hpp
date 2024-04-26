@@ -24,6 +24,7 @@ class CGI {
 		static stat_t	_detach( const Request&, process_t&, fnptr_t );
 
 		/* PARENT */
+		static void 	_write( const process_t&, const Request& );
 		static void		_wait( process_t& );
 		static void		_read( process_t&, osstream_t& );
 

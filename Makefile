@@ -2,7 +2,7 @@ NAME		= webserv
 
 CPP			= c++
 FLAG		= -Wall -Wextra -Werror \
-$(FLG_STD) -I include -I src -I src/http -I src/tcp -I src/cgi
+$(FLG_STD) -I src -I src/http -I src/tcp -I src/cgi
 
 FLG_STD		= -std=c++98
 
@@ -15,6 +15,9 @@ $(wildcard src/tcp/*.cpp)
 OBJ			= $(SRC:.cpp=.o)
 
 all			: $(NAME)
+
+run			: $(NAME)
+			./$(NAME)
 
 $(NAME)		: $(OBJ)
 			$(CPP) $(FLAG) $(OBJ) -o $@

@@ -12,7 +12,7 @@
 class Request;
 class Response;
 
-const path_t	dirKeys			= "./key";
+const path_t	dirKeys			= "src/http/key";
 const path_t	fileStatus		= dirKeys + "/keyStatus.txt";
 const path_t	fileMime		= dirKeys + "/keyMime.txt";
 const path_t	fileHeaderIn	= dirKeys + "/keyHeaderIn.txt";
@@ -30,7 +30,7 @@ const str_t strMethod[] = {
 const str_t strVersion[] = {
 	"0.9",
 	"1.0",
-	"1.1",
+"1.1",
 	"2.0"
 };
 
@@ -41,7 +41,7 @@ class HTTP {
 
 		static void		init( const str_t&, const str_t& );
 		static void		transaction( const Client&, osstream_t& );
-		static size_t	getLocationConf( const str_t&, const vec_location_t& );
+		static size_t	getLocationConf( const str_t&, const vec_config_t& );
 	
 		static void		GET( const Request&, char**, size_t& );
 		static void		POST( const Request&, char**, size_t& );

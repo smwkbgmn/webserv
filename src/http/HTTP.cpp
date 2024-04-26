@@ -95,11 +95,11 @@ size_t HTTP::getLocationConf( const str_t& uri, const vec_config_t& config ) {
 }
 
 /* FILTER INIT */
-errstat_s::errstat_s( const uint_t& status ) { code = status; }
 
 config_s::config_s( void ) {
 	location		= "/";
-	root			= HTTP::http.absolute + "/html";
+	// root			= HTTP::http.absolute + "/html";
+	root			= "html";
 	file40x			= "/40x.html";
 	file50x			= "/50x.html";
 

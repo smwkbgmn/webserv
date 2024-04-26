@@ -6,8 +6,8 @@
 
 class Response {
 	public:
-		Response( const Client& ); // When can't construct Request
 		Response( const Request& );
+		Response( const Client&, const uint_t& ); // When can't construct Request
 		~Response( void );
 
 		const response_line_t&		line( void ) const;

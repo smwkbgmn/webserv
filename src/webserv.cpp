@@ -20,7 +20,7 @@
 
 int main( void ) {
 	try {
-		HTTP::init( "text/plain", "./html/cgi-bin" );
+		HTTP::init( "text/plain", "html/cgi-bin" );
 		
 		Server server;
 
