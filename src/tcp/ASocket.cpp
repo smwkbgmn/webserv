@@ -3,15 +3,15 @@
 ASocket::ASocket() : server_socket(-1) {}
 
 ASocket::~ASocket() {
-    for (size_t i = 0; i < socket_list.size(); ++i)
-        close(socket_list[i]);
+    for (size_t i = 0; i < server_list.size(); ++i)
+        close(server_list[i]);
 }
 
 void ASocket::socketOpen() {
     server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (server_socket == -1)
         throw err_t("Failed to create socket");
-    socket_list.push_back(server_socket);
+    server_list.push_back(server_socket);
 }
 
 void ASocket::setAddr() {

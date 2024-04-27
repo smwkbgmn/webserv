@@ -29,7 +29,7 @@ class ASocket {
 public:
     sockaddr_t addr;
     socket_t server_socket;
-    socket_list_t sever_list;
+    socket_list_t server_list;
 
     ASocket();
     virtual ~ASocket();
