@@ -3,47 +3,39 @@
 
 #include "ASocket.hpp"
 #include "Server.hpp"
+#include <sstream>
+#include <map>
+#include <string>
 
-#define max 1024
-typedef std::runtime_error err_t;
-// class Server;
+#define BuffSize 1024
+class Server;
 
-class Client : ASocket {
-  private:
-    std::map<int, std::string> clients;
-    Server &srv;
-    std::vector<config_t> nginxConfigs;
+class Client {
+private:
+    Server& srv;
+    int client_socket;
+    std::ostringstream oss;  
 
-    std::string sav_msg;
+public:
 
-  public:
-    char buf[max];
 
-    Client(Server &);
+    Client(Server& server);
     ~Client();
 
+    bool sendData();
+    void disconnect_client(int client_fd);
+    void processClientRequest( Client &);
 
-  const std::vector<config_t>& getServerConfigs() const { return nginxConfigs; }
-  void setServerConfigs(const std::vector<config_t>& configs) { nginxConfigs = configs; }
-
-    const char* buffer( void ) const { return buf; }
-    const Server &server(void) const { return srv; }
-    void setSocket(const socket_t &socket) { client_socket = socket; }
-    const socket_t &socket(void) const { return client_socket; }
-    
-
-    void disconnect_client(int);
-
-    // bool changeProperty(int);
-    void processClientRequest(int, std::map<int, std::string> &, Server &);
-    void handleChunkedRequest(int, std::map<int, std::string> &);
-    void handleRegularRequest(int, std::map<int, std::string> &);
-
-    const std::map<int, std::string> &getClients() const;
-    const Server &getserver(void) const;
-    const std::string getBufferContents() const { return std::string(buf); }
+    const char* buffer() const ;
+    const std::string getBufferContents() const;
     bool isRequestComplete(const std::string& request);
-    void Client::processFullRequest(int fd, const std::string& request);
+
+    const Server& getServer() const;
+    const int& getSocket() const;
+     
+     
+    void setSocket(const int& );
+    void setServer(const Server& );
 };
 
-#endif
+#endif // CLIENT_HPP
