@@ -8,8 +8,8 @@ Request::Request( const Client& client ): _client( client ), _body( NULL ) {
 	// Parse request message
 	_parse( client.buffer() );
 
-	// Set config based by location
-	_configIdx = HTTP::getLocationConf( _line.uri, client.server().config() );
+	// // Set config based by location
+	// _configIdx = HTTP::getLocationConf( _line.uri, client.server().config() );
 
 	// If the method is not allowed at this location config, set methodID as NOT_ALLOWED
 	if ( _line.method != UNKNOWN && !config().allow.at( _line.method ) )
@@ -29,25 +29,17 @@ Request::_parse( const char* buf ) {
 	begin = end + 2;
 
 	while ( ( end = msgRqst.find( CRLF, begin ) ) != str_t::npos ) {
-		if ( end == begin ) {
-			begin += 2;
-			break;
-		}
-
-		_parseHeader( msgRqst.substr( begin, end ) );
+		if ( end != begin ) _parseHeader( msgRqst.substr( begin, end ) );
 		begin = end + 2;
 	}
 	
 	// std::clog << "pos begin: " << begin << ", msg len: " << msgRqst.length() << std::endl;
-	if ( begin != msgRqst.length() ) {
+	// if ( begin != msgRqst.length() ) {
+	if ( _header.content_length ) {
 		// _parseBody( msgRqst.substr( begin ) );
-		size_t bodysize = client().byte_read - begin;
-		_body = new char[bodysize];
-		memcpy( _body, &buf[begin], bodysize );
-		// std::clog << "the size of body: " << bodysize << "\n";
-		// for ( size_t idx = 0; idx < bodysize; ++idx )
-		// 	std::clog << _body[idx];
-		// std::clog << "body end" << std::endl;
+		// size_t bodysize = client().byte_read - begin;
+		_body = new char[_header.content_length];
+		memcpy( _body, &buf[begin], _header.content_length );
 	}
 
 	// LOGGING Request Message
@@ -74,7 +66,11 @@ Request::_assignMethod( str_t token ) {
 }
 
 void
-Request::_assignURI( str_t token ) { _line.uri = token; }
+Request::_assignURI( str_t token ) { 
+	_configIdx = HTTP::getLocationConf( token, _client.server().config() );
+	
+	_line.uri = token;
+}
 
 void
 Request::_assignVersion( str_t token ) {
