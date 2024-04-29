@@ -21,54 +21,24 @@
 
 #define LOOP 1
 
-/*
-        [TCP functions using UNIX]
-        socketpair
-        htons
-        htonl
-        nthos
-        ntohl
-
-        select / poll / epoll / kqueue
-        socket
-        accept
-        listen
-
-        send
-        recv
-
-        bind
-        connect
-
-        getaddrinfo
-        freeaddrinfo
-
-        setsockpot
-        getsockname
-        getprotobyname
-*/
+typedef struct sockaddr_in sockaddr_t;
+typedef int socket_t;
+typedef std::vector<int> socket_list_t;
 
 class ASocket {
-
-  public:
-    struct sockaddr_in addr;
-    socklen_t addrSize;
+public:
+    sockaddr_t addr;
     socket_t server_socket;
-    socket_t client_socket;
-    socket_t  sock;
+    socket_list_t server_list;
 
-    std::vector<socket_t> socket_list;
+    ASocket();
+    virtual ~ASocket();
 
-    ASocket(void);
-    ASocket(int);
-    virtual ~ASocket(void);
-    void setAddr(void);
-
+    void setAddr();
     void setNonBlocking(int);
-    void socketOpen(void);
+    void socketOpen();
     void preSet();
-
-    void openSocket(void);
+    void openSocket();
 };
 
 #endif
