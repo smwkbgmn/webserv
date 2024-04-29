@@ -1,7 +1,7 @@
 #include "Client.hpp"
 #include "HTTP.hpp"
 
-Client::Client(Server &connect_server) : srv(connect_server),client_socket(-1), byte_read( -1 ) {}
+Client::Client(Server &connect_server) : srv(connect_server),client_socket(-1), header_done( FALSE ), body_size( 0 ), body_read( 0 ) {}
 
 Client::~Client() {}
 
@@ -17,8 +17,11 @@ const int& Client::getSocket() const {
 
 const char* Client::buffer() const {
     // return oss.str().c_str();
-    return strdup( oss.str().c_str() );
-};
+	// char* testbuf = new char[oss.str().size()];
+    // return static_cast<const char*>( memcpy( testbuf, oss.str().c_str(), oss.str().size()) );
+	size_t	size;
+	return dupStreamBuf( oss, size );
+}
 
 void Client::setSocket(const int& socket ){
     client_socket = socket;
@@ -39,7 +42,7 @@ void Client::processClientRequest(Client& client) {
     char buf[BuffSize];
 
     clog( "TCP\t: receiving data" );
-    int n = recv(client_socket, buf, BuffSize, 0);
+    ssize_t n = recv(client_socket, buf, BuffSize, 0);
 
     osstream_t stream;
     stream << "TCP\t: receiving done by " << n;
@@ -63,17 +66,18 @@ void Client::processClientRequest(Client& client) {
 
         logging.fs << oss.str() << std::endl;
 
-        // if (isRequestComplete(oss.str())) {
+        if (isHeaderDone( buf, n ) && isRequestComplete( buf, n ) ) {
             HTTP::transaction(*this, response);
 
-        // client.oss.flush();
-        client.oss.str( "" );
-        client.oss.clear();
+			client.oss.str( "" );
+			client.oss.clear();
 
-        client.byte_read = 0;
+			client.header_done  = FALSE;
+			client.body_size    = 0;
+			client.body_read	= 0;
 
             srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
-        // }
+        }
     }
 }
 
@@ -100,14 +104,46 @@ bool Client::sendData()
 }
 
 
+bool
+Client::isHeaderDone( const char* buf, ssize_t& byte_read ) {
+	if ( !header_done ) {
+		str_t data_read( buf );
+
+		size_t pos_header_end = str_t( buf ).find( "\r\n\r\n" );
+		if ( pos_header_end != str_t::npos ) {
+			clog( "TCP\t: end of header has found" );
+			header_done	= TRUE;
+			body_read	= byte_read - pos_header_end - 4;
+			byte_read	= 0;
+
+			size_t pos_header_len = data_read.find( "Content-Length" );
+			if ( pos_header_len != str_t::npos ) {
+				clog( "TCP\t: content-length header has found" );
+				isstream_t  iss( data_read.substr( pos_header_len, data_read.find( CRLF, pos_header_len ) ) ); 
+				str_t       discard;
+
+				std::getline( iss, discard, ':' );
+				iss >> std::ws >> body_size;
+
+			}
+		}
+	}
+	return header_done;
+}
+
 // bool Client::isRequestComplete(const std::string& request) {
-bool Client::isRequestComplete(const osstream_t& oss) {
-    size_t  pos_header_end;
-    
-    if ( byte_read == -1 && ( pos_header_end = oss.str().find( "\r\n\r\n" ) ) == str_t::npos )
-        return FALSE;
+bool Client::isRequestComplete(const char* buf, const size_t& byte_read) {
+	(void)buf;
 
+	body_read += byte_read;
 
+	osstream_t oss;
+
+	oss << "TCP\t: body read by " << byte_read << " so far: " << body_read << " / " << body_size << std::endl;
+	clog( oss.str() );
+	
+	return body_size == body_read;
+	
     
 
     // size_t headerEnd = request.find("\r\n\r\n");

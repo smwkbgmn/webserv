@@ -15,12 +15,16 @@ class Server;
 
 class Client {
 private:
-    Server& srv;
-    int client_socket;
-    osstream_t oss;  
-    osstream_t  response;
+    Server&		srv;
+    int			client_socket;
 
-    ssize_t  byte_read;
+    // osstream_t	oss;  
+	std::stringstream	oss;  
+    osstream_t	response;
+
+    bool		header_done;
+    ssize_t		body_size;
+    ssize_t		body_read;
 
 public:
 
@@ -32,10 +36,11 @@ public:
     void disconnect_client(int client_fd);
     void processClientRequest( Client &);
 
-    const char* buffer() const ;
+    const char* buffer() const;
     const std::string getBufferContents() const;
     // bool isRequestComplete(const std::string& request);
-    bool isRequestComplete( const osstream_t& );
+    bool    isHeaderDone( const char*, ssize_t& );
+    bool isRequestComplete( const char*, const size_t& );
 
     const Server& getServer() const;
     const int& getSocket() const;

@@ -36,7 +36,12 @@ Request::_parse( const char* buf ) {
 	begin = end + 2;
 
 	while ( ( end = msgRqst.find( CRLF, begin ) ) != str_t::npos ) {
-		if ( end != begin ) _parseHeader( msgRqst.substr( begin, end ) );
+		if ( end == begin ) {
+			begin += 2;
+			break;
+		}
+		
+		_parseHeader( msgRqst.substr( begin, end ) );
 		begin = end + 2;
 	}
 
@@ -111,8 +116,9 @@ Request::_assignBody( const size_t& bodyBegin, const char* buf ) {
 	_body = new char[_header.content_length];
 	memcpy( _body, &buf[bodyBegin], _header.content_length );
 	
-	clog( "HTTP\t: the rqst body" );
-	std::clog << _body << std::endl;
+	// clog( "HTTP\t: the rqst body" );
+	// std::clog.write( _body, _header.content_length );
+	// std::clog << std::endl;
 }
 
 str_t

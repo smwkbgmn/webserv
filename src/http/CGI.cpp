@@ -138,6 +138,8 @@ CGI::_read( process_t& procs, osstream_t& oss ) {
 	if ( bytes == ERROR )
 		throwSysErr( "read", 500 );
 
+	oss << "HTTP/1.1 200 OK" << CRLF;
+	oss << "Content-Length: " << bytes << CRLF;
 	// oss << "Content-Length: " << bytes << CRLF << CRLF;
 	oss << str_t( buf );
 

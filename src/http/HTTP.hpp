@@ -74,6 +74,8 @@ size_t
 distance( Container& obj, Target token ) { return static_cast<size_t>( std::distance( obj.begin(), lookup( obj, token ) ) ); }
 
 char* dupStreamBuf( std::ios&, size_t& );
+const char* dupStreamBuf( const std::ios&, size_t& );
+char* dupStreamBuf( const osstream_t& );
 
 # include "CGI.hpp"
 
