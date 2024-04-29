@@ -7,6 +7,8 @@ Server::Server() : ASocket(), EventList(8), client_event("client"), server_event
         throw err_t("Failed to create kqueue");
     timeout.tv_sec = 5;
     timeout.tv_nsec = 0;
+
+    conf.push_back( config_t() );
 }
 
 Server::~Server() {
@@ -76,15 +78,15 @@ bool Server::handleReadEvent(struct kevent &occur_event) {
         if (it != ClientMap.end()) {
             Client* client = it->second;
             client->processClientRequest(*client);
+        }
     }
     return true;
-}
 }
 
 
 
 void Server::connectsever() {
-    struct kevent* curr_event;
+    // struct kevent* curr_event;
     ServerPreset();
     while (true) {
         int newEvent = eventOccure();
@@ -92,9 +94,7 @@ void Server::connectsever() {
             struct kevent &event = getEventList(i);
             if (!errorcheck(event)) {
                 if (event.filter == EVFILT_READ) {
-                    if (!handleReadEvent(event)) {
-                        continue;
-                    }
+                    if (!handleReadEvent(event)) continue;
                 } else if (event.filter == EVFILT_WRITE) {
                     ConnectClients::iterator it = ClientMap.find(event.ident);
                     if (it != ClientMap.end()) {
@@ -105,8 +105,8 @@ void Server::connectsever() {
                     }
                 }
             }
-            }
         }
+    }
 }
 
 

@@ -16,11 +16,13 @@ class Server : public ASocket {
 private:
     kque kq;
     eventQueue EventList;
-    struct kevent *occur_event;
+    // struct kevent *occur_event;
     struct timespec timeout;
     ConnectClients ClientMap;
     char client_event[8];
     char server_event[8];
+
+    vec_config_t conf;
 
 public:
     Server();
@@ -32,6 +34,8 @@ public:
     bool errorcheck(struct kevent &);
     bool handleReadEvent(struct kevent &);
     struct kevent &getEventList(int);
+
+    const vec_config_t& config( void ) const { return conf; }
 };
 
 #endif

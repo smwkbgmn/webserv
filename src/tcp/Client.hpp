@@ -7,6 +7,8 @@
 #include <map>
 #include <string>
 
+#include <cstring>
+
 #define BuffSize 1024
 class Server;
 
@@ -14,7 +16,8 @@ class Client {
 private:
     Server& srv;
     int client_socket;
-    std::ostringstream oss;  
+    osstream_t oss;  
+    osstream_t  response;
 
 public:
 
@@ -32,8 +35,7 @@ public:
 
     const Server& getServer() const;
     const int& getSocket() const;
-     
-     
+
     void setSocket(const int& );
     void setServer(const Server& );
 };

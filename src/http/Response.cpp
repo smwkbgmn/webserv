@@ -62,7 +62,7 @@ Response::_mime( const str_t& uri, str_t& typeHeader, const str_t& typeUnrecog )
 }
 
 Response::Response( const Client& client, const uint_t& errstat ): _body( NULL ) { 
-	const config_t&	config = client.server().config().at( 0 );
+	const config_t&	config = client.getServer().config().at( 0 );
 
 	_pageError( errstat, config );
 }

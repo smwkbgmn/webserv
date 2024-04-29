@@ -16,7 +16,8 @@ const int& Client::getSocket() const {
 }
 
 const char* Client::buffer() const {
-    return oss.str().c_str();
+    // return oss.str().c_str();
+    return strdup( oss.str().c_str() );
 };
 
 void Client::setSocket(const int& socket ){
@@ -47,7 +48,7 @@ void Client::processClientRequest(Client& client) {
         buf[n] = '\0';
         client.oss << buf;
         if (isRequestComplete(oss.str())) {
-            HTTP::transaction(*this, oss);
+            HTTP::transaction(*this, response);
             srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
         }
     }
@@ -55,17 +56,25 @@ void Client::processClientRequest(Client& client) {
 
 bool Client::sendData() 
 {
-        std::string data = oss.str(); 
+        std::string data = response.str(); 
         const char* buffer = data.c_str();  
         size_t length = data.size(); 
+
+        clog( "TCP - sending" );
+        std::clog << response.str() << std::endl;
 
         ssize_t bytesSent = send(client_socket, buffer, length, 0);  
         if (bytesSent < 0) {
             return false;
         }
+        
+        response.flush();
+        response.clear();  
 
-        oss.str("");  
-        oss.clear();  
+        oss.flush();
+        oss.clear();
+
+        
         return true;
 }
 

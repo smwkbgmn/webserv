@@ -2,7 +2,7 @@
 
 /* ACCESS */
 const Client&			Request::client( void ) const { return _client; }
-const config_t&			Request::config( void ) const { return client().server().config().at( _configIdx ); }
+const config_t&			Request::config( void ) const { return client().getServer().config().at( _configIdx ); }
 
 const request_line_t&	Request::line( void ) const { return _line; }
 const request_header_t&	Request::header( void ) const { return _header; }
@@ -61,7 +61,7 @@ Request::_assignMethod( str_t token ) {
 
 void
 Request::_assignURI( str_t token ) { 
-	_configIdx	= HTTP::getLocationConf( _line.uri, _client.server().config() );
+	_configIdx	= HTTP::getLocationConf( _line.uri, _client.getServer().config() );
 	if ( config().location.length() == 1 )
 		_line.uri	= token.replace( 0, config().location.length(), config().root + "/" );
 	else
