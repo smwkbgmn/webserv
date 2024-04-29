@@ -1,25 +1,17 @@
 #include "ASocket.hpp"
 
-ASocket::ASocket(void) {}
+ASocket::ASocket() : server_socket(-1) {}
 
-ASocket::~ASocket(void) {
-    for (unsigned int i = 0; i < socket_list.size(); i++)
-		close(socket_list[i]);
-	
- }
+ASocket::~ASocket() {
+    for (size_t i = 0; i < server_list.size(); ++i)
+        close(server_list[i]);
+}
 
-void ASocket::openSocket() {
-
-    socketOpen();
-    setAddr();
-    // socket timeout 설정
-    int optval = 1;
-    setsockopt(this->server_socket, SOL_SOCKET, SO_REUSEADDR, &optval,
-               sizeof(optval));
-    preSet();
-    setNonBlocking(this->server_socket);
-    clog( "Listening on port 8080" );
-
+void ASocket::socketOpen() {
+    server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (server_socket == -1)
+        throw err_t("Failed to create socket");
+    server_list.push_back(server_socket);
 }
 
 void ASocket::setAddr() {
@@ -29,27 +21,24 @@ void ASocket::setAddr() {
     addr.sin_port = htons(8080);
 }
 
+void ASocket::preSet() {
+    if (bind(server_socket, reinterpret_cast<const struct sockaddr*>(&addr), sizeof(addr)) == ERROR)
+        throw err_t("Failed to bind");
+    if (listen(server_socket, 10) == ERROR)
+        throw err_t("Failed to listen");
+}
+
 void ASocket::setNonBlocking(int fd) {
     if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) {
         close(fd);
-        throw err_t("Failed to change status");
+        throw err_t("Failed to set non-blocking mode");
     }
 }
 
-
-void ASocket::socketOpen(void) {
-    this->server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (this->server_socket == -1)
-        throw err_t("fail to create socket");
-    socket_list.push_back(server_socket);
-    this->client_socket = 0;
-}
-
-void ASocket::preSet(void) {
-
-    if (bind(this->server_socket, (const struct sockaddr *)&addr,
-             sizeof(addr)) == ERROR)
-        throw err_t("fail to bind");
-    if (listen(this->server_socket, 10) == ERROR)
-        throw err_t("fail to listening");
+void ASocket::openSocket() {
+    socketOpen();
+    setAddr();
+    preSet();
+    setNonBlocking(server_socket);
+    clog("Listening on port 8080");
 }
