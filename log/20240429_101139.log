@@ -1,0 +1,41 @@
+POST /cgi-bin/upload.cgi HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Content-Length: 1252
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Upgrade-Insecure-Requests: 1
+Origin: http://localhost:8080
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryVjCDKxCiBWrJ9S3U
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Referer: http://localhost:8080/upload.html
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+------WebKitFormBoundaryVjCDKxCiBWrJ9S3U
+Content-Disposition: form-data; name="photo"; filename="img.png"
+Content-Type: image/png
+
+‰PNG
+
+
+HTTP/1.1 303 See Other
+Location: /50x.html
+
+
+
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 1252
+
+
+
+

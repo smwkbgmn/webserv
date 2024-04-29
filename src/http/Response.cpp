@@ -74,12 +74,8 @@ Response::_pageError( const uint_t& status, const config_t& config ) {
 
 	_line.status = 303;	
 
-	if ( status == 400 )
-		_header.location = "http://localhost:8080" + fileBadRqst;
-		// _header.location = fileBadRqst;
-	else if ( status < 500 )
+	if ( status < 500 )
 		_header.location = "http://localhost:8080" + config.file40x;
-		// _header.location = config.file40x;
 	else
 		_header.location = config.file50x;
 

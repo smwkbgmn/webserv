@@ -61,7 +61,7 @@ class CGI {
 	
 // 	close( procs.fd[R] );
 
-// 	*bufptr = dupStreamBuffer( oss, size );
+// 	*bufptr = dupStreamBuf( oss, size );
 // 	std::clog << "the copied data\n" << *bufptr << std::endl;
 // }
 
@@ -100,6 +100,6 @@ class CGI {
 // 	// 	if ( oss.fail() ) throwSysErr( "read", 500 );
 // 	// }
 	 
-// 	// std::clog << "_read start dupStreamBuffer\n";
-// 	// *bufptr = dupStreamBuffer( oss, size );
+// 	// std::clog << "_read start dupStreamBuf\n";
+// 	// *bufptr = dupStreamBuf( oss, size );
 // }

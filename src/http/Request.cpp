@@ -1,20 +1,20 @@
 #include "Request.hpp"
 
+/* ACCESS */
+const Client&			Request::client( void ) const { return _client; }
+const config_t&			Request::config( void ) const { return client().server().config().at( _configIdx ); }
+
+const request_line_t&	Request::line( void ) const { return _line; }
+const request_header_t&	Request::header( void ) const { return _header; }
+const char*				Request::body( void ) const { return _body; }
+
+/* CONSTRUCT */
 Request::Request( const Client& client ): _client( client ), _body( NULL ) {
-	// timestamp();
-	// std::clog << "constructing rqst - " << client.socket() << std::endl;
-	// std::clog << client.buffer() << std::endl;
-
-	// Parse request message
 	_parse( client.buffer() );
-
-	// // Set config based by location
-	// _configIdx = HTTP::getLocationConf( _line.uri, client.server().config() );
 
 	// If the method is not allowed at this location config, set methodID as NOT_ALLOWED
 	if ( _line.method != UNKNOWN && !config().allow.at( _line.method ) )
 		_line.method = NOT_ALLOWED;
-	// clog("constructing rqst");
 }
 
 void
@@ -32,15 +32,9 @@ Request::_parse( const char* buf ) {
 		if ( end != begin ) _parseHeader( msgRqst.substr( begin, end ) );
 		begin = end + 2;
 	}
-	
-	// std::clog << "pos begin: " << begin << ", msg len: " << msgRqst.length() << std::endl;
-	// if ( begin != msgRqst.length() ) {
-	if ( _header.content_length ) {
-		// _parseBody( msgRqst.substr( begin ) );
-		// size_t bodysize = client().byte_read - begin;
-		_body = new char[_header.content_length];
-		memcpy( _body, &buf[begin], _header.content_length );
-	}
+
+	if ( _header.content_length )
+		_assignBody( begin, buf );
 
 	// LOGGING Request Message
 	logging.fs << msgRqst << std::endl;
@@ -67,9 +61,11 @@ Request::_assignMethod( str_t token ) {
 
 void
 Request::_assignURI( str_t token ) { 
-	_configIdx = HTTP::getLocationConf( token, _client.server().config() );
-	
-	_line.uri = token;
+	_configIdx	= HTTP::getLocationConf( _line.uri, _client.server().config() );
+	if ( config().location.length() == 1 )
+		_line.uri	= token.replace( 0, config().location.length(), config().root + "/" );
+	else
+		_line.uri	= token.replace( 0, config().location.length(), config().root );
 }
 
 void
@@ -89,26 +85,17 @@ Request::_assignVersion( str_t token ) {
 void
 Request::_parseHeader( str_t field ) {
 	isstream_t		iss( field );
-	str_t			name;
+	str_t			header;
 
-	// if ( iter == HTTP::header_in.end() )
-	// 	throw err_t( "_parseHeader: " + errMsg[INVALID_REQUEST_FIELD] + " " + field );
-
-	// std::clog << "rqst - header: " << field << std::endl;
-
-	
-	name = _token( iss, ':' );
+	header = _token( iss, ':' );
 	iss >> std::ws;
 
-	vec_str_iter_t	iter = lookup( HTTP::key.header_in, name );
-
-	switch ( std::distance( HTTP::key.header_in.begin(), iter ) ) {
+	switch ( distance( HTTP::key.header_in, header ) ) {
 		case IN_HOST		: iss >> _header.host; _add( _header.list, IN_HOST ); break;
 		case IN_CONNECTION	: _header.connection = KEEP_ALIVE; _add( _header.list, IN_CONNECTION ); break;
 		case IN_CHUNK		: break;
-		case IN_CONTENT_LEN	: iss >> _header.content_length; _add( _header.list, IN_CONTENT_LEN );
+		case IN_CONTENT_LEN	: iss >> _header.content_length; _add( _header.list, IN_CONTENT_LEN ); break;
 		case IN_CONTENT_TYPE: break;
-		// default: throw err_t( "_parseHeader: " + errMsg[INVALID_REQUEST_FIELD] + " " + field );
 	}
 }
 
@@ -116,15 +103,9 @@ void
 Request::_add( vec_uint_t& list, uint_t id ) { list.push_back( id ); }
 
 void
-Request::_parseBody( str_t body ) {
-	( void )body;
-	// clog( "HTTP - _parseBody" );
-	// std::clog << "tokened the body\n";
-	// std::clog << body << std::endl;
-
-	// _body = new char[body.length()];
-	// body.copy( _body, body.length() );
-	// _body[body.length()] = '\0';
+Request::_assignBody( const size_t& bodyBegin, const char* buf ) {
+	_body = new char[_header.content_length];
+	memcpy( _body, &buf[bodyBegin], _header.content_length );
 }
 
 str_t
@@ -139,22 +120,4 @@ Request::_token( isstream_t& iss, char delim ) {
 }
 
 Request::~Request( void ) { if ( _body ) delete _body; }
-
-const Client&
-Request::client( void ) const { return _client; }
-
-const config_t& 
-Request::config( void ) const { return client().server().config().at( _configIdx ); }
-
-const request_line_t&
-Request::line( void ) const { return _line; }
-
-const request_header_t&
-Request::header( void ) const { return _header; }
-
-const char*
-Request::body( void ) const { return _body; }
-
-
-
 

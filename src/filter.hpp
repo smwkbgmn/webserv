@@ -68,10 +68,14 @@ enum headerOutID {
 	OUT_LOCATION
 };
 
-// Try default value by declaring directly
-// path_t	location = "/";
+/* STRUCT - Keys, Config/Server, Congif/Location */
+typedef struct {
+	vec_str_t			header_in;
+	vec_str_t			header_out;
+	map_uint_str_t		status;
+	map_str_type_t		mime;
+} 	keys_t;
 
-/* STRUCT - Http, Config, Keys */
 typedef std::map<methodID, bool> map_method_bool_t;
 
 typedef struct {
@@ -79,10 +83,9 @@ typedef struct {
 	vec_str_t			version;
 	vec_str_t			method;
 
-	str_t				typeDefault;
+	type_t				typeDefault;
 	
-	path_t				absolute;
-	name_t				locationCGI;
+	path_t				locationCGI;
 	name_t				fileAtidx;
 }	http_t;
 
@@ -125,18 +128,11 @@ typedef struct config_s {
 
 typedef std::vector<config_t> vec_config_t;
 
+/* STRUCT - Request & Response */
 typedef struct {
-	vec_str_t			header_in;
-	vec_str_t			header_out;
-	map_uint_str_t		status;
-	map_str_str_t		mime;
-} 	keys_t;
-
-/* STRUCT - Request */
-typedef struct {
-	methodID			method;
-	name_t				uri;
 	versionID			version;
+	methodID			method;
+	path_t				uri;
 
 }	request_line_t;
 
@@ -153,7 +149,6 @@ typedef struct request_header_s {
 	request_header_s(void);
 }	request_header_t;
 
-/* STRUCT - Response */
 typedef struct response_line_s {
 	versionID			version;
 	uint_t				status;

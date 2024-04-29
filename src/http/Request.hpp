@@ -34,7 +34,7 @@ class Request {
 		void						_parseHeader( str_t );
 		void						_add( vec_uint_t&, uint_t );
 
-		void						_parseBody( str_t );
+		void						_assignBody( const size_t&, const char* );
 
 		str_t						_token( isstream_t&, char );
 };

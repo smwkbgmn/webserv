@@ -25,18 +25,9 @@
 void
 HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
 	try {
-		File target( rqst.config().root + rqst.line().uri, R_BINARY );
-
-		// std::clog << "HTTP::GET: file is opened well with target " << rqst.config().root << rqst.line().uri << "\n";
-		// std::filebuf* pbuf = target.fs.rdbuf();
-		// size = pbuf->pubseekoff( 0, target.fs.end, target.fs.in );
-		// pbuf->pubseekpos( 0, target.fs.in );
-
-		// char *buf = new char[size];
-		// pbuf->sgetn( buf, size );
+		File target( rqst.line().uri, R_BINARY );
 		
-		// *bufptr = buf;
-		*bufptr = dupStreamBuffer( target.fs, size );
+		*bufptr = dupStreamBuf( target.fs, size );
 	} catch ( err_t& exc ) { clog( "HTTP - GET: " + str_t( exc.what() ) ); throw errstat_t( 404 ); }
 }
  
@@ -46,7 +37,7 @@ HTTP::POST( const Request& rqst, char** bufptr, size_t& size ) {
 	( void )size;
 
 	try {
-		File target( rqst.config().root + rqst.line().uri, W );
+		File target( rqst.line().uri, W );
 
 		target.fs << rqst.body();
 	} catch ( exception_t& exc ) { clog( str_t( exc.what() ) ); throw errstat_t( 400 ); }
@@ -57,7 +48,7 @@ HTTP::DELETE( const Request& rqst ) {
 	// stat_t	statbuf;
 
 	// if ( stat( rqst.line().uri.c_str(), &statbuf ) != ERROR )
-	if ( std::remove( ( rqst.config().root + rqst.line().uri ).c_str() ) == ERROR )
+	if ( std::remove( rqst.line().uri.c_str() ) == ERROR )
 		throw errstat_t( 404 );
 
 	// return FALSE;

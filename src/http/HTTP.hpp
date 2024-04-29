@@ -19,8 +19,6 @@ const path_t	fileHeaderIn	= dirKeys + "/keyHeaderIn.txt";
 const path_t	fileHeaderOut	= dirKeys + "/keyHeaderOut.txt";
 const path_t	fileListCGI		= dirKeys + "/lstCGI.txt";
 
-const path_t	fileBadRqst		= "/bad_request.html";
-
 const str_t strMethod[] = {
 	"GET",
 	"POST",
@@ -30,7 +28,7 @@ const str_t strMethod[] = {
 const str_t strVersion[] = {
 	"0.9",
 	"1.0",
-"1.1",
+	"1.1",
 	"2.0"
 };
 
@@ -53,7 +51,6 @@ class HTTP {
 		static void		_assignStatus(void);
 		static void		_assignMime(void);
 		static void		_assignVec(vec_str_t &, const str_t[], size_t);
-		static void		_assignCWD( void );
 
 		/* transaction */
 		static void		_build( const Response&, osstream_t& );
@@ -72,7 +69,11 @@ template<typename Container, typename Target>
 typename Container::iterator
 lookup( Container& obj, Target token ) { return std::find( obj.begin(), obj.end(), token ); }
 
-char* dupStreamBuffer( std::ios&, size_t& );
+template<typename Container, typename Target>
+size_t
+distance( Container& obj, Target token ) { return static_cast<size_t>( std::distance( obj.begin(), lookup( obj, token ) ) ); }
+
+char* dupStreamBuf( std::ios&, size_t& );
 
 # include "CGI.hpp"
 
