@@ -14,11 +14,14 @@ typedef unsigned int				bits_t;
 typedef std::string					str_t;
 
 /*
-	name_t: relative path, means when it be used, should combined with absolute path
+	name_t: relative path, means when use it, should be combined with absolute path
 	path_t: absolute path
+	type_t: the type of mime
 */
+
 typedef str_t						name_t;
 typedef str_t						path_t;
+typedef str_t						type_t;
 
 /* UNIX */
 #include <sys/stat.h>
@@ -42,7 +45,7 @@ typedef vec_str_t					vec_name_t;
 typedef vec_str_t::iterator			vec_str_iter_t;
 typedef std::vector<char*>			vec_cstr_t;
 
-typedef std::map<str_t, str_t>		map_str_str_t;
+typedef std::map<str_t, type_t>		map_str_type_t;
 typedef std::map<uint_t, str_t>		map_uint_str_t;
 
 /* Struct */

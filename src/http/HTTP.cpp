@@ -14,7 +14,6 @@ HTTP::init( const str_t& type, const name_t& cgi ) {
 	_assignVec( http.version, strVersion, CNT_VERSION );
 	_assignVec( http.method, strMethod, CNT_METHOD );
 
-	_assignCWD();
 	_assignHeader();
 	_assignStatus();
 	_assignMime();
@@ -68,15 +67,6 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 		target.push_back(source[idx]);
 }
 
-
-void
-HTTP::_assignCWD( void ) {
-	// char buf[1024];
-	// http.absolute.assign( getcwd( buf, 1024 ) );
-	http.absolute = ".";
-}
-
-
 /* METHOD - getLocationConf: get index of vec_config_t matching with request URI
  */
 size_t HTTP::getLocationConf( const str_t& uri, const vec_config_t& config ) {
@@ -98,7 +88,6 @@ size_t HTTP::getLocationConf( const str_t& uri, const vec_config_t& config ) {
 
 config_s::config_s( void ) {
 	location		= "/";
-	// root			= HTTP::http.absolute + "/html";
 	root			= "html";
 	file40x			= "/40x.html";
 	file50x			= "/50x.html";
@@ -128,14 +117,12 @@ response_header_s::response_header_s( void ) {
 	content_length	= 0;
 }
 
-char* dupStreamBuffer( std::ios& obj, size_t& size ) {
+char* dupStreamBuf( std::ios& obj, size_t& size ) {
 	std::streambuf* pbuf = obj.rdbuf();
 	size = pbuf->pubseekoff( 0, obj.end, obj.in );
 	pbuf->pubseekpos( 0, obj.in );
 
-	// std::clog << "dupStreamBuffer: before new char[" << size << "]\n";
 	char* buf = new char[size];
-	// std::clog << "dupStreamBuffer: before pbuf->sgetn\n";
 	pbuf->sgetn( buf, size );
 
 	return buf;

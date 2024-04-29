@@ -89,8 +89,9 @@ void Client::handleRegularRequest(int fd, std::map<int, std::stringstream> &find
     clog( "handleRegularRequest - recv start" );
     byte_read = recv(fd, buf, SIZE_BUF, 0);
   
-    clog( "handleRegularRequest - recv done read by " );
-    std::clog << byte_read << std::endl;
+    osstream_t stream;
+    stream << "handleRegularRequest - recv done read by " << byte_read;
+    clog( stream.str() );
 
     // clog( "handleRegularRequest - recv data" );
     // for ( ssize_t idx = 0; idx < byte_read; ++idx ) std::clog << msg[idx];
