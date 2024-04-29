@@ -28,7 +28,7 @@ HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
 		File target( rqst.line().uri, R_BINARY );
 		
 		*bufptr = dupStreamBuf( target.fs, size );
-	} catch ( err_t& exc ) { clog( "HTTP - GET: " + str_t( exc.what() ) ); throw errstat_t( 404 ); }
+	} catch ( err_t& exc ) { clog( "HTTP - GET:\t" + str_t( exc.what() ) ); throw errstat_t( 404 ); }
 }
  
 void

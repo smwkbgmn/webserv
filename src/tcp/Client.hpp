@@ -9,7 +9,8 @@
 
 #include <cstring>
 
-#define BuffSize 1024
+// #define BuffSize 1024
+#define BuffSize 3000
 class Server;
 
 class Client {
@@ -18,6 +19,8 @@ private:
     int client_socket;
     osstream_t oss;  
     osstream_t  response;
+
+    ssize_t  byte_read;
 
 public:
 
@@ -31,7 +34,8 @@ public:
 
     const char* buffer() const ;
     const std::string getBufferContents() const;
-    bool isRequestComplete(const std::string& request);
+    // bool isRequestComplete(const std::string& request);
+    bool isRequestComplete( const osstream_t& );
 
     const Server& getServer() const;
     const int& getSocket() const;

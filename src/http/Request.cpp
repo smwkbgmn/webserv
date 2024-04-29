@@ -10,7 +10,14 @@ const char*				Request::body( void ) const { return _body; }
 
 /* CONSTRUCT */
 Request::Request( const Client& client ): _client( client ), _body( NULL ) {
-	_parse( client.buffer() );
+	clog( "HTTP\t: constructing requeset" );
+
+	const char* buf = client.buffer();
+
+	// // LOGGING Request Message
+	// logging.fs << buf << std::endl;
+
+	_parse( buf );
 
 	// If the method is not allowed at this location config, set methodID as NOT_ALLOWED
 	if ( _line.method != UNKNOWN && !config().allow.at( _line.method ) )
@@ -35,9 +42,6 @@ Request::_parse( const char* buf ) {
 
 	if ( _header.content_length )
 		_assignBody( begin, buf );
-
-	// LOGGING Request Message
-	logging.fs << msgRqst << std::endl;
 } 
 
 void
@@ -106,6 +110,9 @@ void
 Request::_assignBody( const size_t& bodyBegin, const char* buf ) {
 	_body = new char[_header.content_length];
 	memcpy( _body, &buf[bodyBegin], _header.content_length );
+	
+	clog( "HTTP\t: the rqst body" );
+	std::clog << _body << std::endl;
 }
 
 str_t

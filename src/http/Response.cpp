@@ -70,7 +70,7 @@ Response::Response( const Client& client, const uint_t& errstat ): _body( NULL )
 void
 Response::_pageError( const uint_t& status, const config_t& config ) {
 	timestamp();
-	std::clog << "HTTP - responsing with errcode " << status << "\n";
+	std::clog << "HTTP\t: responsing with errcode " << status << "\n";
 
 	_line.status = 303;	
 

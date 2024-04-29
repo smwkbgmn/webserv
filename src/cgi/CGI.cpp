@@ -6,7 +6,7 @@ void
 CGI::proceed( const Request& rqst, osstream_t& oss ) {
 	process_t	procs;
 	fnptr_t		act = NULL;
-	
+
 	if ( *rqst.line().uri.rbegin() == '/' ) act = &_autoindex;
 	else act = &_script;
 
@@ -26,13 +26,13 @@ CGI::_detach( const Request& rqst, process_t& procs, fnptr_t execute ) {
 	if ( pipe( procs.fd ) == ERROR || ( procs.pid = fork() ) == ERROR )
 		throwSysErr( "_detach", 500 );
 	
-	if ( !procs.pid ) return execute( rqst, procs );
+	if ( !procs.pid && write( procs.fd[W], "HTTP/1.1 200 OK\r\n", 17 ) != ERROR )
+			return execute( rqst, procs );
 	else return SUCCESS;
 }
 
 stat_t
 CGI::_script( const Request& rqst, const process_t& procs ) {
-	// str_t		script_path = "html" + rqst.line().uri;
 	str_t		script_path = rqst.line().uri;
 	vec_cstr_t	argv_c;
 	vec_cstr_t	env_c;
@@ -54,6 +54,9 @@ CGI::_script( const Request& rqst, const process_t& procs ) {
 	env_c.push_back( const_cast<char*>( "CONTENT_TYPE=multipart/form-data" ) );
 	env_c.push_back( NULL );
 
+	if ( write( procs.fd[W], "Content-Type: text/html\r\n", 25 ) == ERROR )
+		return EXIT_FAILURE;
+
 	return _execve( procs, argv_c.data(), env_c.data() );
 }
 
@@ -73,6 +76,9 @@ CGI::_autoindex( const Request& rqst, const process_t& procs ) {
 	str_t	path_info = varPATH_INFO + rqst.line().uri;
 	env_c.push_back( const_cast<char*>( path_info.c_str() ) ); 
 	env_c.push_back( NULL );
+
+	if ( write( procs.fd[W], "Content-Type: text/html\r\n", 25 ) == ERROR )
+		return EXIT_FAILURE;
 	
 	return _execve( procs, argv_c.data(), env_c.data() );
 }
@@ -91,11 +97,11 @@ CGI::_redirect( const process_t& procs ) {
 
 stat_t
 CGI::_execve( const process_t& procs, char* argv[], char* env[] ) {
-	clog( "CGI - argv" );
+	clog( "CGI\t: argv" );
 	for ( size_t ptr = 0; argv[ptr]; ++ptr )
 		std::clog << argv[ptr] << "\n";
 
-	clog( "CGI - env" );
+	clog( "CGI\t: env" );
 	for ( size_t ptr = 0; env[ptr]; ++ptr )
 		std::clog << env[ptr] << "\n";
 
@@ -132,10 +138,7 @@ CGI::_read( process_t& procs, osstream_t& oss ) {
 	if ( bytes == ERROR )
 		throwSysErr( "read", 500 );
 
-	oss << "HTTP/1.1 200 OK\r\n";
-    oss << "Content-Type: text/html\r\n";
-	oss << "Content-Length: " << bytes << CRLF;
-	oss << CRLF;
+	// oss << "Content-Length: " << bytes << CRLF << CRLF;
 	oss << str_t( buf );
 
 	close( procs.fd[R] );

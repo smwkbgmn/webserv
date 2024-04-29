@@ -9,7 +9,7 @@ HTTP::init( const str_t& type, const name_t& cgi ) {
 	http.signature		= "HTTP";
 	http.typeDefault	= type;
 	http.locationCGI	= cgi;
-	http.fileAtidx		= cgi + "/autoindex_v2.cgi";
+	http.fileAtidx		= cgi + "/autoindex_v4.cgi";
 
 	_assignVec( http.version, strVersion, CNT_VERSION );
 	_assignVec( http.method, strMethod, CNT_METHOD );
