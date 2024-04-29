@@ -26,7 +26,7 @@ int main( void ) {
 
 		// Retrieve http signature and default type from config file
 		// server.listening();
-		server.connect_sever();
+		server.connectsever();
 	} catch ( err_t &err ) { clog( str_t( err.what() ) ); }
 
   return 0;
