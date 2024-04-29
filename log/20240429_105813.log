@@ -1,0 +1,630 @@
+GET /index.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+
+HTTP/1.1 200 OK
+Content-Length: 1889
+Content-Type: text/html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTTP Method Test</title>
+</head>
+<body>
+  <h1>HTTP Method Test</h1>
+  
+  <!-- GET Method -->
+  <h2>GET Method</h2>
+  <form id="getForm">
+    <button type="button" onclick="sendGET()">Send GET Request</button>
+  </form>
+  <div id="getResult"></div>
+  
+  <!-- POST Method -->
+  <h2>POST Method</h2>
+  <form id="postForm">
+    <label for="postInput">Enter Text:</label><br>
+    <input type="text" id="postInput" name="postInput"><br>
+    <button type="button" onclick="sendPOST()">Send POST Request</button>
+  </form>
+  <div id="postResult"></div>
+  
+  <!-- DELETE Method -->
+  <h2>DELETE Method</h2>
+  <form id="deleteForm">
+    <button type="button" onclick="sendDELETE()">Send DELETE Request</button>
+  </form>
+  <div id="deleteResult"></div>
+  
+  <script>
+    function sendGET() {
+      fetch('/freeboard.txt', {
+        method: 'GET'
+      })
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('getResult').innerText = data;
+      })
+      .catch(error => console.error('Error:', error));
+    }
+    
+    function sendPOST() {
+      const text = document.getElementById('postInput').value;
+      
+      fetch('/freeboard.txt', {
+        method: 'POST',
+        body: text
+      })
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('postResult').innerText = data;
+      })
+      .catch(error => console.error('Error:', error));
+    }
+    
+    function sendDELETE() {
+      fetch('/freeboard.txt', {
+        method: 'DELETE'
+      })
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('deleteResult').innerText = data;
+      })
+      .catch(error => console.error('Error:', error));
+    }
+  </script>
+</body>
+</html>
+
+GET /index.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+GET /favicon.ico HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+sec-ch-ua-platform: "macOS"
+Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: no-cors
+Sec-Fetch-Dest: image
+Referer: http://localhost:8080/index.html
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+
+HTTP/1.1 200 OK
+Content-Length: 1889
+Content-Type: text/html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTTP Method Test</title>
+</head>
+<body>
+  <h1>HTTP Method Test</h1>
+  
+  <!-- GET Method -->
+  <h2>GET Method</h2>
+  <form id="getForm">
+    <button type="button" onclick="sendGET()">Send GET Request</button>
+  </form>
+  <div id="getResult"></div>
+  
+  <!-- POST Method -->
+  <h2>POST Method</h2>
+  <form id="postForm">
+    <label for="postInput">Enter Text:</label><br>
+    <input type="text" id="postInput" name="postInput"><br>
+    <button type="button" onclick="sendPOST()">Send POST Request</button>
+  </form>
+  <div id="postResult"></div>
+  
+  <!-- DELETE Method -->
+  <h2>DELETE Method</h2>
+  <form id="deleteForm">
+    <button type="button" onclick="sendDELETE()">Send DELETE Request</button>
+  </form>
+  <div id="deleteResult"></div>
+  
+  <script>
+    function sendGET() {
+      fetch('/freeboard.txt', {
+        method: 'GET'
+      })
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('getResult').innerText = data;
+      })
+      .catch(error => console.error('Error:', error));
+    }
+    
+    function sendPOST() {
+      const text = document.getElementById('postInput').value;
+      
+      fetch('/freeboard.txt', {
+        method: 'POST',
+        body: text
+      })
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('postResult').innerText = data;
+      })
+      .catch(error => console.error('Error:', error));
+    }
+    
+    function sendDELETE() {
+      fetch('/freeboard.txt', {
+        method: 'DELETE'
+      })
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('deleteResult').innerText = data;
+      })
+      .catch(error => console.error('Error:', error));
+    }
+  </script>
+</body>
+</html>HTTP/1.1 200 OK
+Content-Length: 1889
+Content-Type: text/html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTTP Method Test</title>
+</head>
+<body>
+  <h1>HTTP Method Test</h1>
+  
+  <!-- GET Method -->
+  <h2>GET Method</h2>
+  <form id="getForm">
+    <button type="button" onclick="sendGET()">Send GET Request</button>
+  </form>
+  <div id="getResult"></div>
+  
+  <!-- POST Method -->
+  <h2>POST Method</h2>
+  <form id="postForm">
+    <label for="postInput">Enter Text:</label><br>
+    <input type="text" id="postInput" name="postInput"><br>
+    <button type="button" onclick="sendPOST()">Send POST Request</button>
+  </form>
+  <div id="postResult"></div>
+  
+  <!-- DELETE Method -->
+  <h2>DELETE Method</h2>
+  <form id="deleteForm">
+    <button type="button" onclick="sendDELETE()">Send DELETE Request</button>
+  </form>
+  <div id="deleteResult"></div>
+  
+  <script>
+    function sendGET() {
+      fetch('/freeboard.txt', {
+        method: 'GET'
+      })
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('getResult').innerText = data;
+      })
+      .catch(error => console.error('Error:', error));
+    }
+    
+    function sendPOST() {
+      const text = document.getElementById('postInput').value;
+      
+      fetch('/freeboard.txt', {
+        method: 'POST',
+        body: text
+      })
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('postResult').innerText = data;
+      })
+      .catch(error => console.error('Error:', error));
+    }
+    
+    function sendDELETE() {
+      fetch('/freeboard.txt', {
+        method: 'DELETE'
+      })
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('deleteResult').innerText = data;
+      })
+      .catch(error => console.error('Error:', error));
+    }
+  </script>
+</body>
+</html>
+
+GET / HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 815
+
+<html><head><title>Autoindex</title></head><body><h1>Index of html/</h1><ul><li><a href="/40x.html/">40x.html</a></li><li><a href="/50x.html/">50x.html</a></li><li><a href="/bad_request.html/">bad_request.html</a></li><li><a href="/cgi-bin/">cgi-bin</a></li><li><a href="/chunked.html/">chunked.html</a></li><li><a href="/favicon.ico/">favicon.ico</a></li><li><a href="/form_get.html/">form_get.html</a></li><li><a href="/form_post.html/">form_post.html</a></li><li><a href="/freeboard.txt/">freeboard.txt</a></li><li><a href="/index.html/">index.html</a></li><li><a href="/post_request.txt/">post_request.txt</a></li><li><a href="/temp/">temp</a></li><li><a href="/upload/">upload</a></li><li><a href="/upload.html/">upload.html</a></li><li><a href="/upload_copy.html/">upload_copy.html</a></li></ul></body></html>
+
+GET / HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+GET /favicon.ico HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+sec-ch-ua-platform: "macOS"
+Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: no-cors
+Sec-Fetch-Dest: image
+Referer: http://localhost:8080/
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 815
+
+<html><head><title>Autoindex</title></head><body><h1>Index of html/</h1><ul><li><a href="/40x.html/">40x.html</a></li><li><a href="/50x.html/">50x.html</a></li><li><a href="/bad_request.html/">bad_request.html</a></li><li><a href="/cgi-bin/">cgi-bin</a></li><li><a href="/chunked.html/">chunked.html</a></li><li><a href="/favicon.ico/">favicon.ico</a></li><li><a href="/form_get.html/">form_get.html</a></li><li><a href="/form_post.html/">form_post.html</a></li><li><a href="/freeboard.txt/">freeboard.txt</a></li><li><a href="/index.html/">index.html</a></li><li><a href="/post_request.txt/">post_request.txt</a></li><li><a href="/temp/">temp</a></li><li><a href="/upload/">upload</a></li><li><a href="/upload.html/">upload.html</a></li><li><a href="/upload_copy.html/">upload_copy.html</a></li></ul></body></html>HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 815
+
+<html><head><title>Autoindex</title></head><body><h1>Index of html/</h1><ul><li><a href="/40x.html/">40x.html</a></li><li><a href="/50x.html/">50x.html</a></li><li><a href="/bad_request.html/">bad_request.html</a></li><li><a href="/cgi-bin/">cgi-bin</a></li><li><a href="/chunked.html/">chunked.html</a></li><li><a href="/favicon.ico/">favicon.ico</a></li><li><a href="/form_get.html/">form_get.html</a></li><li><a href="/form_post.html/">form_post.html</a></li><li><a href="/freeboard.txt/">freeboard.txt</a></li><li><a href="/index.html/">index.html</a></li><li><a href="/post_request.txt/">post_request.txt</a></li><li><a href="/temp/">temp</a></li><li><a href="/upload/">upload</a></li><li><a href="/upload.html/">upload.html</a></li><li><a href="/upload_copy.html/">upload_copy.html</a></li></ul></body></html>
+
+GET /cgi-bin/ HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Referer: http://localhost:8080/
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 527
+
+<html><head><title>Autoindex</title></head><body><h1>Index of html/cgi-bin/</h1><ul><li><a href="/autoindex_v1.cgi/">autoindex_v1.cgi</a></li><li><a href="/autoindex_v2.cgi/">autoindex_v2.cgi</a></li><li><a href="/autoindex_v3.cgi/">autoindex_v3.cgi</a></li><li><a href="/cgi_get.py/">cgi_get.py</a></li><li><a href="/cgi_post.py/">cgi_post.py</a></li><li><a href="/indexing.perl/">indexing.perl</a></li><li><a href="/upload.cgi/">upload.cgi</a></li><li><a href="/upload_copy2.cgi/">upload_copy2.cgi</a></li></ul></body></html>
+
+GET /cgi-bin/ HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Referer: http://localhost:8080/
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+GET /favicon.ico HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+sec-ch-ua-platform: "macOS"
+Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: no-cors
+Sec-Fetch-Dest: image
+Referer: http://localhost:8080/cgi-bin/
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 527
+
+<html><head><title>Autoindex</title></head><body><h1>Index of html/cgi-bin/</h1><ul><li><a href="/autoindex_v1.cgi/">autoindex_v1.cgi</a></li><li><a href="/autoindex_v2.cgi/">autoindex_v2.cgi</a></li><li><a href="/autoindex_v3.cgi/">autoindex_v3.cgi</a></li><li><a href="/cgi_get.py/">cgi_get.py</a></li><li><a href="/cgi_post.py/">cgi_post.py</a></li><li><a href="/indexing.perl/">indexing.perl</a></li><li><a href="/upload.cgi/">upload.cgi</a></li><li><a href="/upload_copy2.cgi/">upload_copy2.cgi</a></li></ul></body></html>HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 527
+
+<html><head><title>Autoindex</title></head><body><h1>Index of html/cgi-bin/</h1><ul><li><a href="/autoindex_v1.cgi/">autoindex_v1.cgi</a></li><li><a href="/autoindex_v2.cgi/">autoindex_v2.cgi</a></li><li><a href="/autoindex_v3.cgi/">autoindex_v3.cgi</a></li><li><a href="/cgi_get.py/">cgi_get.py</a></li><li><a href="/cgi_post.py/">cgi_post.py</a></li><li><a href="/indexing.perl/">indexing.perl</a></li><li><a href="/upload.cgi/">upload.cgi</a></li><li><a href="/upload_copy2.cgi/">upload_copy2.cgi</a></li></ul></body></html>
+
+GET /123 HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+
+HTTP/1.1 303 See Other
+Location: http://localhost:8080/40x.html
+
+
+
+GET /40x.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+
+HTTP/1.1 200 OK
+Content-Length: 39
+Content-Type: text/html
+
+40x something has gone wrong at request
+
+GET /40x.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+GET /favicon.ico HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+sec-ch-ua-platform: "macOS"
+Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: no-cors
+Sec-Fetch-Dest: image
+Referer: http://localhost:8080/40x.html
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+
+HTTP/1.1 200 OK
+Content-Length: 39
+Content-Type: text/html
+
+40x something has gone wrong at requestHTTP/1.1 200 OK
+Content-Length: 39
+Content-Type: text/html
+
+40x something has gone wrong at request
+
+GET /upload.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+
+HTTP/1.1 200 OK
+Content-Length: 360
+Content-Type: text/html
+
+<HTML>
+    <HEAD></HEAD>
+    <BODY>
+    <FORM ACTION="cgi-bin/upload.cgi" METHOD="post" ENCTYPE="multipart/form-data">
+    Photo to Upload: <INPUT TYPE="file" NAME="photo">
+    <br><br>
+    Your Email Address: <INPUT TYPE="text" NAME="email_address">
+    <br><br>
+    <INPUT TYPE="submit" NAME="Submit" VALUE="Submit Form">
+    </FORM>
+    </BODY>
+  </HTML>
+  
+
+GET /upload.html HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+GET /favicon.ico HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+sec-ch-ua: "Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"
+sec-ch-ua-mobile: ?0
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36
+sec-ch-ua-platform: "macOS"
+Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: no-cors
+Sec-Fetch-Dest: image
+Referer: http://localhost:8080/upload.html
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ko-KR,ko;q=0.9
+
+
+HTTP/1.1 200 OK
+Content-Length: 360
+Content-Type: text/html
+
+<HTML>
+    <HEAD></HEAD>
+    <BODY>
+    <FORM ACTION="cgi-bin/upload.cgi" METHOD="post" ENCTYPE="multipart/form-data">
+    Photo to Upload: <INPUT TYPE="file" NAME="photo">
+    <br><br>
+    Your Email Address: <INPUT TYPE="text" NAME="email_address">
+    <br><br>
+    <INPUT TYPE="submit" NAME="Submit" VALUE="Submit Form">
+    </FORM>
+    </BODY>
+  </HTML>
+  HTTP/1.1 200 OK
+Content-Length: 360
+Content-Type: text/html
+
+<HTML>
+    <HEAD></HEAD>
+    <BODY>
+    <FORM ACTION="cgi-bin/upload.cgi" METHOD="post" ENCTYPE="multipart/form-data">
+    Photo to Upload: <INPUT TYPE="file" NAME="photo">
+    <br><br>
+    Your Email Address: <INPUT TYPE="text" NAME="email_address">
+    <br><br>
+    <INPUT TYPE="submit" NAME="Submit" VALUE="Submit Form">
+    </FORM>
+    </BODY>
+  </HTML>
+  
+

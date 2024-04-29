@@ -32,7 +32,7 @@ int main( void ) {
 		Server server;
 
 		// server.listening();
-		server.connect_sever();
+		server.connectsever();
 	} catch ( err_t &err ) { clog( str_t( err.what() ) ); }
 
   return 0;
