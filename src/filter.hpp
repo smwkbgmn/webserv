@@ -1,7 +1,7 @@
 #ifndef FILTER_HPP
-#define FILTER_HPP
+# define FILTER_HPP
 
-#include "structure.hpp"
+# include "structure.hpp"
 
 /*
         token	= 1*tchar
@@ -21,16 +21,20 @@
    https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 */
 
-#define NONE	0
-#define FALSE	0
-#define TRUE	1
+# define NONE	0
 
-#define LF		'\n'
-#define CR		'\r'
-#define CRLF	"\r\n"
-#define SP		' '
+# define CR		'\r'
+# define LF		'\n'
+# define CRLF	"\r\n"
+# define SP		' '
 
-/* IDs */
+/* ENUM */
+enum cgi_mode_e {
+	EXECUTABLE,
+	SCRIPT,
+	AUTOINDEX
+};
+
 enum methodID {
 	GET,
 	POST,
@@ -68,7 +72,7 @@ enum headerOutID {
 	OUT_LOCATION
 };
 
-/* STRUCT - Keys, Config/Server, Congif/Location */
+/* STRUCT - Keys, Config (Server, Location) */
 typedef struct {
 	vec_str_t			header_in;
 	vec_str_t			header_out;

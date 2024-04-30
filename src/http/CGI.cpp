@@ -1,16 +1,23 @@
 #include "CGI.hpp"
 
-// autoindexing (GET/.php), RPN calculator (POST/.exe), sorting (POST/.cpp)
+/*
+	.cgi, .exe and files in configured cgi-bin directory
+	-> execute directly
+
+	other else .perl, .php, .py.. so on
+	-> /usr/bin/perl..
+*/
 
 void
-CGI::proceed( const Request& rqst, osstream_t& oss ) {
-	process_t	procs;
-	fnptr_t		act = NULL;
+CGI::init( void ) {
+	_bin.insert( std::make_pair<str_t, path_t>( ".php", "/usr/bin/php" ) );
+	_bin.insert( std::make_pair<str_t, path_t>( ".perl", "/usr/bin/perl" ) );
+	_bin.insert( std::make_pair<str_t, path_t>( ".py", "/usr/bin/python" ) );
+}
 
-	if ( *rqst.line().uri.rbegin() == '/' ) act = &_autoindex;
-	else act = &_script;
-
-	if ( _detach( rqst, procs, act ) == SUCCESS ) {
+void
+CGI::proceed( const Request& rqst, process_t& procs, osstream_t& oss ) {
+	if ( _detach( rqst, oss, procs ) == SUCCESS ) {
 		_write( procs, rqst );
 		_wait( procs );
 		_read( procs, oss );
@@ -18,24 +25,28 @@ CGI::proceed( const Request& rqst, osstream_t& oss ) {
 		if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
 			throw errstat_t( 500, "the CGI fail to exit as SUCCESS" );
 	}
-	else throwSysErr( "execve", 500 );
+	else throwSysErr( "_detach", 500 );
 }
 
 stat_t
-CGI::_detach( const Request& rqst, process_t& procs, fnptr_t execute ) {
-	if ( pipe( procs.fd ) == ERROR || ( procs.pid = fork() ) == ERROR )
-		throwSysErr( "_detach", 500 );
+CGI::_detach( const Request& rqst, osstream_t& oss, process_t& procs ) {
+	if ( pipe( procs.fd ) != ERROR || ( procs.pid = fork() ) != ERROR )
+		return EXIT_FAILURE;
 	
-	if ( !procs.pid && write( procs.fd[W], "HTTP/1.1 200 OK\r\n", 17 ) != ERROR )
-			return execute( rqst, procs );
-	else return SUCCESS;
+	if ( !procs.pid ) {
+		if ( write( procs.fd[W], "HTTP/1.1 200 OK\r\n", 17 ) == ERROR ) return EXIT_FAILURE;
+		return procs.act( rqst, procs );
+	}
+	return SUCCESS;
 }
 
 stat_t
-CGI::_script( const Request& rqst, const process_t& procs ) {
+CGI::_script( const Request& rqst, process_t& procs ) {
 	str_t		script_path = rqst.line().uri;
 	vec_cstr_t	argv_c;
 	vec_cstr_t	env_c;
+
+	assignEnv( rqst, procs.env );
 
 	argv_c.push_back( const_cast<char*>( script_path.c_str() ) );
 	argv_c.push_back( NULL );
@@ -61,7 +72,12 @@ CGI::_script( const Request& rqst, const process_t& procs ) {
 }
 
 stat_t
-CGI::_autoindex( const Request& rqst, const process_t& procs ) {
+CGI::_execute( const Request& rqst, process_t& procs ) {
+
+}
+
+stat_t
+CGI::_autoindex( const Request& rqst, process_t& procs ) {
 	vec_str_t	argv;
 	vec_cstr_t	argv_c;
 	vec_cstr_t	env_c;
@@ -73,7 +89,7 @@ CGI::_autoindex( const Request& rqst, const process_t& procs ) {
 		argv_c.push_back( const_cast<char*>( iter->c_str() ) );
 	argv_c.push_back( NULL );
 
-	str_t	path_info = varPATH_INFO + rqst.line().uri;
+	str_t	path_info = "PATH_INFO=" + rqst.line().uri;
 	env_c.push_back( const_cast<char*>( path_info.c_str() ) ); 
 	env_c.push_back( NULL );
 
@@ -113,10 +129,9 @@ CGI::_execve( const process_t& procs, char* argv[], char* env[] ) {
 
 void
 CGI::_write( const process_t& procs, const Request& rqst ) {
-	if ( rqst.line().method == POST ) {
-		if ( write( procs.fd[W], rqst.body(), rqst.header().content_length ) == ERROR)
+	if ( rqst.line().method == POST &&
+		write( procs.fd[W], rqst.body(), rqst.header().content_length ) == ERROR ) 
 			throwSysErr( "write", 500 );
-	}
 	close( procs.fd[W] );
 }
 
@@ -126,7 +141,7 @@ CGI::_wait( process_t& procs ) {
 	if ( waitpid( procs.pid, &procs.stat, NONE ) == ERROR )
 		throwSysErr( "wait", 500 );
 }
- 
+
 void
 CGI::_read( process_t& procs, osstream_t& oss ) {
 	char	buf[1500]	= { NONE };
@@ -146,9 +161,21 @@ CGI::_read( process_t& procs, osstream_t& oss ) {
 	close( procs.fd[R] );
 }
 
-process_s::process_s( void ) {
+/* METHOD - assignEnv: build ENVs for CGI script */
+void
+CGI::assignEnv( const Request& rqst, vec_cstr_t& env ) {
+	
+}
+
+/* STRUCT */
+process_s::process_s( void ) { reset();	}
+
+void
+process_s::reset( void ) {
+	act		= EXECUTABLE;
+
 	pid		= NONE;
-	fd[R]	= NONE;
-	fd[W]	= NONE;
 	stat	= NONE;
+	fd[R]	= NONE;
+	fd[W]	= NONE;	
 }

@@ -72,9 +72,9 @@ void
 Request::_assignURI( str_t token ) { 
 	_configIdx	= HTTP::getLocationConf( _line.uri, _client.getServer().config() );
 	if ( config().location.length() == 1 )
-		_line.uri	= token.replace( 0, config().location.length(), config().root + "/" );
+		_line.uri = token.replace( 0, config().location.length(), config().root + "/" );
 	else
-		_line.uri	= token.replace( 0, config().location.length(), config().root );
+		_line.uri = token.replace( 0, config().location.length(), config().root );
 }
 
 void
@@ -99,17 +99,17 @@ Request::_parseHeader( str_t field ) {
 	header = _token( iss, ':' );
 	iss >> std::ws;
 
-	switch ( distance( HTTP::key.header_in, header ) ) {
-		case IN_HOST		: iss >> _header.host; _add( _header.list, IN_HOST ); break;
-		case IN_CONNECTION	: _header.connection = KEEP_ALIVE; _add( _header.list, IN_CONNECTION ); break;
+	switch ( _add( _header.list, distance( HTTP::key.header_in, header ) ) ) {
+		case IN_HOST		: iss >> _header.host; break;
+		case IN_CONNECTION	: _header.connection = KEEP_ALIVE; break;
 		case IN_CHUNK		: break;
-		case IN_CONTENT_LEN	: iss >> _header.content_length; _add( _header.list, IN_CONTENT_LEN ); break;
+		case IN_CONTENT_LEN	: iss >> _header.content_length; break;
 		case IN_CONTENT_TYPE: break;
 	}
 }
 
-void
-Request::_add( vec_uint_t& list, uint_t id ) { list.push_back( id ); }
+ssize_t
+Request::_add( vec_uint_t& list, ssize_t id ) { if ( id != -1 ) list.push_back( id ); return id; }
 
 void
 Request::_assignBody( const size_t& bodyBegin, const char* buf ) {

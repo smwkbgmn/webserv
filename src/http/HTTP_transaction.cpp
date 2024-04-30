@@ -50,15 +50,15 @@
 
 /* METHOD - transaction: send response message */
 void
-HTTP::transaction( const Client& client, osstream_t& oss ) {
+HTTP::transaction( const Client& client, process_t& procs, osstream_t& oss ) {
 	try {
 		Request	rqst( client );
 		
-		if ( _invokeCGI( rqst ) ) CGI::proceed( rqst, oss );
+		if ( _invokeCGI( rqst, procs ) ) CGI::proceed( rqst, procs, oss );
 		else _build( Response( rqst ), oss );
 	}
 	// Replace the action of error case with building of response for redirection to error page
-	catch ( errstat_t& exc ) { clog( "HTTP\t: transaction: " + str_t( exc.what() ) ); _build( Response( client, exc.code ), oss ); }
+	catch ( errstat_t& exc ) { clog( "HTTP\t: transaction: " + str_t( exc.what() ) ); oss.str( "" ); _build( Response( client, exc.code ), oss ); }
 	catch ( err_t& exc ) { clog( "HTTP\t: Request: " + str_t( exc.what() ) ); _build( Response( client, 400 ), oss ); }
 
 	// // LOGGING Response Message
@@ -67,17 +67,16 @@ HTTP::transaction( const Client& client, osstream_t& oss ) {
 
 
 bool
-HTTP::_invokeCGI( const Request& rqst ) {
+HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {
 	size_t	dot = rqst.line().uri.rfind( "." );
 	str_t	ext;
 
-	if ( dot != str_t::npos ) 
+	if ( dot != str_t::npos )
 		ext = rqst.line().uri.substr( dot );
 
-	return ext == ".cgi" || *rqst.line().uri.rbegin() == '/';
-	// return rqst.config().location == HTTP::http.locationCGI ||
-	// 	*rqst.line().uri.rbegin() == '/';
-		// rqst.line().uri.substr( rqst.line().uri.rfind( '.' ) ) == ".exe";
+	if ( ext == "")
+
+	// return ext == ".cgi" || *rqst.line().uri.rbegin() == '/';
 }
 
 

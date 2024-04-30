@@ -1,8 +1,11 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#include "utill.hpp"
+
 #include "ASocket.hpp"
 #include "Server.hpp"
+
 #include <sstream>
 #include <map>
 #include <string>
@@ -19,12 +22,14 @@ private:
     int			client_socket;
 
     // osstream_t	oss;  
-	std::stringstream	oss;  
+	sstream_t	oss;  
     osstream_t	response;
 
-    bool		header_done;
+    bool		msg;
     ssize_t		body_size;
     ssize_t		body_read;
+
+    process_t   subprocs;
 
 public:
 
@@ -39,8 +44,8 @@ public:
     const char* buffer() const;
     const std::string getBufferContents() const;
     // bool isRequestComplete(const std::string& request);
-    bool    isHeaderDone( const char*, ssize_t& );
-    bool isRequestComplete( const char*, const size_t& );
+    bool isMsgDone( const char*, ssize_t& );
+    bool isBodyDone( const size_t& );
 
     const Server& getServer() const;
     const int& getSocket() const;

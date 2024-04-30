@@ -61,21 +61,9 @@ class HTTP {
 		static void		_buildBody( const Response&, osstream_t& );
 
 		/* method */
-		static bool		_invokeCGI( const Request& );
+		static bool		_invokeCGI( const Request&, process_t& );
 
 };
-
-template<typename Container, typename Target>
-typename Container::iterator
-lookup( Container& obj, Target token ) { return std::find( obj.begin(), obj.end(), token ); }
-
-template<typename Container, typename Target>
-size_t
-distance( Container& obj, Target token ) { return static_cast<size_t>( std::distance( obj.begin(), lookup( obj, token ) ) ); }
-
-char* dupStreamBuf( std::ios&, size_t& );
-const char* dupStreamBuf( const std::ios&, size_t& );
-char* dupStreamBuf( const osstream_t& );
 
 # include "CGI.hpp"
 

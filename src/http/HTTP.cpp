@@ -17,6 +17,8 @@ HTTP::init( const str_t& type, const name_t& cgi ) {
 	_assignHeader();
 	_assignStatus();
 	_assignMime();
+
+	CGI::init();
 }
 
 void
@@ -67,8 +69,7 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 		target.push_back(source[idx]);
 }
 
-/* METHOD - getLocationConf: get index of vec_config_t matching with request URI
- */
+/* METHOD - getLocationConf: get index of vec_config_t matching with request URI */
 size_t HTTP::getLocationConf( const str_t& uri, const vec_config_t& config ) {
 	if ( config.size() > 1 ) {
 		vec_config_t::const_iterator	iter	= config.begin();
@@ -84,8 +85,7 @@ size_t HTTP::getLocationConf( const str_t& uri, const vec_config_t& config ) {
 	return 0;
 }
 
-/* FILTER INIT */
-
+/* STRUCT */
 config_s::config_s( void ) {
 	location		= "/";
 	root			= "html";
@@ -115,44 +115,4 @@ response_header_s::response_header_s( void ) {
 	connection		= KEEP_ALIVE;
 	chunked			= FALSE;
 	content_length	= 0;
-}
-
-char*
-dupStreamBuf( std::ios& obj, size_t& size ) {
-	std::streambuf* pbuf = obj.rdbuf();
-	size = pbuf->pubseekoff( 0, obj.end, obj.in );
-	pbuf->pubseekpos( 0, obj.in );
-
-	char* buf = new char[size];
-	pbuf->sgetn( buf, size );
-
-	return buf;
-}
-
-const char*
-dupStreamBuf( const std::ios& obj, size_t& size ) {
-	std::streambuf* pbuf = obj.rdbuf();
-	size = pbuf->pubseekoff( 0, obj.end, obj.in );
-	pbuf->pubseekpos( 0, obj.in );
-
-	char* buf = new char[size];
-	pbuf->sgetn( buf, size );
-
-	return buf;
-}
-
-char*
-dupStreamBuf( const osstream_t& obj ) {
-    std::streambuf* pbuf = obj.rdbuf();
-
-	std::string	data;
-
-	char buf[100];
-	std::streamsize	read;
-	while ( ( read = pbuf->sgetn( buf, 100 ) ) > 0 )
-		data.append( buf, read );
-
-	char* newbuf = new char[data.size()];
-	memcpy( newbuf, data.data(), data.size() );
-	return newbuf;
 }
