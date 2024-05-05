@@ -81,11 +81,11 @@ CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
 			case GATEWAY_INTERFACE	: break;
 			case REQUEST_METHOD		: oss << strMethod[rqst.line().method]; break;
 			case SCRIPT_NAME		: oss << rqst.line().uri.substr( rqst.line().uri.rfind( '/' ) + 1 ); break;
-			case CONTENT_LENGTH		: if ( rqst.line().method == POST ) oss << rqst.header().content_length; break;
-			case CONTENT_TYPE		: if ( rqst.line().method == POST ) oss << rqst.header().content_type; break;
+			case CONTENT_LENGTH		: oss << rqst.header().content_length; break;
+			case CONTENT_TYPE		: oss << rqst.header().content_type; break;
 			case PATH_INFO			: oss << rqst.line().uri.substr( rqst.config().root.length() + 1 ); break;
 			case PATH_TRANSLATED	: oss << rqst.line().uri; break;
-			case QUERY_STRING		: break;
+			case QUERY_STRING		: oss << rqst.line().query; break;
 		}
 		procs.env.push_back( oss.str() );
 		return TRUE;
@@ -98,8 +98,7 @@ bool
 CGI::_redirect( const process_t& procs ) {
 	if ( dup2( procs.fd[R], STDIN_FILENO ) == ERROR ||
 		dup2( procs.fd[W], STDOUT_FILENO ) == ERROR ||
-		close( procs.fd[R] ) == ERROR ||
-		close( procs.fd[W] ) == ERROR )
+		close( procs.fd[R] ) == ERROR || close( procs.fd[W] ) == ERROR )
 		return FALSE;
 	return TRUE;	
 }

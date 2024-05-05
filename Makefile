@@ -13,7 +13,8 @@ $(wildcard src/http/*.cpp) \
 $(wildcard src/tcp/*.cpp)
 
 # OBJ			= $(SRC:.cpp=.o)
-OBJ			= $(patsubst src/%.cpp, obj/%.o,$(SRC))
+# OBJ			= $(patsubst src/%.cpp, obj/%.o,$(SRC))
+OBJ         = $(patsubst src/%.cpp, obj/%.o, $(SRC))
 
 all			: $(NAME)
 

@@ -14,9 +14,6 @@ Request::Request( const Client& client ): _client( client ), _body( NULL ) {
 
 	const char* buf = client.buffer();
 
-	// // LOGGING Request Message
-	// logging.fs << buf << std::endl;
-
 	_parse( buf );
 
 	// If the method is not allowed at this location config, set method_e as NOT_ALLOWED
@@ -75,6 +72,13 @@ Request::_assignURI( str_t token ) {
 		_line.uri = token.replace( 0, config().location.length(), config().root + "/" );
 	else
 		_line.uri = token.replace( 0, config().location.length(), config().root );
+
+	size_t	pos_query = _line.uri.find( '?' );
+	std::clog << "pos_query: " << pos_query << std::endl;
+	if ( pos_query != str_t::npos ) {
+		_line.query = _line.uri.substr( pos_query );
+		_line.uri.erase( pos_query );
+	}
 }
 
 void

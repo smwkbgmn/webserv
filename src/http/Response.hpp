@@ -19,7 +19,7 @@ class Response {
 		response_header_t			_header;
 		char*						_body;
 
-		void						_pageError( const uint_t&, const config_t& );
+		void						_redirect( const uint_t&, const config_t& );
 		void						_mime( const str_t&, str_t&, const str_t& );
 };
 

@@ -20,7 +20,7 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 				_mime( rqst.line().uri, _header.content_type, HTTP::http.typeDefault );
 				_header.list.push_back( OUT_CONTENT_LEN );
 				_header.list.push_back( OUT_CONTENT_TYPE );
-			} catch ( errstat_t& errstat ) { _pageError( errstat.code, rqst.config() ); }
+			} catch ( errstat_t& errstat ) { _redirect( errstat.code, rqst.config() ); }
 			break;
 
 		case POST:
@@ -29,23 +29,23 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 			try {
 				HTTP::POST( rqst, &_body, _header.content_length );
 				_line.status = 204;
-			} catch ( errstat_t& errstat ) { _pageError( errstat.code, rqst.config() ); }
+			} catch ( errstat_t& errstat ) { _redirect( errstat.code, rqst.config() ); }
 			break;
 
 		case DELETE:
 			try {
 				HTTP::DELETE( rqst );
 				_line.status = 204;
-			} catch ( errstat_t& errstat ) { _pageError( errstat.code, rqst.config() ); }
+			} catch ( errstat_t& errstat ) { _redirect( errstat.code, rqst.config() ); }
  			break;
 
 		case NOT_ALLOWED:
-			_pageError( 405, rqst.config() );
+			_redirect( 405, rqst.config() );
 			break;
 			  
 
 		default:
-			_pageError( 400, rqst.config() );
+			_redirect( 400, rqst.config() );
 	}
 }
 
@@ -64,20 +64,23 @@ Response::_mime( const str_t& uri, str_t& typeHeader, const str_t& typeUnrecog )
 Response::Response( const Client& client, const uint_t& errstat ): _body( NULL ) { 
 	const config_t&	config = client.getServer().config().at( 0 );
 
-	_pageError( errstat, config );
+	_redirect( errstat, config );
 }
 
 void
-Response::_pageError( const uint_t& status, const config_t& config ) {
+Response::_redirect( const uint_t& status, const config_t& config ) {
 	timestamp();
 	std::clog << "HTTP\t: responsing with errcode " << status << "\n";
 
 	_line.status = 303;	
 
+	osstream_t query;
+	query << "?status_code=" << status;
+
 	if ( status < 500 )
-		_header.location = "http://localhost:8080" + config.file40x;
+		_header.location = "http://localhost:8080" + config.file40x + query.str();
 	else
-		_header.location = config.file50x;
+		_header.location = "http://localhost:8080" + config.file50x + query.str();
 
 	_header.list.push_back( OUT_LOCATION );
 }

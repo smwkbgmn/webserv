@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/php
+#!/usr/bin/php
 <?php
 
 // Get the path information from PATH_INFO

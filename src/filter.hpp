@@ -148,6 +148,7 @@ typedef struct {
 	version_e			version;
 	method_e			method;
 	path_t				uri;
+	str_t				query;
 
 }	request_line_t;
 
