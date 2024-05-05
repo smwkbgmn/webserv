@@ -57,12 +57,10 @@ HTTP::transaction( const Client& client, process_t& procs, osstream_t& oss ) {
 		if ( _invokeCGI( rqst, procs ) ) CGI::proceed( rqst, procs, oss );
 		else _build( Response( rqst ), oss );
 	}
+
 	// Replace the action of error case with building of response for redirection to error page
 	catch ( errstat_t& exc ) { clog( "HTTP\t: transaction: " + str_t( exc.what() ) ); oss.str( "" ); _build( Response( client, exc.code ), oss ); }
 	catch ( err_t& exc ) { clog( "HTTP\t: Request: " + str_t( exc.what() ) ); _build( Response( client, 400 ), oss ); }
-
-	// // LOGGING Response Message
-	// logging.fs << oss.str() << "\n" << std::endl;
 }
 
 
@@ -74,13 +72,17 @@ HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {
 	if ( dot != str_t::npos )
 		ext = rqst.line().uri.substr( dot );
 
-	if ( *rqst.line().uri.rbegin() == '/' ) procs.act = AUTOINDEX;
-	else if ( !ext.empty() && ext != ".cgi" && ext != ".ext" )  {
-		try { procs.argv.push_back( const_cast<char*>( CGI::script_bin.at( ext ).c_str() ) ); }
+	if ( *rqst.line().uri.rbegin() == '/' )
+		procs.argv.push_back( HTTP::http.fileAtidx );
+	else if ( ext.empty() || ext == ".cgi" || ext == ".ext" )
+		procs.argv.push_back( rqst.line().uri );
+	else  {
+		try { procs.argv.push_back( CGI::script_bin.at( ext ) ); }
 		catch( exception_t& exc ) { return FALSE; }
 	}
-	return TRUE;}
-
+	
+	return TRUE;
+}
 
 void
 HTTP::_build( const Response& rspn, osstream_t& oss ) {

@@ -26,7 +26,7 @@ typedef str_t						name_t;
 typedef str_t						path_t;
 typedef str_t						type_t;
 
-/* UNIX */
+/* POSIX */
 # include <sys/stat.h>
 
 typedef struct stat					fstat_t;
@@ -52,6 +52,22 @@ typedef std::vector<char*>			vec_cstr_t;
 typedef std::map<uint_t, str_t>		map_uint_str_t;
 typedef std::map<str_t, type_t>		map_str_type_t;
 typedef std::map<str_t, path_t>		map_str_path_t;
+
+/* STRUCT */
+typedef struct process_s {
+	process_s( void );
+
+	void		reset( void );
+
+	pid_t		pid;
+	stat_t		stat;
+	pipe_t		fd[2];
+
+	vec_str_t	argv;
+	vec_str_t	env;
+
+}	process_t;
+
 
 # include "File.hpp"
 

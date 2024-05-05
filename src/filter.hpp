@@ -29,13 +29,6 @@
 # define SP		' '
 
 /* ENUM */
-enum cgi_mode_e {
-	// NO_CGI,
-	EXECUTABLE,
-	SCRIPT,
-	AUTOINDEX
-};
-
 enum cgi_env_e {
 	SERVER_NAME,
 	SERVER_PORT,
@@ -149,21 +142,6 @@ typedef struct config_s {
 }	config_t;
 
 typedef std::vector<config_t> vec_config_t;
-
-typedef struct process_s {
-	cgi_mode_e			act;
-
-	pid_t				pid;
-	stat_t				stat;
-	pipe_t				fd[2];
-
-	vec_cstr_t			argv;
-	vec_cstr_t			env;
-	
-	process_s( void );
-
-	void				reset( void );
-}	process_t;
 
 /* STRUCT - Request & Response */
 typedef struct {

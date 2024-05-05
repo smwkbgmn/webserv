@@ -24,8 +24,9 @@ class CGI {
 		static void				_assignEnvironList( void );
 
 		static stat_t			_detach( const Request&, process_t& );
-		static void				_buildEnviron( const Request&, vec_cstr_t& );
-		static bool				_buildEnvironVar( const Request&, vec_cstr_t&, uint_t idx );
+		static void				_buildEnviron( const Request&, process_t& );
+		static bool				_buildEnvironVar( const Request&, process_t&, uint_t idx );
+		
 		/* PARENT */
 		static void				_write( const process_t&, const Request& );
 		static void				_wait( process_t& );
@@ -35,8 +36,6 @@ class CGI {
 		static bool				_redirect( const process_t& );
 		static stat_t			_execve( const process_t& );
 
-		static stat_t			_execute( const Request&, process_t& );
-		static stat_t			_autoindex( process_t& );
 		
 };
 

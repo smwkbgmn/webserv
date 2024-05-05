@@ -84,7 +84,7 @@ bool Client::sendData()
         const char* buffer = data.c_str();  
         size_t length = data.size(); 
 
-        clog( "TCP\t: sending" );
+        clog( "TCP\t: sending\n" );
         // std::clog << response.str() << std::endl;
         logging.fs << response.str() << "\n" << std::endl;
 

@@ -1,4 +1,4 @@
-#!/usr/bin/php
+#!/opt/homebrew/bin/php
 <?php
 
 // Get the path information from PATH_INFO
@@ -53,10 +53,14 @@ if (is_dir($directory) && is_readable($directory)) {
         echo "</ul></body></html>";
     } else {
         // Error opening directory
+        echo "Content-Type: text/plain\r\n";
+        echo "Content-Length: 24\r\n\r\n";
         echo "Error opening directory.";
     }
 } else {
     // Directory not found or not readable
+    echo "Content-Type: text/text/plain\r\n";
+    echo "Content-Length: 36\r\n\r\n";
     echo "Directory not found or not readable.";
 }
 ?>
