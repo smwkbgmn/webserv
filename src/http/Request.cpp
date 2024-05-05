@@ -10,7 +10,7 @@ const char*				Request::body( void ) const { return _body; }
 
 /* CONSTRUCT */
 Request::Request( const Client& client ): _client( client ), _body( NULL ) {
-	clog( "HTTP\t: constructing requeset" );
+	log( "HTTP\t: constructing requeset" );
 
 	const char* buf = client.buffer();
 
@@ -68,15 +68,16 @@ Request::_assignMethod( str_t token ) {
 void
 Request::_assignURI( str_t token ) { 
 	_configIdx	= HTTP::getLocationConf( _line.uri, _client.getServer().config() );
+	// _config		= _client.server().config().at( _configIdx );
+
 	if ( config().location.length() == 1 )
 		_line.uri = token.replace( 0, config().location.length(), config().root + "/" );
 	else
 		_line.uri = token.replace( 0, config().location.length(), config().root );
 
 	size_t	pos_query = _line.uri.find( '?' );
-	std::clog << "pos_query: " << pos_query << std::endl;
 	if ( pos_query != str_t::npos ) {
-		_line.query = _line.uri.substr( pos_query );
+		_line.query = _line.uri.substr( pos_query + 1);
 		_line.uri.erase( pos_query );
 	}
 }
@@ -120,7 +121,7 @@ Request::_assignBody( const size_t& bodyBegin, const char* buf ) {
 	_body = new char[_header.content_length];
 	memcpy( _body, &buf[bodyBegin], _header.content_length );
 	
-	// clog( "HTTP\t: the rqst body" );
+	// log( "HTTP\t: the rqst body" );
 	// std::clog.write( _body, _header.content_length );
 	// std::clog << std::endl;
 }
@@ -134,6 +135,33 @@ Request::_token( isstream_t& iss, char delim ) {
 		throw err_t( "_token: " + errMsg[INVALID_REQUEST_LINE] );
 
 	return token;
+}
+
+Request::Request( const Client& client, const config_t& config, const uint_t& status ): _client( client ), _body( NULL ) {
+	_line.version	= VERSION_11;
+	_line.method	= GET;
+
+	if ( status < 500 ) {
+		_line.uri = config.file40x;
+		
+		// size_t pos_dot = _line.uri.rfind( '.' );
+		// if ( pos_dot != str_t::npos && _line.uri.substr( pos_dot ) == ".cgi" ) {
+		// 	osstream_t query;
+		// 	query << "status_code=" << status << "&explanation=";
+			
+		// 	str_t	explain( HTTP::key.status.at( status ) );
+		// 	size_t	pos_ws;
+
+		// 	while ( ( pos_ws = explain.find( ' ' ) ) != str_t::npos )
+		// 		explain.replace( pos_ws, 1, "+" );
+		// 	query << explain;
+
+		// 	_line.query = query.str();
+		// }
+	}
+	else _line.uri = config.file50x;
+
+	// _config = config;
 }
 
 Request::~Request( void ) { if ( _body ) delete _body; }

@@ -47,10 +47,10 @@ class HTTP {
 
 	private:
 		/* init */
-		static void		_assignHeader(void);
-		static void		_assignStatus(void);
-		static void		_assignMime(void);
-		static void		_assignVec(vec_str_t &, const str_t[], size_t);
+		static void		_assignHeader( void );
+		static void		_assignStatus( void );
+		static void		_assignMime( void );
+		static void		_assignVec( vec_str_t &, const str_t[], size_t );
 
 		/* transaction */
 		static void		_build( const Response&, osstream_t& );
@@ -61,6 +61,7 @@ class HTTP {
 		static void		_buildBody( const Response&, osstream_t& );
 
 		/* method */
+		static bool		_getFstat( const path_t&, fstat_t& );
 		static bool		_invokeCGI( const Request&, process_t& );
 
 };

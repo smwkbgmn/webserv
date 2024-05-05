@@ -1,8 +1,5 @@
 #include "HTTP.hpp"
 
-// http_t	HTTP::http;
-// keys_t	HTTP::key;
-
 /*	HTTP MESSAGE FORMMAT
 
 	HTTP-message   = start-line CRLF
@@ -16,8 +13,7 @@
 	field-line = field-name ":" OWS field-value OWS
 */
 
-
-/*	NGINX plain GET transaction
+/*	A example of plain GET transaction on NGINX
 
 	[Request]
 		GET / HTTP/1.1
@@ -54,15 +50,31 @@ HTTP::transaction( const Client& client, process_t& procs, osstream_t& oss ) {
 	try {
 		Request	rqst( client );
 		
-		if ( _invokeCGI( rqst, procs ) ) CGI::proceed( rqst, procs, oss );
-		else _build( Response( rqst ), oss );
+		if ( _getFstat( rqst.line().uri, rqst.info ) ) {
+			if ( _invokeCGI( rqst, procs ) ) CGI::proceed( rqst, procs, oss );
+			else _build( Response( rqst ), oss );
+		}
+		else {
+			if ( errno == 2 ) throw errstat_t( 404, "target source is not exist" );
+			else throw errstat_t( 500 );
+		}
 	}
 
-	// Replace the action of error case with building of response for redirection to error page
-	catch ( errstat_t& exc ) { clog( "HTTP\t: transaction: " + str_t( exc.what() ) ); oss.str( "" ); _build( Response( client, exc.code ), oss ); }
-	catch ( err_t& exc ) { clog( "HTTP\t: Request: " + str_t( exc.what() ) ); _build( Response( client, 400 ), oss ); }
+	catch ( errstat_t& err ) {
+		log( "HTTP\t: transaction: " + str_t( err.what() ) );
+		oss.str( "" ); _build( Response( client, err.code ), oss );
+	}
+
+	catch ( err_t& err ) {
+		log( "HTTP\t: Request: " + str_t( err.what() ) );
+		_build( Response( client, 400 ), oss );
+	}
 }
 
+bool
+HTTP::_getFstat( const path_t& uri, fstat_t& info ) {
+	return stat( uri.c_str(), &info ) == SUCCESS;
+}
 
 bool
 HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {	
@@ -72,15 +84,16 @@ HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {
 	if ( dot != str_t::npos )
 		ext = rqst.line().uri.substr( dot );
 
-	if ( *rqst.line().uri.rbegin() == '/' )
+	// if ( *rqst.line().uri.rbegin() == '/' )
+	if ( S_ISDIR( rqst.info.st_mode) )
 		procs.argv.push_back( HTTP::http.fileAtidx );
-	else if ( ext.empty() || ext == ".cgi" || ext == ".ext" )
+	else {
+		if ( !ext.empty() && ext != ".cgi" && ext != ".exe" ) {
+			try { procs.argv.push_back( CGI::script_bin.at( ext ) );  }
+			catch( exception_t& exc ) { return FALSE; }
+		}
 		procs.argv.push_back( rqst.line().uri );
-	else  {
-		try { procs.argv.push_back( CGI::script_bin.at( ext ) ); }
-		catch( exception_t& exc ) { return FALSE; }
 	}
-	
 	return TRUE;
 }
 
@@ -97,9 +110,10 @@ HTTP::_buildLine( const Response& rspn, osstream_t& oss ) {
 	map_uint_str_t::iterator iter = key.status.find( rspn.line().status );
 
 	oss <<
-	http.signature << '/' << http.version.at( static_cast<size_t>( rspn.line().version ) ) << ' ' <<
-	iter->first << " " << iter->second << 
-	CRLF;
+	http.signature << '/' <<
+	http.version.at( static_cast<size_t>( rspn.line().version ) ) << SP <<
+	iter->first << SP <<
+	iter->second << CRLF;
 }
 
 void

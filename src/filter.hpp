@@ -99,6 +99,8 @@ typedef struct {
 	vec_str_t			method;
 
 	type_t				typeDefault;
+	path_t				file40x_def;
+	path_t				file50x_def;
 	
 	path_t				locationCGI;
 	name_t				fileAtidx;

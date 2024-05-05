@@ -31,7 +31,7 @@ void timestamp( void ) {
 	std::clog << buf << " ";
 }
 
-void clog( const str_t& msg ) {
+void log( const str_t& msg ) {
 	timestamp();
 	std::clog << msg << std::endl;
 }

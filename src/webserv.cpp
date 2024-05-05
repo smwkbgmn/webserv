@@ -9,6 +9,7 @@
 		See more the CGI _read
 		Replace _wait NONE mode with WNOHANG
 	- Replace buffers
+	- 
 	- Make GET method to check all index files in case of target not found 
 	- Add seeing how the file stat() is before proceeding HTTP methods
     - Handle chunked request/response
@@ -40,7 +41,7 @@ int main( void ) {
 		Server server;
 
 		server.connectsever();
-	} catch ( err_t &err ) { clog( str_t( err.what() ) ); }
+	} catch ( err_t &err ) { log( str_t( err.what() ) ); }
 
   return 0;
 }

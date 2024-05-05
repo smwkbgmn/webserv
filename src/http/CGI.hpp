@@ -7,8 +7,6 @@
 
 # include "HTTP.hpp"
 
-# define SUCCESS 0
-
 // typedef stat_t	( *fnptr_t )( const Request&, process_t& );
 
 class CGI {
@@ -20,23 +18,22 @@ class CGI {
 		static void 			proceed( const Request&, process_t&, osstream_t& );
 
 	private:
+		/* init */
 		static void				_assignScriptBin( void );
 		static void				_assignEnvironList( void );
 
+		/* proceed */
 		static stat_t			_detach( const Request&, process_t& );
 		static void				_buildEnviron( const Request&, process_t& );
 		static bool				_buildEnvironVar( const Request&, process_t&, uint_t idx );
 		
-		/* PARENT */
 		static void				_write( const process_t&, const Request& );
 		static void				_wait( process_t& );
 		static void				_read( process_t&, osstream_t& );
 
-		/* CHILD */
 		static bool				_redirect( const process_t& );
 		static stat_t			_execve( const process_t& );
-
-		
+		static void				_assignVectorChar( vec_cstr_t&, const vec_str_t& );
 };
 
 #endif

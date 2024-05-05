@@ -37,6 +37,8 @@ CGI::_assignEnvironList( void ) {
 /* METHOD - proceed: get outsourcing data */
 void
 CGI::proceed( const Request& rqst, process_t& procs, osstream_t& oss ) {
+	log( "CGI\t: proceed" );
+
 	if ( _detach( rqst, procs ) == SUCCESS ) {
 		_write( procs, rqst );
 		_wait( procs );
@@ -61,74 +63,7 @@ CGI::_detach( const Request& rqst, process_t& procs ) {
 	return SUCCESS;
 }
 
-void
-CGI::_buildEnviron( const Request& rqst, process_t& procs ) {
-	for ( uint_t idx = 0; _buildEnvironVar( rqst, procs, idx ); ++idx );
-}
-
-bool
-CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
-	try {
-		osstream_t	oss;
-		oss << environ_list.at( idx ) << '=';
-
-		switch ( idx ) {
-			case SERVER_NAME		: oss << "webserv"; break;
-			case SERVER_PORT		: oss << "8080"; break;
-			case SERVER_PROTOCOL	: oss << "HTTP/1.1"; break;
-			case REMOTE_ADDR		: break;
-			case REMOTE_HOST		: break;
-			case GATEWAY_INTERFACE	: break;
-			case REQUEST_METHOD		: oss << strMethod[rqst.line().method]; break;
-			case SCRIPT_NAME		: oss << rqst.line().uri.substr( rqst.line().uri.rfind( '/' ) + 1 ); break;
-			case CONTENT_LENGTH		: oss << rqst.header().content_length; break;
-			case CONTENT_TYPE		: oss << rqst.header().content_type; break;
-			case PATH_INFO			: oss << rqst.line().uri.substr( rqst.config().root.length() + 1 ); break;
-			case PATH_TRANSLATED	: oss << rqst.line().uri; break;
-			case QUERY_STRING		: oss << rqst.line().query; break;
-		}
-		procs.env.push_back( oss.str() );
-		return TRUE;
-	}
-	catch ( exception_t& exc ) { return FALSE; }
-}
-
-// Be aware that functions under _detach are running on subprocess
-bool
-CGI::_redirect( const process_t& procs ) {
-	if ( dup2( procs.fd[R], STDIN_FILENO ) == ERROR ||
-		dup2( procs.fd[W], STDOUT_FILENO ) == ERROR ||
-		close( procs.fd[R] ) == ERROR || close( procs.fd[W] ) == ERROR )
-		return FALSE;
-	return TRUE;	
-}
-
-stat_t
-CGI::_execve( const process_t& procs ) {
-	vec_cstr_t	argv_c;
-	vec_cstr_t	env_c;
-
-	for ( vec_str_t::const_iterator iter = procs.argv.begin(); iter != procs.argv.end(); ++iter ) 
-		argv_c.push_back( const_cast<char*>( iter->c_str() ) );
-	argv_c.push_back( NULL );
-	
-	for ( vec_str_t::const_iterator iter = procs.env.begin(); iter != procs.env.end(); ++iter )
-		env_c.push_back( const_cast<char*>( iter->c_str() ) );
-	env_c.push_back( NULL );
-
-	clog( "CGI\t: argv" );
-	for ( size_t ptr = 0; argv_c[ptr]; ++ptr )
-		std::clog << str_t( argv_c[ptr] ) << std::endl;
-
-	clog( "CGI\t: env" );
-	for ( size_t ptr = 0; env_c[ptr]; ++ptr )
-		std::clog << str_t( env_c[ptr] ) << std::endl;
-
-	if ( _redirect( procs ) )
-		return execve( argv_c[0], argv_c.data(), env_c.data() ); 
-	return EXIT_FAILURE;
-}
-
+/* PARENT */
 void
 CGI::_write( const process_t& procs, const Request& rqst ) {
 	if ( rqst.line().method == POST &&
@@ -174,6 +109,78 @@ CGI::_read( process_t& procs, osstream_t& oss ) {
 	oss << data.str();
 	
 	close( procs.fd[R] );
+}
+
+
+/* CHILD */
+void
+CGI::_buildEnviron( const Request& rqst, process_t& procs ) {
+	for ( uint_t idx = 0; _buildEnvironVar( rqst, procs, idx ); ++idx );
+}
+
+bool
+CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
+	try {
+		osstream_t	oss;
+		oss << environ_list.at( idx ) << '=';
+
+		switch ( idx ) {
+			case SERVER_NAME		: oss << "webserv"; break;
+			case SERVER_PORT		: oss << "8080"; break;
+			case SERVER_PROTOCOL	: oss << "HTTP/1.1"; break;
+			case REMOTE_ADDR		: break;
+			case REMOTE_HOST		: break;
+			case GATEWAY_INTERFACE	: break;
+			case REQUEST_METHOD		: oss << strMethod[rqst.line().method]; break;
+			case SCRIPT_NAME		: oss << rqst.line().uri.substr( rqst.line().uri.rfind( '/' ) + 1 ); break;
+			case CONTENT_LENGTH		: if ( rqst.line().method == POST ) oss << rqst.header().content_length; break;
+			case CONTENT_TYPE		: oss << rqst.header().content_type; break;
+			case PATH_INFO			: oss << rqst.line().uri.substr( rqst.config().root.length() + 1 ); break;
+			case PATH_TRANSLATED	: oss << rqst.line().uri; break;
+			case QUERY_STRING		: oss << rqst.line().query; break;
+		}
+		procs.env.push_back( oss.str() );
+		return TRUE;
+	}
+	catch ( exception_t& exc ) { return FALSE; }
+}
+
+bool
+CGI::_redirect( const process_t& procs ) {
+	if ( dup2( procs.fd[R], STDIN_FILENO ) == ERROR ||
+		dup2( procs.fd[W], STDOUT_FILENO ) == ERROR ||
+		close( procs.fd[R] ) == ERROR ||
+		close( procs.fd[W] ) == ERROR )
+		return FALSE;
+	return TRUE;	
+}
+
+stat_t
+CGI::_execve( const process_t& procs ) {
+	vec_cstr_t	argv_c;
+	vec_cstr_t	env_c;
+
+	_assignVectorChar( argv_c, procs.argv );
+	_assignVectorChar( env_c, procs.env );
+
+	// log( "CGI\t: argv" );
+	// for ( size_t ptr = 0; argv_c[ptr]; ++ptr )
+	// 	std::clog << str_t( argv_c[ptr] ) << std::endl;
+
+	// log( "CGI\t: env" );
+	// for ( size_t ptr = 0; env_c[ptr]; ++ptr )
+	// 	std::clog << str_t( env_c[ptr] ) << std::endl;
+
+	if ( _redirect( procs ) )
+		return execve( argv_c[0], argv_c.data(), env_c.data() ); 
+	return EXIT_FAILURE;
+}
+
+void
+CGI::_assignVectorChar( vec_cstr_t& vec_char, const vec_str_t& vec_str ) {
+	for ( vec_str_t::const_iterator iter = vec_str.begin(); iter != vec_str.end(); ++iter )
+		vec_char.push_back( const_cast<char*>( iter->c_str() ) );
+	vec_char.push_back( NULL );
 }
 
 /* STRUCT */

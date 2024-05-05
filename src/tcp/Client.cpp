@@ -38,12 +38,12 @@ void Client::disconnect_client(int client_fd) {
 void Client::processClientRequest(Client& client) {
     char buf[BuffSize];
 
-    clog( "TCP\t: receiving data" );
+    log( "TCP\t: receiving data" );
     ssize_t byte = recv(client_socket, buf, BuffSize, 0);
 
     osstream_t stream;
     stream << "TCP\t: receiving done by " << byte;
-    clog( stream.str() );
+    log( stream.str() );
 
     if (byte < 0) {
         disconnect_client(client_socket);
@@ -61,7 +61,7 @@ void Client::processClientRequest(Client& client) {
         logging.fs << oss.str() << std::endl;
 
         if (isMsgDone( buf, byte ) && isBodyDone( byte ) ) {
-            HTTP::transaction(*this, client.subprocs, response);
+            HTTP::transaction( *this, client.subprocs, response );
             
             // Consider write a Client reset method
             client.oss.str( "" );
@@ -84,7 +84,7 @@ bool Client::sendData()
         const char* buffer = data.c_str();  
         size_t length = data.size(); 
 
-        clog( "TCP\t: sending\n" );
+        log( "TCP\t: sending\n" );
         // std::clog << response.str() << std::endl;
         logging.fs << response.str() << "\n" << std::endl;
 
@@ -108,14 +108,14 @@ Client::isMsgDone( const char* buf, ssize_t& byte_read ) {
 
 		size_t pos_header_end = str_t( buf ).find( "\r\n\r\n" );
 		if ( pos_header_end != str_t::npos ) {
-			clog( "TCP\t: end of header has found" );
+			// log( "TCP\t: end of header has found" );
 			msg         = TRUE;
 			body_read	= byte_read - pos_header_end - 4;
 			byte_read	= 0;
 
 			size_t pos_header_len = data_read.find( "Content-Length" );
 			if ( pos_header_len != str_t::npos ) {
-				clog( "TCP\t: content-length header has found" );
+				// log( "TCP\t: content-length header has found" );
 				isstream_t  iss( data_read.substr( pos_header_len, data_read.find( CRLF, pos_header_len ) ) ); 
 				str_t       discard;
 
@@ -130,9 +130,11 @@ Client::isMsgDone( const char* buf, ssize_t& byte_read ) {
 bool Client::isBodyDone(const size_t& byte_read) {
 	body_read += byte_read;
 
-	osstream_t oss;
-	oss << "TCP\t: body read by " << byte_read << " so far: " << body_read << " / " << body_size << std::endl;
-	clog( oss.str() );
+    if ( byte_read ) {
+        osstream_t oss;
+        oss << "TCP\t: body read by " << byte_read << " so far: " << body_read << " / " << body_size << std::endl;
+        log( oss.str() );
+    }
 	
 	return body_size == body_read;
 }

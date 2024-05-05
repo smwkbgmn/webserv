@@ -1,5 +1,4 @@
 #include "HTTP.hpp"
-#include "CGI.hpp"
 
 /*
 	#define __DARWIN_STRUCT_STAT64 { \
@@ -19,6 +18,22 @@
 		__int32_t	st_lspare;              RESERVED: DO NOT USE!
 		__int64_t	st_qspare[2];           RESERVED: DO NOT USE!
 	}
+
+ 	[XSI] The following macros shall be provided to test whether a file is
+ 	of the specified type.  The value m supplied to the macros is the value
+ 	of st_mode from a stat structure.  The macro shall evaluate to a non-zero
+ 	value if the test is true; 0 if the test is false.
+
+	#define S_ISBLK(m)      (((m) & S_IFMT) == S_IFBLK)      block special 
+	#define S_ISCHR(m)      (((m) & S_IFMT) == S_IFCHR)      char special 
+	#define S_ISDIR(m)      (((m) & S_IFMT) == S_IFDIR)      directory 
+	#define S_ISFIFO(m)     (((m) & S_IFMT) == S_IFIFO)      fifo or socket 
+	#define S_ISREG(m)      (((m) & S_IFMT) == S_IFREG)      regular file 
+	#define S_ISLNK(m)      (((m) & S_IFMT) == S_IFLNK)      symbolic link 
+	#define S_ISSOCK(m)     (((m) & S_IFMT) == S_IFSOCK)     socket 
+	#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)
+	#define S_ISWHT(m)      (((m) & S_IFMT) == S_IFWHT)      OBSOLETE: whiteout 
+	#endif
 */
 
 // When fail to get all of default index files, set status as 403 forbidden
@@ -28,7 +43,7 @@ HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
 		File target( rqst.line().uri, R_BINARY );
 		
 		*bufptr = dupStreamBuf( target.fs, size );
-	} catch ( err_t& exc ) { clog( "HTTP - GET:\t" + str_t( exc.what() ) ); throw errstat_t( 404 ); }
+	} catch ( err_t& exc ) { log( "HTTP\t: " + str_t( exc.what() ) ); throw errstat_t( 404 ); }
 }
  
 void
@@ -40,7 +55,7 @@ HTTP::POST( const Request& rqst, char** bufptr, size_t& size ) {
 		File target( rqst.line().uri, W );
 
 		target.fs << rqst.body();
-	} catch ( exception_t& exc ) { clog( str_t( exc.what() ) ); throw errstat_t( 400 ); }
+	} catch ( exception_t& exc ) { log( str_t( exc.what() ) ); throw errstat_t( 400 ); }
 }
 
 void

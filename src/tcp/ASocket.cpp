@@ -46,5 +46,5 @@ void ASocket::openSocket() {
 
     preSet();
     setNonBlocking(server_socket);
-    clog("TCP\t: Listening on port 8080");
+    log("TCP\t: Listening on port 8080\n");
 }

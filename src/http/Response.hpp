@@ -7,7 +7,7 @@
 class Response {
 	public:
 		Response( const Request& );
-		Response( const Client&, const uint_t& ); // When can't construct Request
+		Response( const Client&, const uint_t& ); // When fail to construct Request
 		~Response( void );
 
 		const response_line_t&		line( void ) const;
@@ -20,6 +20,8 @@ class Response {
 		char*						_body;
 
 		void						_redirect( const uint_t&, const config_t& );
+		// void						_errpage( const Client&, const config_t&, const uint_t& );
+		// void						_errpageBuild( const uint_t& );
 		void						_mime( const str_t&, str_t&, const str_t& );
 };
 

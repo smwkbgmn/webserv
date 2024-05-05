@@ -8,6 +8,10 @@ void
 HTTP::init( const str_t& type, const name_t& cgi ) {
 	http.signature		= "HTTP";
 	http.typeDefault	= type;
+
+	http.file40x_def	= "/error_page.cgi";
+	http.file50x_def	= "/50x.html";
+
 	http.locationCGI	= cgi;
 	http.fileAtidx		= cgi + "/autoindex_v5.cgi";
 
@@ -89,10 +93,8 @@ size_t HTTP::getLocationConf( const str_t& uri, const vec_config_t& config ) {
 config_s::config_s( void ) {
 	location		= "/";
 	root			= "html";
-	// file40x			= "/40x.html";
-	file40x			= "/error_page.cgi";
-	// file50x			= "/50x.html";
-	file50x			= "/error_page.cgi";
+	file40x			= HTTP::http.file40x_def;
+	file50x			= HTTP::http.file50x_def;
 
 	atidx			= FALSE;
 	sizeBodyMax		= 1000;
