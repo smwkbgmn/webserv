@@ -1,13 +1,13 @@
 #ifndef HTTP_HPP
-#define HTTP_HPP
+# define HTTP_HPP
 
-#include <cstdio>
+# include <cstdio>
 
 # include "log.hpp"
 # include "Client.hpp"
-
-#define CNT_METHOD 3
-#define CNT_VERSION 4
+	
+# define CNT_METHOD 3
+# define CNT_VERSION 4
 
 class Request;
 class Response;
@@ -17,7 +17,7 @@ const path_t	fileStatus		= dirKeys + "/keyStatus.txt";
 const path_t	fileMime		= dirKeys + "/keyMime.txt";
 const path_t	fileHeaderIn	= dirKeys + "/keyHeaderIn.txt";
 const path_t	fileHeaderOut	= dirKeys + "/keyHeaderOut.txt";
-const path_t	fileListCGI		= dirKeys + "/lstCGI.txt";
+const path_t	fileEnviron		= dirKeys + "/keyEnviron.txt";
 
 const str_t strMethod[] = {
 	"GET",
@@ -38,7 +38,7 @@ class HTTP {
 		static keys_t	key;
 
 		static void		init( const str_t&, const str_t& );
-		static void		transaction( const Client&, osstream_t& );
+		static void		transaction( const Client&, process_t&, osstream_t& );
 		static size_t	getLocationConf( const str_t&, const vec_config_t& );
 	
 		static void		GET( const Request&, char**, size_t& );

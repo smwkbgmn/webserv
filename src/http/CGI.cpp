@@ -1,5 +1,8 @@
 #include "CGI.hpp"
 
+map_str_path_t	CGI::script_bin;
+map_uint_str_t	CGI::environ_list;
+
 /*
 	.cgi, .exe and files in configured cgi-bin directory
 	-> execute directly
@@ -10,14 +13,32 @@
 
 void
 CGI::init( void ) {
-	_bin.insert( std::make_pair<str_t, path_t>( ".php", "/usr/bin/php" ) );
-	_bin.insert( std::make_pair<str_t, path_t>( ".perl", "/usr/bin/perl" ) );
-	_bin.insert( std::make_pair<str_t, path_t>( ".py", "/usr/bin/python" ) );
+	_assignScriptBin();
+	_assignEnvironList();
+}
+
+void
+CGI::_assignScriptBin( void ) {
+	script_bin.insert( std::make_pair<str_t, path_t>( ".php", "/usr/bin/php" ) );
+	script_bin.insert( std::make_pair<str_t, path_t>( ".pl", "/usr/bin/perl" ) );
+	script_bin.insert( std::make_pair<str_t, path_t>( ".py", "/usr/bin/python" ) );
+}
+
+void
+CGI::_assignEnvironList( void ) {
+	File	fileEnv( fileEnviron, R );
+	str_t	key;
+	
+	for ( uint_t keyidx = 0; std::getline( fileEnv.fs, key ); ++keyidx )
+		environ_list.insert( std::make_pair<uint_t, str_t>( keyidx, key ) );
+
+	// while ( std::getline( fileEnv.fs, key ) )
+	// 	environ_list.push_back( key );
 }
 
 void
 CGI::proceed( const Request& rqst, process_t& procs, osstream_t& oss ) {
-	if ( _detach( rqst, oss, procs ) == SUCCESS ) {
+	if ( _detach( rqst, procs ) == SUCCESS ) {
 		_write( procs, rqst );
 		_wait( procs );
 		_read( procs, oss );
@@ -29,74 +50,57 @@ CGI::proceed( const Request& rqst, process_t& procs, osstream_t& oss ) {
 }
 
 stat_t
-CGI::_detach( const Request& rqst, osstream_t& oss, process_t& procs ) {
-	if ( pipe( procs.fd ) != ERROR || ( procs.pid = fork() ) != ERROR )
+CGI::_detach( const Request& rqst, process_t& procs ) {
+	std::clog << "_detach\n";
+
+	if ( pipe( procs.fd ) == ERROR || ( procs.pid = fork() ) == ERROR )
 		return EXIT_FAILURE;
-	
+
 	if ( !procs.pid ) {
-		if ( write( procs.fd[W], "HTTP/1.1 200 OK\r\n", 17 ) == ERROR ) return EXIT_FAILURE;
-		return procs.act( rqst, procs );
+		if ( write( procs.fd[W], "HTTP/1.1 200 OK\r\n", 17 ) == ERROR ||
+			write( procs.fd[W], "Content-Type: text/html\r\n", 25 ) == ERROR )
+			return EXIT_FAILURE;
+
+		_buildEnviron( rqst, procs.env );
+
+		if ( procs.act == AUTOINDEX ) return _autoindex( procs );
+		// else return _script( rqst, procs );
+		else return _execute( rqst, procs );
 	}
 	return SUCCESS;
 }
 
 stat_t
-CGI::_script( const Request& rqst, process_t& procs ) {
-	str_t		script_path = rqst.line().uri;
-	vec_cstr_t	argv_c;
-	vec_cstr_t	env_c;
-
-	assignEnv( rqst, procs.env );
-
-	argv_c.push_back( const_cast<char*>( script_path.c_str() ) );
-	argv_c.push_back( NULL );
-
-	env_c.push_back( const_cast<char*>( "REQUEST_METHOD=POST" ) );
-	env_c.push_back( const_cast<char*>( "SERVER_PROTOCOL=HTTP/1.1" ) );
-	env_c.push_back( const_cast<char*>( "SCRIPT_FILENAME=upload.cgi" ) );
-	env_c.push_back( const_cast<char*>( "SERVER_PORT=8080" ) );
-	env_c.push_back( const_cast<char*>( "SERVER_NAME=webserv" ) );
-
-	osstream_t	oss;
-	oss << "CONTENT_LENGTH=";
-	oss << rqst.header().content_length;
-	env_c.push_back( const_cast<char*>( oss.str().c_str() ) );
-
-	env_c.push_back( const_cast<char*>( "CONTENT_TYPE=multipart/form-data" ) );
-	env_c.push_back( NULL );
-
-	if ( write( procs.fd[W], "Content-Type: text/html\r\n", 25 ) == ERROR )
-		return EXIT_FAILURE;
-
-	return _execve( procs, argv_c.data(), env_c.data() );
-}
-
-stat_t
 CGI::_execute( const Request& rqst, process_t& procs ) {
+	std::clog << "_execute\n";
+	procs.argv.push_back( const_cast<char*>( rqst.line().uri.c_str() ) );
+	procs.argv.push_back( NULL );
 
+	return _execve( procs );
 }
 
 stat_t
-CGI::_autoindex( const Request& rqst, process_t& procs ) {
-	vec_str_t	argv;
-	vec_cstr_t	argv_c;
-	vec_cstr_t	env_c;
+CGI::_autoindex( process_t& procs ) {
+	std::clog << "_autoindex\n";
+	// vec_str_t	argv;
+	// vec_cstr_t	argv_c;
+	// vec_cstr_t	env_c;
 
-	argv.push_back( binPHP );
-	argv.push_back( HTTP::http.fileAtidx );
+	// argv.push_back( "/usr/bin/php" );
+	// argv.push_back( HTTP::http.fileAtidx );
 
-	for ( vec_str_t::const_iterator iter = argv.begin(); iter != argv.end(); ++iter )
-		argv_c.push_back( const_cast<char*>( iter->c_str() ) );
-	argv_c.push_back( NULL );
+	// for ( vec_str_t::const_iterator iter = argv.begin(); iter != argv.end(); ++iter )
+	// 	argv_c.push_back( const_cast<char*>( iter->c_str() ) );
+	// argv_c.push_back( NULL );
 
-	str_t	path_info = "PATH_INFO=" + rqst.line().uri;
-	env_c.push_back( const_cast<char*>( path_info.c_str() ) ); 
-	env_c.push_back( NULL );
+	// str_t	path_info = "PATH_INFO=" + rqst.line().uri;
+	// env_c.push_back( const_cast<char*>( path_info.c_str() ) ); 
+	// env_c.push_back( NULL );
 
-	if ( write( procs.fd[W], "Content-Type: text/html\r\n", 25 ) == ERROR )
-		return EXIT_FAILURE;
-	
-	return _execve( procs, argv_c.data(), env_c.data() );
+	procs.argv.push_back( const_cast<char*>( HTTP::http.fileAtidx.c_str() ) );
+	procs.argv.push_back( NULL );
+
+	return _execve( procs );
 }
 
 
@@ -112,18 +116,17 @@ CGI::_redirect( const process_t& procs ) {
 }
 
 stat_t
-CGI::_execve( const process_t& procs, char* argv[], char* env[] ) {
+CGI::_execve( const process_t& procs ) {
 	clog( "CGI\t: argv" );
-	for ( size_t ptr = 0; argv[ptr]; ++ptr )
-		std::clog << argv[ptr] << "\n";
+	for ( size_t ptr = 0; procs.argv[ptr]; ++ptr )
+		std::clog << str_t( procs.argv[ptr] ) << std::endl;
 
 	clog( "CGI\t: env" );
-	for ( size_t ptr = 0; env[ptr]; ++ptr )
-		std::clog << env[ptr] << "\n";
+	for ( size_t ptr = 0; procs.env[ptr]; ++ptr )
+		std::clog << str_t( procs.env[ptr] ) << std::endl;
 
 	if ( _redirect( procs ) )
-		return execve( *argv, argv, env );
-	return EXIT_FAILURE;
+		return execve( procs.argv[0], procs.argv.data(), procs.env.data() ); return EXIT_FAILURE;
 }
 
 
@@ -150,12 +153,8 @@ CGI::_read( process_t& procs, osstream_t& oss ) {
 	if ( ( bytes = read( procs.fd[R], buf, 1500 ) ) == ERROR )
 		throwSysErr( "read", 500 );
 
-	if ( bytes == ERROR )
-		throwSysErr( "read", 500 );
-
 	oss << "HTTP/1.1 200 OK" << CRLF;
 	oss << "Content-Length: " << bytes << CRLF;
-	// oss << "Content-Length: " << bytes << CRLF << CRLF;
 	oss << str_t( buf );
 
 	close( procs.fd[R] );
@@ -163,8 +162,41 @@ CGI::_read( process_t& procs, osstream_t& oss ) {
 
 /* METHOD - assignEnv: build ENVs for CGI script */
 void
-CGI::assignEnv( const Request& rqst, vec_cstr_t& env ) {
-	
+CGI::_buildEnviron( const Request& rqst, vec_cstr_t& env ) {
+	std::clog << "_buildEnvrion\n";
+	for ( uint_t idx = 0; _buildEnvironVar( rqst, env, idx ); ++idx );
+	env.push_back( NULL );
+}
+
+bool
+CGI::_buildEnvironVar( const Request& rqst, vec_cstr_t& env, uint_t idx ) {
+	clog( "_buildingEnvironVar" );
+	try {
+		osstream_t	oss;
+		oss << environ_list.at( idx ) << '=';
+
+		switch ( idx ) {
+			case SERVER_NAME		: oss << "webserv"; break;
+			case SERVER_PORT		: oss << "8080"; break;
+			case SERVER_PROTOCOL	: oss << "HTTP/1.1"; break;
+			case REMOTE_ADDR		: break;
+			case REMOTE_HOST		: break;
+			case GATEWAY_INTERFACE	: break;
+			case REQUEST_METHOD		: oss << strMethod[rqst.line().method]; break;
+			case SCRIPT_NAME		: oss << rqst.line().uri.substr( rqst.line().uri.rfind( '/' ) + 1 ); break;
+			case CONTENT_LENGTH		: if ( rqst.line().method == POST ) oss << rqst.header().content_length; break;
+			case CONTENT_TYPE		: if ( rqst.line().method == POST ) oss << rqst.header().content_type; break;
+			case PATH_INFO			: oss << rqst.line().uri.substr( rqst.config().root.length() + 1 ); break;
+			case PATH_TRANSLATED	: oss << rqst.line().uri; break;
+			case QUERY_STRING		: break;
+		}
+		clog( oss.str().c_str() );
+		env.push_back( strdup( const_cast<char*>( oss.str().c_str() ) ) );
+		clog( env.at( idx ) );
+
+		return TRUE;
+	}
+	catch ( exception_t& exc ) { return FALSE; }
 }
 
 /* STRUCT */

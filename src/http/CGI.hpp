@@ -9,35 +9,35 @@
 
 # define SUCCESS 0
 
-const str_t binPHP = "/usr/bin/php";
-
 // typedef stat_t	( *fnptr_t )( const Request&, process_t& );
 
 class CGI {
 	public:
-   static void				init( void );
+		static map_str_path_t	script_bin;
+		static map_uint_str_t	environ_list;
 
-	static void 			proceed( const Request&, process_t&, osstream_t& );
-	static void				assignEnv( const Request&, vec_cstr_t& );
+		static void				init( void );
+		static void 			proceed( const Request&, process_t&, osstream_t& );
 
 	private:
-    static map_str_path_t	_bin;
+		static void				_assignScriptBin( void );
+		static void				_assignEnvironList( void );
 
-	static stat_t			_detach( const Request&, osstream_t&, process_t& );
+		static stat_t			_detach( const Request&, process_t& );
+		static void				_buildEnviron( const Request&, vec_cstr_t& );
+		static bool				_buildEnvironVar( const Request&, vec_cstr_t&, uint_t idx );
+		/* PARENT */
+		static void				_write( const process_t&, const Request& );
+		static void				_wait( process_t& );
+		static void				_read( process_t&, osstream_t& );
 
-	/* PARENT */
-	static void				_write( const process_t&, const Request& );
-	static void				_wait( process_t& );
-	static void				_read( process_t&, osstream_t& );
+		/* CHILD */
+		static bool				_redirect( const process_t& );
+		static stat_t			_execve( const process_t& );
 
-	/* CHILD */
-	static bool				_redirect( const process_t& );
-	static stat_t			_execve( const process_t&, char**, char** );
-
-	static stat_t			_script( const Request&, process_t& );
-	static stat_t			_execute( const Request&, process_t& );
-	static stat_t			_autoindex( const Request&, process_t& );
-
+		static stat_t			_execute( const Request&, process_t& );
+		static stat_t			_autoindex( process_t& );
+		
 };
 
 #endif

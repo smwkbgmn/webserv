@@ -61,7 +61,7 @@ void Client::processClientRequest(Client& client) {
         logging.fs << oss.str() << std::endl;
 
         if (isMsgDone( buf, byte ) && isBodyDone( byte ) ) {
-            HTTP::transaction(*this, response);
+            HTTP::transaction(*this, client.subprocs, response);
             
             // Consider write a Client reset method
             client.oss.str( "" );

@@ -19,7 +19,7 @@ Request::Request( const Client& client ): _client( client ), _body( NULL ) {
 
 	_parse( buf );
 
-	// If the method is not allowed at this location config, set methodID as NOT_ALLOWED
+	// If the method is not allowed at this location config, set method_e as NOT_ALLOWED
 	if ( _line.method != UNKNOWN && !config().allow.at( _line.method ) )
 		_line.method = NOT_ALLOWED;
 }
@@ -65,7 +65,7 @@ Request::_assignMethod( str_t token ) {
 	if ( iter == HTTP::http.method.end() )
 		_line.method = UNKNOWN;
 	else
-		_line.method = static_cast<methodID>( std::distance( HTTP::http.method.begin(), iter ) );
+		_line.method = static_cast<method_e>( std::distance( HTTP::http.method.begin(), iter ) );
 }
 
 void
@@ -88,7 +88,7 @@ Request::_assignVersion( str_t token ) {
 	if ( iter == HTTP::http.version.end() )
 		_line.version = NOT_SUPPORTED;
 	else
-		_line.version = static_cast<versionID>( std::distance( HTTP::http.version.begin(), iter ) );
+		_line.version = static_cast<version_e>( std::distance( HTTP::http.version.begin(), iter ) );
 }
 
 void
@@ -104,7 +104,7 @@ Request::_parseHeader( str_t field ) {
 		case IN_CONNECTION	: _header.connection = KEEP_ALIVE; break;
 		case IN_CHUNK		: break;
 		case IN_CONTENT_LEN	: iss >> _header.content_length; break;
-		case IN_CONTENT_TYPE: break;
+		case IN_CONTENT_TYPE: iss >> _header.content_type; break;
 	}
 }
 

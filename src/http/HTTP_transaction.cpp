@@ -67,17 +67,19 @@ HTTP::transaction( const Client& client, process_t& procs, osstream_t& oss ) {
 
 
 bool
-HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {
+HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {	
 	size_t	dot = rqst.line().uri.rfind( "." );
 	str_t	ext;
 
 	if ( dot != str_t::npos )
 		ext = rqst.line().uri.substr( dot );
 
-	if ( ext == "")
-
-	// return ext == ".cgi" || *rqst.line().uri.rbegin() == '/';
-}
+	if ( *rqst.line().uri.rbegin() == '/' ) procs.act = AUTOINDEX;
+	else if ( !ext.empty() && ext != ".cgi" && ext != ".ext" )  {
+		try { procs.argv.push_back( const_cast<char*>( CGI::script_bin.at( ext ).c_str() ) ); }
+		catch( exception_t& exc ) { return FALSE; }
+	}
+	return TRUE;}
 
 
 void

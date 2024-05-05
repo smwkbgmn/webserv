@@ -8,7 +8,7 @@ lookup( Container& obj, Target token ) { return std::find( obj.begin(), obj.end(
 
 template<typename Container, typename Target> ssize_t
 distance( Container& obj, Target token ) {
-	Container::iterator	iter = lookup( obj, token );
+	typename Container::iterator	iter = lookup( obj, token );
 
 	if ( iter != obj.end() ) return std::distance( obj.begin(), iter );
 	else return -1;
