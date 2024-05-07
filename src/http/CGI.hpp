@@ -30,6 +30,7 @@ class CGI {
 		static void				_write( const process_t&, const Request& );
 		static void				_wait( process_t& );
 		static void				_read( process_t&, osstream_t& );
+      static void          _build( osstream_t&, osstream_t& );
 
 		static bool				_redirect( const process_t& );
 		static stat_t			_execve( const process_t& );

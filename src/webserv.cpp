@@ -3,15 +3,9 @@
 /*
 	To do
 	- CGI
-		Add building of argument and envs for CGI
-		-> retrieve the PATH_INFO and QUERY_STRING from the URI
-		CGI header build
-		See more the CGI _read
 		Replace _wait NONE mode with WNOHANG
 	- Replace buffers
-	- 
 	- Make GET method to check all index files in case of target not found 
-	- Add seeing how the file stat() is before proceeding HTTP methods
     - Handle chunked request/response
 	- Apply corrected config structures
 	- Add program option for toggle of logging
@@ -19,6 +13,11 @@
 	- Implement cookies
 
 	Done
+	- CGI
+		Add building of argument and envs for CGI
+		-> retrieve the PATH_INFO and QUERY_STRING from the URI
+		CGI header build
+	- Add seeing how the file stat() is before proceeding HTTP methods
 	- File upload
 	- Add retrived location to Request obj after replace uri with real path
 	- Redirect to error page in case of error in URI 

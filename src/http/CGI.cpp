@@ -37,12 +37,14 @@ CGI::_assignEnvironList( void ) {
 /* METHOD - proceed: get outsourcing data */
 void
 CGI::proceed( const Request& rqst, process_t& procs, osstream_t& oss ) {
+	osstream_t source;
 	log( "CGI\t: proceed" );
 
 	if ( _detach( rqst, procs ) == SUCCESS ) {
 		_write( procs, rqst );
 		_wait( procs );
-		_read( procs, oss );
+		_read( procs, source );
+		_build( source, oss );
 
 		if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
 			throw errstat_t( 500, "the CGI fail to exit as SUCCESS" );
@@ -80,38 +82,38 @@ CGI::_wait( process_t& procs ) {
 }
 
 void
-CGI::_read( process_t& procs, osstream_t& oss ) {
-	osstream_t	data;
-
-	char		buf[1024];
-	ssize_t		byte_read;
-	size_t		byte_total = 0;
+CGI::_read( process_t& procs, osstream_t& source ) {
+	c_buffer_t	buf;
 	
-	while ( ( byte_read = read( procs.fd[R], buf, 1024 ) ) > 0 ) {
-		data.write( buf, byte_read );
-		byte_total += byte_read;
+	while ( ( buf.read = read( procs.fd[R], buf.ptr, SIZE_BUF ) ) > 0 ) {
+		source.write( buf.ptr, buf.read );
+		buf.total += buf.read;
 	}
-	if ( byte_read == ERROR ) throwSysErr( "read", 500 );
-
-	if ( byte_total > 0 ) {
-		oss << "HTTP/1.1 200 OK" << CRLF;
-
-		if ( data.str().find( "Content-Type" ) == str_t::npos )
-			oss << "Content-Type: text/plain" << CRLF;
-
-		if ( data.str().find( "Content-Length" ) == str_t::npos ) {
-			size_t	pos_header_end = data.str().find( "\r\n\r\n" );
-
-			if ( pos_header_end != str_t::npos )
-				byte_total -= pos_header_end - 4;
-			oss << "Content-Length: " << byte_total << CRLF;
-		}
-
-		oss << data.str();
-	}
-	else oss << "HTTP/1.1 204" << SP << HTTP::key.status.at( 204 ) << CRLF;
+	if ( buf.read == ERROR ) throwSysErr( "read", 500 );
 	
 	close( procs.fd[R] );
+}
+
+void
+CGI::_build( osstream_t& source, osstream_t& oss ) {
+	size_t len = source.str().length();
+
+	if ( len > 0 ) {
+		oss << "HTTP/1.1 200 OK" << CRLF;
+
+		if ( source.str().find( "Content-Type" ) == str_t::npos )
+			oss << "Content-Type: text/plain" << CRLF;
+
+		if ( source.str().find( "Content-Length" ) == str_t::npos ) {
+			size_t	pos_header_end = source.str().find( MSG_END );
+
+			if ( pos_header_end != str_t::npos )
+				len -= pos_header_end - 4;
+			oss << "Content-Length: " << len << CRLF;
+		}
+		oss << source.str();
+	}
+	else oss << "HTTP/1.1 204" << SP << HTTP::key.status.at( 204 ) << CRLF;
 }
 
 /* CHILD */
@@ -165,14 +167,6 @@ CGI::_execve( const process_t& procs ) {
 	_assignVectorChar( argv_c, procs.argv );
 	_assignVectorChar( env_c, procs.env );
 
-	// log( "CGI\t: argv" );
-	// for ( size_t ptr = 0; argv_c[ptr]; ++ptr )
-	// 	std::clog << str_t( argv_c[ptr] ) << std::endl;
-
-	// log( "CGI\t: env" );
-	// for ( size_t ptr = 0; env_c[ptr]; ++ptr )
-	// 	std::clog << str_t( env_c[ptr] ) << std::endl;
-
 	if ( _redirect( procs ) )
 		return execve( argv_c[0], argv_c.data(), env_c.data() ); 
 	return EXIT_FAILURE;
@@ -186,6 +180,11 @@ CGI::_assignVectorChar( vec_cstr_t& vec_char, const vec_str_t& vec_str ) {
 }
 
 /* STRUCT */
+c_buffer_s::c_buffer_s( void ) {
+	total	= 0;
+	read	= 0;
+}
+
 process_s::process_s( void ) { reset();	}
 
 void

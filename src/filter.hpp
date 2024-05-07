@@ -23,10 +23,12 @@
 
 # define NONE	0
 
-# define CR		'\r'
-# define LF		'\n'
-# define CRLF	"\r\n"
-# define SP		' '
+# define CR			'\r'
+# define LF			'\n'
+# define CRLF		"\r\n"
+# define SP			' '
+
+# define MSG_END	"\r\n\r\n"
 
 /* ENUM */
 enum method_e {

@@ -3,8 +3,10 @@
 
 # include <string>
 
-# define FALSE	0
-# define TRUE	1
+# define FALSE		0
+# define TRUE		1
+
+# define SIZE_BUF	1024
 
 typedef int							socket_t;
 typedef int							port_t;
@@ -54,6 +56,15 @@ typedef std::map<str_t, type_t>		map_str_type_t;
 typedef std::map<str_t, path_t>		map_str_path_t;
 
 /* STRUCT */
+typedef struct c_buffer_s {
+	c_buffer_s( void );
+	
+	char	ptr[SIZE_BUF];
+
+	size_t	total;
+	ssize_t	read;
+}	c_buffer_t;
+
 typedef struct process_s {
 	process_s( void );
 
