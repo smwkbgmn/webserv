@@ -49,15 +49,14 @@ void
 HTTP::transaction( const Client& client, process_t& procs, osstream_t& oss ) {
 	try {
 		Request	rqst( client );
-		
-		if ( _getFstat( rqst.line().uri, rqst.info ) ) {
-			if ( _invokeCGI( rqst, procs ) ) CGI::proceed( rqst, procs, oss );
-			else _build( Response( rqst ), oss );
-		}
-		else {
+
+		if ( !getInfo( rqst.line().uri, rqst.info ) ) {
 			if ( errno == 2 ) throw errstat_t( 404, "target source is not exist" );
 			else throw errstat_t( 500 );
 		}
+
+		if ( _invokeCGI( rqst, procs ) ) CGI::proceed( rqst, procs, oss );
+		else _build( Response( rqst ), oss );
 	}
 
 	catch ( errstat_t& err ) {
@@ -72,11 +71,6 @@ HTTP::transaction( const Client& client, process_t& procs, osstream_t& oss ) {
 }
 
 bool
-HTTP::_getFstat( const path_t& uri, fstat_t& info ) {
-	return stat( uri.c_str(), &info ) == SUCCESS;
-}
-
-bool
 HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {	
 	size_t	dot = rqst.line().uri.rfind( "." );
 	str_t	ext;
@@ -84,8 +78,7 @@ HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {
 	if ( dot != str_t::npos )
 		ext = rqst.line().uri.substr( dot );
 
-	// if ( *rqst.line().uri.rbegin() == '/' )
-	if ( S_ISDIR( rqst.info.st_mode) )
+	if ( *rqst.line().uri.rbegin() == '/' )
 		procs.argv.push_back( HTTP::http.fileAtidx );
 	else {
 		if ( !ext.empty() && ext != ".cgi" && ext != ".exe" ) {
@@ -140,12 +133,19 @@ HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, osstream_t&
 		case OUT_CONTENT_LEN	: oss << header.content_length; break;
 		case OUT_CONTENT_TYPE	: oss << header.content_type; break;
 		case OUT_LOCATION		: oss << header.location; break;
+		case OUT_ALLOW			:
+			vec_uint_t::const_iterator iter = header.allow.begin();
+			while ( iter != header.allow.end() ) {
+				oss << HTTP::http.method.at( *iter );
+				if ( ++iter != header.allow.end() ) 
+					oss << ", ";
+			}
+			break;
 	}
 	oss << CRLF;
 }
 
 void
 HTTP::_buildBody( const Response& rspn, osstream_t& oss ) {
-	for ( size_t idx = 0; idx < rspn.header().content_length; ++idx )
-		oss << rspn.body()[idx];
+	oss.write( rspn.body(), rspn.header().content_length );
 }

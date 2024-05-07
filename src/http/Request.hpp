@@ -6,7 +6,6 @@
 class Request {
 	public:
 		Request( const Client& );
-		Request( const Client&, const config_t&, const uint_t& ); // For providing errpage by python-CGI script
 		~Request( void );
 
 		const Client&				client( void ) const;
@@ -21,7 +20,6 @@ class Request {
 	private:
 		const Client&				_client;
 		size_t						_configIdx;
-		// config_t&					_config;
 
 		request_line_t				_line;
 		request_header_t			_header;

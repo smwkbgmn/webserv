@@ -81,8 +81,6 @@ CGI::_wait( process_t& procs ) {
 
 void
 CGI::_read( process_t& procs, osstream_t& oss ) {
-	oss << "HTTP/1.1 200 OK" << CRLF;
-
 	osstream_t	data;
 
 	char		buf[1024];
@@ -93,24 +91,28 @@ CGI::_read( process_t& procs, osstream_t& oss ) {
 		data.write( buf, byte_read );
 		byte_total += byte_read;
 	}
-	if ( byte_read == ERROR )
-		throwSysErr( "read", 500 );
+	if ( byte_read == ERROR ) throwSysErr( "read", 500 );
 
-	if ( data.str().find( "Content-Type" ) == str_t::npos )
-		oss << "Content-Type: text/plain" << CRLF;
+	if ( byte_total > 0 ) {
+		oss << "HTTP/1.1 200 OK" << CRLF;
 
-	if ( data.str().find( "Content-Length" ) == str_t::npos ) {
-		size_t	pos_header_end = data.str().find( "\r\n\r\n" );
+		if ( data.str().find( "Content-Type" ) == str_t::npos )
+			oss << "Content-Type: text/plain" << CRLF;
 
-		if ( pos_header_end != str_t::npos )
-			byte_total -= pos_header_end - 4;
-		oss << "Content-Length: " << byte_total << CRLF;
+		if ( data.str().find( "Content-Length" ) == str_t::npos ) {
+			size_t	pos_header_end = data.str().find( "\r\n\r\n" );
+
+			if ( pos_header_end != str_t::npos )
+				byte_total -= pos_header_end - 4;
+			oss << "Content-Length: " << byte_total << CRLF;
+		}
+
+		oss << data.str();
 	}
-	oss << data.str();
+	else oss << "HTTP/1.1 204" << SP << HTTP::key.status.at( 204 ) << CRLF;
 	
 	close( procs.fd[R] );
 }
-
 
 /* CHILD */
 void

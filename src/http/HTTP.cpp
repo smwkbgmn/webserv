@@ -9,9 +9,6 @@ HTTP::init( const str_t& type, const name_t& cgi ) {
 	http.signature		= "HTTP";
 	http.typeDefault	= type;
 
-	http.file40x_def	= "/error_page.cgi";
-	http.file50x_def	= "/50x.html";
-
 	http.locationCGI	= cgi;
 	http.fileAtidx		= cgi + "/autoindex_v5.cgi";
 
@@ -29,17 +26,17 @@ void
 HTTP::_assignHeader( void ) {
 	str_t header;
 
-	File fileIn( fileHeaderIn, R );
+	File fileIn( fileHeaderIn, READ );
 	while ( std::getline( fileIn.fs, header ) )
 		key.header_in.push_back( header );
 
-	File fileOut( fileHeaderOut, R );
+	File fileOut( fileHeaderOut, READ );
 	while ( std::getline( fileOut.fs, header ) ) key.header_out.push_back( header );
 }
 
 void
 HTTP::_assignStatus( void ) {
-	File file( fileStatus, R );
+	File file( fileStatus, READ );
 
 	while ( !file.fs.eof() ) {
 		uint_t code;
@@ -55,7 +52,7 @@ HTTP::_assignStatus( void ) {
 
 void
 HTTP::_assignMime(void) {
-	File	file( fileMime, R );
+	File	file( fileMime, READ );
 	str_t	type, exts, ext;
 
 	while ( !file.fs.eof() ) {
@@ -93,15 +90,13 @@ size_t HTTP::getLocationConf( const str_t& uri, const vec_config_t& config ) {
 config_s::config_s( void ) {
 	location		= "/";
 	root			= "html";
-	file40x			= HTTP::http.file40x_def;
-	file50x			= HTTP::http.file50x_def;
 
 	atidx			= FALSE;
 	sizeBodyMax		= 1000;
 
 	allow.insert( std::make_pair( GET, TRUE ) );
 	allow.insert( std::make_pair( POST, TRUE ) );
-	allow.insert( std::make_pair( DELETE, TRUE ) );
+	allow.insert( std::make_pair( DELETE, FALSE ) );
 }
 
 request_header_s::request_header_s( void ) {

@@ -3,7 +3,7 @@
 #include "log.hpp"
 
 const std::time_t	begin	= std::time( NULL );
-File				logging( "log/" + logFname(), W );
+File				logging( "log/" + logFname(), WRITE );
 
 std::string logFname( void ) {
 	std::string	fname = strTime() + ".log";

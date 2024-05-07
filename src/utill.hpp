@@ -14,8 +14,16 @@ distance( Container& obj, Target token ) {
 	else return -1;
 }
 
+/* BUFFER */
 char*		dupStreamBuf( std::ios&, size_t& );
 const char*	dupStreamBuf( const std::ios&, size_t& );
-// char*		dupStreamBuf( const osstream_t& );
+
+/* FILE INFO */
+bool		getInfo( const str_t&, fstat_t& );
+bool		isExist( const str_t& );
+bool		isDir( const fstat_t& );
+
+/* ERROR PAGE */
+void		errpageScript( sstream_t&, const uint_t&, const str_t& );
 
 #endif

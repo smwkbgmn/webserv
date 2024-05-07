@@ -1,7 +1,8 @@
 #ifndef RESPONSE_HPP
 # define RESPONSE_HPP
 
-# include "structure.hpp"
+# include "utill.hpp"
+
 # include "Request.hpp"
 
 class Response {
@@ -19,9 +20,8 @@ class Response {
 		response_header_t			_header;
 		char*						_body;
 
-		void						_redirect( const uint_t&, const config_t& );
-		// void						_errpage( const Client&, const config_t&, const uint_t& );
-		// void						_errpageBuild( const uint_t& );
+		void						_errpage( const uint_t&, const config_t& );
+		void						_errpageBuild( const uint_t& );
 		void						_mime( const str_t&, str_t&, const str_t& );
 };
 

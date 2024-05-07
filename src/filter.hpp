@@ -29,22 +29,6 @@
 # define SP		' '
 
 /* ENUM */
-enum cgi_env_e {
-	SERVER_NAME,
-	SERVER_PORT,
-	SERVER_PROTOCOL,
-	REMOTE_ADDR,
-	REMOTE_HOST,
-	GATEWAY_INTERFACE,
-	REQUEST_METHOD,
-	SCRIPT_NAME,
-	CONTENT_LENGTH,
-	CONTENT_TYPE,
-	PATH_INFO,
-	PATH_TRANSLATED,
-	QUERY_STRING
-};
-
 enum method_e {
 	GET,
 	POST,
@@ -79,9 +63,25 @@ enum header_out_e {
 	OUT_CHUNK,
 	OUT_CONTENT_LEN,
 	OUT_CONTENT_TYPE,
-	OUT_LOCATION
+	OUT_LOCATION,
+	OUT_ALLOW
 };
 
+enum cgi_env_e {
+	SERVER_NAME,
+	SERVER_PORT,
+	SERVER_PROTOCOL,
+	REMOTE_ADDR,
+	REMOTE_HOST,
+	GATEWAY_INTERFACE,
+	REQUEST_METHOD,
+	SCRIPT_NAME,
+	CONTENT_LENGTH,
+	CONTENT_TYPE,
+	PATH_INFO,
+	PATH_TRANSLATED,
+	QUERY_STRING
+};
 
 /* STRUCT - Keys, Config (Server, Location), Process */
 typedef struct {
@@ -99,8 +99,6 @@ typedef struct {
 	vec_str_t			method;
 
 	type_t				typeDefault;
-	path_t				file40x_def;
-	path_t				file50x_def;
 	
 	path_t				locationCGI;
 	name_t				fileAtidx;
@@ -183,6 +181,7 @@ typedef struct response_header_s {
 	size_t				content_length;
 	str_t				content_type;
 	str_t				location;
+	vec_uint_t			allow;
 
 	vec_uint_t			list;
 

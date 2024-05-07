@@ -40,7 +40,16 @@
 void
 HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
 	try {
-		File target( rqst.line().uri, R_BINARY );
+		File target( rqst.line().uri, READ_BINARY );
+		
+		*bufptr = dupStreamBuf( target.fs, size );
+	} catch ( err_t& exc ) { log( "HTTP\t: " + str_t( exc.what() ) ); throw errstat_t( 404 ); }
+}
+
+void
+HTTP::GET( const str_t& uri, char** bufptr, size_t& size ) {
+	try {
+		File target( uri, READ_BINARY );
 		
 		*bufptr = dupStreamBuf( target.fs, size );
 	} catch ( err_t& exc ) { log( "HTTP\t: " + str_t( exc.what() ) ); throw errstat_t( 404 ); }
@@ -52,7 +61,7 @@ HTTP::POST( const Request& rqst, char** bufptr, size_t& size ) {
 	( void )size;
 
 	try {
-		File target( rqst.line().uri, W );
+		File target( rqst.line().uri, WRITE_APP );
 
 		target.fs << rqst.body();
 	} catch ( exception_t& exc ) { log( str_t( exc.what() ) ); throw errstat_t( 400 ); }
@@ -65,6 +74,4 @@ HTTP::DELETE( const Request& rqst ) {
 	// if ( stat( rqst.line().uri.c_str(), &statbuf ) != ERROR )
 	if ( std::remove( rqst.line().uri.c_str() ) == ERROR )
 		throw errstat_t( 404 );
-
-	// return FALSE;
 }

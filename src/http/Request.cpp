@@ -17,8 +17,11 @@ Request::Request( const Client& client ): _client( client ), _body( NULL ) {
 	_parse( buf );
 
 	// If the method is not allowed at this location config, set method_e as NOT_ALLOWED
-	if ( _line.method != UNKNOWN && !config().allow.at( _line.method ) )
-		_line.method = NOT_ALLOWED;
+	try {
+		if ( _line.method != UNKNOWN && !config().allow.at( _line.method ) )
+			_line.method = NOT_ALLOWED;
+	}
+	catch ( exception_t& exc ) { log( "HTTP\t: please assign TRUE or FALSE to all supported method on the config" ); }
 }
 
 void
@@ -68,7 +71,6 @@ Request::_assignMethod( str_t token ) {
 void
 Request::_assignURI( str_t token ) { 
 	_configIdx	= HTTP::getLocationConf( _line.uri, _client.getServer().config() );
-	// _config		= _client.server().config().at( _configIdx );
 
 	if ( config().location.length() == 1 )
 		_line.uri = token.replace( 0, config().location.length(), config().root + "/" );
@@ -135,33 +137,6 @@ Request::_token( isstream_t& iss, char delim ) {
 		throw err_t( "_token: " + errMsg[INVALID_REQUEST_LINE] );
 
 	return token;
-}
-
-Request::Request( const Client& client, const config_t& config, const uint_t& status ): _client( client ), _body( NULL ) {
-	_line.version	= VERSION_11;
-	_line.method	= GET;
-
-	if ( status < 500 ) {
-		_line.uri = config.file40x;
-		
-		// size_t pos_dot = _line.uri.rfind( '.' );
-		// if ( pos_dot != str_t::npos && _line.uri.substr( pos_dot ) == ".cgi" ) {
-		// 	osstream_t query;
-		// 	query << "status_code=" << status << "&explanation=";
-			
-		// 	str_t	explain( HTTP::key.status.at( status ) );
-		// 	size_t	pos_ws;
-
-		// 	while ( ( pos_ws = explain.find( ' ' ) ) != str_t::npos )
-		// 		explain.replace( pos_ws, 1, "+" );
-		// 	query << explain;
-
-		// 	_line.query = query.str();
-		// }
-	}
-	else _line.uri = config.file50x;
-
-	// _config = config;
 }
 
 Request::~Request( void ) { if ( _body ) delete _body; }

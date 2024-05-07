@@ -2,9 +2,10 @@
 
 File::File( const std::string& fileName, int mode ) {
 	switch ( mode ) {
-		case R: fs.open( fileName.c_str(), std::fstream::in ); break;
-		case R_BINARY: fs.open( fileName.c_str(), std::ios::in | std::ios::binary ); break;
-		case W: fs.open( fileName.c_str(), std::fstream::out ); break;
+		case READ			: fs.open( fileName.c_str(), std::ios::in ); break;
+		case READ_BINARY	: fs.open( fileName.c_str(), std::ios::in | std::ios::binary ); break;
+		case WRITE			: fs.open( fileName.c_str(), std::ios::out ); break;
+		case WRITE_APP		: fs.open( fileName.c_str(), std::ios::out | std::ios::app ); break;
 		default: throw std::runtime_error( "unknown mode" );
 	}
 

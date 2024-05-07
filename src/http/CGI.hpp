@@ -7,7 +7,7 @@
 
 # include "HTTP.hpp"
 
-// typedef stat_t	( *fnptr_t )( const Request&, process_t& );
+enum pipe_mode_e { R, W };
 
 class CGI {
 	public:
@@ -37,7 +37,6 @@ class CGI {
 };
 
 #endif
-
 
 /*
 3.  Invoking the Script

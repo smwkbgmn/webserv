@@ -4,6 +4,7 @@
 # include <cstdio>
 
 # include "log.hpp"
+# include "utill.hpp"
 # include "Client.hpp"
 	
 # define CNT_METHOD 3
@@ -42,6 +43,7 @@ class HTTP {
 		static size_t	getLocationConf( const str_t&, const vec_config_t& );
 	
 		static void		GET( const Request&, char**, size_t& );
+		static void		GET( const str_t&, char**, size_t& ); // For getting internal target
 		static void		POST( const Request&, char**, size_t& );
 		static void		DELETE( const Request& );
 
@@ -61,7 +63,6 @@ class HTTP {
 		static void		_buildBody( const Response&, osstream_t& );
 
 		/* method */
-		static bool		_getFstat( const path_t&, fstat_t& );
 		static bool		_invokeCGI( const Request&, process_t& );
 
 };
