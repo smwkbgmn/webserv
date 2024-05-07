@@ -1,8 +1,5 @@
 #include "HTTP.hpp"
 
-// http_t	HTTP::http;
-// keys_t	HTTP::key;
-
 /*	HTTP MESSAGE FORMMAT
 
 	HTTP-message   = start-line CRLF
@@ -16,8 +13,7 @@
 	field-line = field-name ":" OWS field-value OWS
 */
 
-
-/*	NGINX plain GET transaction
+/*	A example of plain GET transaction on NGINX
 
 	[Request]
 		GET / HTTP/1.1
@@ -50,36 +46,50 @@
 
 /* METHOD - transaction: send response message */
 void
-HTTP::transaction( const Client& client, osstream_t& oss ) {
+HTTP::transaction( const Client& client, process_t& procs, osstream_t& oss ) {
 	try {
 		Request	rqst( client );
-		
-		if ( _invokeCGI( rqst ) ) CGI::proceed( rqst, oss );
+
+		if ( !getInfo( rqst.line().uri, rqst.info ) ) {
+			if ( errno == 2 ) throw errstat_t( 404, "target source is not exist" );
+			else throw errstat_t( 500 );
+		}
+
+		if ( _invokeCGI( rqst, procs ) ) CGI::proceed( rqst, procs, oss );
 		else _build( Response( rqst ), oss );
 	}
-	// Replace the action of error case with building of response for redirection to error page
-	catch ( errstat_t& exc ) { clog( "HTTP - transaction: " + str_t( exc.what() ) ); _build( Response( client, exc.code ), oss ); }
-	catch ( err_t& exc ) { clog( "HTTP - Request: " + str_t( exc.what() ) ); _build( Response( client, 400 ), oss ); }
 
-	// LOGGING Response Message
-	logging.fs << oss.str() << "\n" << std::endl;
+	catch ( errstat_t& err ) {
+		log( "HTTP\t: transaction: " + str_t( err.what() ) );
+		oss.str( "" ); _build( Response( client, err.code ), oss );
+	}
+
+	catch ( err_t& err ) {
+		log( "HTTP\t: Request: " + str_t( err.what() ) );
+		_build( Response( client, 400 ), oss );
+	}
 }
 
-
 bool
-HTTP::_invokeCGI( const Request& rqst ) {
+HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {	
 	size_t	dot = rqst.line().uri.rfind( "." );
 	str_t	ext;
 
-	if ( dot != str_t::npos ) 
+	if ( dot != str_t::npos )
 		ext = rqst.line().uri.substr( dot );
 
-	return ext == ".cgi" || *rqst.line().uri.rbegin() == '/';
-	// return rqst.config().location == HTTP::http.locationCGI ||
-	// 	*rqst.line().uri.rbegin() == '/';
-		// rqst.line().uri.substr( rqst.line().uri.rfind( '.' ) ) == ".exe";
+	// Add condition if the autoindexing is TRUE
+	if ( *rqst.line().uri.rbegin() == '/' )
+		procs.argv.push_back( HTTP::http.fileAtidx );
+	else {
+		if ( !ext.empty() && ext != ".cgi" && ext != ".exe" ) {
+			try { procs.argv.push_back( CGI::script_bin.at( ext ) );  }
+			catch( exception_t& exc ) { return FALSE; }
+		}
+		procs.argv.push_back( rqst.line().uri );
+	}
+	return TRUE;
 }
-
 
 void
 HTTP::_build( const Response& rspn, osstream_t& oss ) {
@@ -94,9 +104,10 @@ HTTP::_buildLine( const Response& rspn, osstream_t& oss ) {
 	map_uint_str_t::iterator iter = key.status.find( rspn.line().status );
 
 	oss <<
-	http.signature << '/' << http.version.at( static_cast<size_t>( rspn.line().version ) ) << ' ' <<
-	iter->first << " " << iter->second << 
-	CRLF;
+	http.signature << '/' <<
+	http.version.at( static_cast<size_t>( rspn.line().version ) ) << SP <<
+	iter->first << SP <<
+	iter->second << CRLF;
 }
 
 void
@@ -123,12 +134,17 @@ HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, osstream_t&
 		case OUT_CONTENT_LEN	: oss << header.content_length; break;
 		case OUT_CONTENT_TYPE	: oss << header.content_type; break;
 		case OUT_LOCATION		: oss << header.location; break;
+		case OUT_ALLOW			:
+			vec_uint_t::const_iterator iter = header.allow.begin();
+			while ( iter != header.allow.end() ) {
+				oss << HTTP::http.method.at( *iter );
+				if ( ++iter != header.allow.end() ) oss << ", ";
+			} break;
 	}
 	oss << CRLF;
 }
 
 void
 HTTP::_buildBody( const Response& rspn, osstream_t& oss ) {
-	for ( size_t idx = 0; idx < rspn.header().content_length; ++idx )
-		oss << rspn.body()[idx];
+	oss.write( rspn.body(), rspn.header().content_length );
 }

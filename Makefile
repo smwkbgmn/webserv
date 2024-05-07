@@ -2,7 +2,7 @@ NAME		= webserv
 
 CPP			= c++
 FLAG		= -Wall -Wextra -Werror \
-$(FLG_STD) -I src -I src/http -I src/tcp -I src/cgi
+$(FLG_STD) -I src -I src/http -I src/tcp
 
 FLG_STD		= -std=c++98
 
@@ -12,21 +12,28 @@ $(wildcard src/cgi/*.cpp) \
 $(wildcard src/http/*.cpp) \
 $(wildcard src/tcp/*.cpp)
 
-OBJ			= $(SRC:.cpp=.o)
+# OBJ			= $(SRC:.cpp=.o)
+# OBJ			= $(patsubst src/%.cpp, obj/%.o,$(SRC))
+OBJ         = $(patsubst src/%.cpp, obj/%.o, $(SRC))
 
 all			: $(NAME)
 
-run			: $(NAME)
+run			: all
 			./$(NAME)
 
 $(NAME)		: $(OBJ)
 			$(CPP) $(FLAG) $(OBJ) -o $@
 
-%.o			: %.cpp
-			$(CPP) $(FLAG) -c $< -o $@
+obj/%.o		: src/%.cpp
+			  mkdir -p $(@D)
+			  $(CPP) $(FLAG) -c $< -o $@
+
+# %.o			: %.cpp
+# 			$(CPP) $(FLAG) -c $< -o $@
 
 clean		:
-			$(RM) $(OBJ)
+			$(RM) -r obj
+#			$(RM) $(OBJ)
 
 fclean		:
 			make clean

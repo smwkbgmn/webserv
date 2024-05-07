@@ -1,13 +1,14 @@
 #ifndef HTTP_HPP
-#define HTTP_HPP
+# define HTTP_HPP
 
-#include <cstdio>
+# include <cstdio>
 
 # include "log.hpp"
+# include "utill.hpp"
 # include "Client.hpp"
-
-#define CNT_METHOD 3
-#define CNT_VERSION 4
+	
+# define CNT_METHOD 3
+# define CNT_VERSION 4
 
 class Request;
 class Response;
@@ -17,7 +18,7 @@ const path_t	fileStatus		= dirKeys + "/keyStatus.txt";
 const path_t	fileMime		= dirKeys + "/keyMime.txt";
 const path_t	fileHeaderIn	= dirKeys + "/keyHeaderIn.txt";
 const path_t	fileHeaderOut	= dirKeys + "/keyHeaderOut.txt";
-const path_t	fileListCGI		= dirKeys + "/lstCGI.txt";
+const path_t	fileEnviron		= dirKeys + "/keyEnviron.txt";
 
 const str_t strMethod[] = {
 	"GET",
@@ -38,19 +39,20 @@ class HTTP {
 		static keys_t	key;
 
 		static void		init( const str_t&, const str_t& );
-		static void		transaction( const Client&, osstream_t& );
+		static void		transaction( const Client&, process_t&, osstream_t& );
 		static size_t	getLocationConf( const str_t&, const vec_config_t& );
 	
 		static void		GET( const Request&, char**, size_t& );
+		static void		GET( const str_t&, char**, size_t& ); // For getting internal target
 		static void		POST( const Request&, char**, size_t& );
 		static void		DELETE( const Request& );
 
 	private:
 		/* init */
-		static void		_assignHeader(void);
-		static void		_assignStatus(void);
-		static void		_assignMime(void);
-		static void		_assignVec(vec_str_t &, const str_t[], size_t);
+		static void		_assignHeader( void );
+		static void		_assignStatus( void );
+		static void		_assignMime( void );
+		static void		_assignVec( vec_str_t &, const str_t[], size_t );
 
 		/* transaction */
 		static void		_build( const Response&, osstream_t& );
@@ -61,19 +63,9 @@ class HTTP {
 		static void		_buildBody( const Response&, osstream_t& );
 
 		/* method */
-		static bool		_invokeCGI( const Request& );
+		static bool		_invokeCGI( const Request&, process_t& );
 
 };
-
-template<typename Container, typename Target>
-typename Container::iterator
-lookup( Container& obj, Target token ) { return std::find( obj.begin(), obj.end(), token ); }
-
-template<typename Container, typename Target>
-size_t
-distance( Container& obj, Target token ) { return static_cast<size_t>( std::distance( obj.begin(), lookup( obj, token ) ) ); }
-
-char* dupStreamBuf( std::ios&, size_t& );
 
 # include "CGI.hpp"
 

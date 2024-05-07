@@ -10,11 +10,18 @@ const char*				Request::body( void ) const { return _body; }
 
 /* CONSTRUCT */
 Request::Request( const Client& client ): _client( client ), _body( NULL ) {
-	_parse( client.buffer() );
+	log( "HTTP\t: constructing requeset" );
 
-	// If the method is not allowed at this location config, set methodID as NOT_ALLOWED
-	if ( _line.method != UNKNOWN && !config().allow.at( _line.method ) )
-		_line.method = NOT_ALLOWED;
+	const char* buf = client.buffer();
+
+	_parse( buf );
+
+	// If the method is not allowed at this location config, set method_e as NOT_ALLOWED
+	try {
+		if ( _line.method != UNKNOWN && !config().allow.at( _line.method ) )
+			_line.method = NOT_ALLOWED;
+	}
+	catch ( exception_t& exc ) { log( "HTTP\t: please assign TRUE or FALSE to all supported method on the config" ); }
 }
 
 void
@@ -29,15 +36,17 @@ Request::_parse( const char* buf ) {
 	begin = end + 2;
 
 	while ( ( end = msgRqst.find( CRLF, begin ) ) != str_t::npos ) {
-		if ( end != begin ) _parseHeader( msgRqst.substr( begin, end ) );
+		if ( end == begin ) {
+			begin += 2;
+			break;
+		}
+		
+		_parseHeader( msgRqst.substr( begin, end ) );
 		begin = end + 2;
 	}
 
 	if ( _header.content_length )
 		_assignBody( begin, buf );
-
-	// LOGGING Request Message
-	logging.fs << msgRqst << std::endl;
 } 
 
 void
@@ -56,16 +65,23 @@ Request::_assignMethod( str_t token ) {
 	if ( iter == HTTP::http.method.end() )
 		_line.method = UNKNOWN;
 	else
-		_line.method = static_cast<methodID>( std::distance( HTTP::http.method.begin(), iter ) );
+		_line.method = static_cast<method_e>( std::distance( HTTP::http.method.begin(), iter ) );
 }
 
 void
 Request::_assignURI( str_t token ) { 
 	_configIdx	= HTTP::getLocationConf( _line.uri, _client.getServer().config() );
+
 	if ( config().location.length() == 1 )
-		_line.uri	= token.replace( 0, config().location.length(), config().root + "/" );
+		_line.uri = token.replace( 0, config().location.length(), config().root + "/" );
 	else
-		_line.uri	= token.replace( 0, config().location.length(), config().root );
+		_line.uri = token.replace( 0, config().location.length(), config().root );
+
+	size_t	pos_query = _line.uri.find( '?' );
+	if ( pos_query != str_t::npos ) {
+		_line.query = _line.uri.substr( pos_query + 1);
+		_line.uri.erase( pos_query );
+	}
 }
 
 void
@@ -79,7 +95,7 @@ Request::_assignVersion( str_t token ) {
 	if ( iter == HTTP::http.version.end() )
 		_line.version = NOT_SUPPORTED;
 	else
-		_line.version = static_cast<versionID>( std::distance( HTTP::http.version.begin(), iter ) );
+		_line.version = static_cast<version_e>( std::distance( HTTP::http.version.begin(), iter ) );
 }
 
 void
@@ -90,22 +106,26 @@ Request::_parseHeader( str_t field ) {
 	header = _token( iss, ':' );
 	iss >> std::ws;
 
-	switch ( distance( HTTP::key.header_in, header ) ) {
-		case IN_HOST		: iss >> _header.host; _add( _header.list, IN_HOST ); break;
-		case IN_CONNECTION	: _header.connection = KEEP_ALIVE; _add( _header.list, IN_CONNECTION ); break;
+	switch ( _add( _header.list, distance( HTTP::key.header_in, header ) ) ) {
+		case IN_HOST		: iss >> _header.host; break;
+		case IN_CONNECTION	: _header.connection = KEEP_ALIVE; break;
 		case IN_CHUNK		: break;
-		case IN_CONTENT_LEN	: iss >> _header.content_length; _add( _header.list, IN_CONTENT_LEN ); break;
-		case IN_CONTENT_TYPE: break;
+		case IN_CONTENT_LEN	: iss >> _header.content_length; break;
+		case IN_CONTENT_TYPE: iss >> _header.content_type; break;
 	}
 }
 
-void
-Request::_add( vec_uint_t& list, uint_t id ) { list.push_back( id ); }
+ssize_t
+Request::_add( vec_uint_t& list, ssize_t id ) { if ( id != -1 ) list.push_back( id ); return id; }
 
 void
 Request::_assignBody( const size_t& bodyBegin, const char* buf ) {
 	_body = new char[_header.content_length];
 	memcpy( _body, &buf[bodyBegin], _header.content_length );
+	
+	// log( "HTTP\t: the rqst body" );
+	// std::clog.write( _body, _header.content_length );
+	// std::clog << std::endl;
 }
 
 str_t

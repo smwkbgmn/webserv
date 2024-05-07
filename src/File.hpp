@@ -15,7 +15,7 @@
 	trunc	(truncate) Any current content is discarded, assuming a length of zero on opening.
 */
 
-enum Mode { R, W, R_BINARY };
+enum Mode { READ, READ_BINARY, WRITE, WRITE_APP };
 
 class File {
 	public:

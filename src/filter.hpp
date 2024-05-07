@@ -1,37 +1,37 @@
 #ifndef FILTER_HPP
-#define FILTER_HPP
+# define FILTER_HPP
 
-#include "structure.hpp"
+# include "structure.hpp"
 
 /*
-        token	= 1*tchar
-        tchar	= "!" / "#" / "$" / "%" / "&" / "'" / "*"
-                        / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
-                        / DIGIT / ALPHA; any VCHAR, except delimiters
+	token	= 1*tchar
+	tchar	= "!" / "#" / "$" / "%" / "&" / "'" / "*"
+					/ "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+					/ DIGIT / ALPHA; any VCHAR, except delimiters
 
-        OWS		= *( SP / HTAB ); optional whitespace
-        RWS		= 1*( SP / HTAB ); required whitespace
-        BWS		= OWS; "bad" whitespace
+	OWS		= *( SP / HTAB ); optional whitespace
+	RWS		= 1*( SP / HTAB ); required whitespace
+	BWS		= OWS; "bad" whitespace
 
-        See iana.org for method, header and status list
-        method: https://www.iana.org/assignments/http-methods/http-methods.xhtml
-        header: https://www.iana.org/assignments/http-fields/http-fields.xhtml
-                also https://en.wikipedia.org/wiki/List_of_HTTP_header_fields
-        status:
-   https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+	See iana.org for method, header and status list
+	method: https://www.iana.org/assignments/http-methods/http-methods.xhtml
+	header: https://www.iana.org/assignments/http-fields/http-fields.xhtml
+			also https://en.wikipedia.org/wiki/List_of_HTTP_header_fields
+	status:
+	https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 */
 
-#define NONE	0
-#define FALSE	0
-#define TRUE	1
+# define NONE	0
 
-#define LF		'\n'
-#define CR		'\r'
-#define CRLF	"\r\n"
-#define SP		' '
+# define CR			'\r'
+# define LF			'\n'
+# define CRLF		"\r\n"
+# define SP			' '
 
-/* IDs */
-enum methodID {
+# define MSG_END	"\r\n\r\n"
+
+/* ENUM */
+enum method_e {
 	GET,
 	POST,
 	DELETE,
@@ -39,18 +39,18 @@ enum methodID {
 	UNKNOWN
 };
 
-enum versionID {
+enum version_e {
 	VERSION_9,
 	VERSION_10,
 	VERSION_11,
 	VERSION_20,
 	NOT_SUPPORTED };
 
-enum connectionID {
+enum connection_e {
 	KEEP_ALIVE
 };
 
-enum headerInID {
+enum header_in_e {
 	IN_HOST,
 	IN_CONNECTION,
 	IN_CHUNK,
@@ -58,17 +58,34 @@ enum headerInID {
 	IN_CONTENT_TYPE
 };
 
-enum headerOutID {
+enum header_out_e {
 	OUT_SERVER,
 	OUT_DATE,
 	OUT_CONNECTION,
 	OUT_CHUNK,
 	OUT_CONTENT_LEN,
 	OUT_CONTENT_TYPE,
-	OUT_LOCATION
+	OUT_LOCATION,
+	OUT_ALLOW
 };
 
-/* STRUCT - Keys, Config/Server, Congif/Location */
+enum cgi_env_e {
+	SERVER_NAME,
+	SERVER_PORT,
+	SERVER_PROTOCOL,
+	REMOTE_ADDR,
+	REMOTE_HOST,
+	GATEWAY_INTERFACE,
+	REQUEST_METHOD,
+	SCRIPT_NAME,
+	CONTENT_LENGTH,
+	CONTENT_TYPE,
+	PATH_INFO,
+	PATH_TRANSLATED,
+	QUERY_STRING
+};
+
+/* STRUCT - Keys, Config (Server, Location), Process */
 typedef struct {
 	vec_str_t			header_in;
 	vec_str_t			header_out;
@@ -76,7 +93,7 @@ typedef struct {
 	map_str_type_t		mime;
 } 	keys_t;
 
-typedef std::map<methodID, bool> map_method_bool_t;
+typedef std::map<method_e, bool> map_method_bool_t;
 
 typedef struct {
 	str_t				signature;
@@ -123,16 +140,17 @@ typedef struct config_s {
 	path_t				file40x;
 	path_t				file50x;
 
-	config_s(void);
+	config_s( void );
 }	config_t;
 
 typedef std::vector<config_t> vec_config_t;
 
 /* STRUCT - Request & Response */
 typedef struct {
-	versionID			version;
-	methodID			method;
+	version_e			version;
+	method_e			method;
 	path_t				uri;
+	str_t				query;
 
 }	request_line_t;
 
@@ -146,14 +164,14 @@ typedef struct request_header_s {
 
 	vec_uint_t			list;
 
-	request_header_s(void);
+	request_header_s( void );
 }	request_header_t;
 
 typedef struct response_line_s {
-	versionID			version;
+	version_e			version;
 	uint_t				status;
 
-	response_line_s(void);
+	response_line_s( void );
 }	response_line_t;
 
 typedef struct response_header_s {
@@ -165,10 +183,11 @@ typedef struct response_header_s {
 	size_t				content_length;
 	str_t				content_type;
 	str_t				location;
+	vec_uint_t			allow;
 
 	vec_uint_t			list;
 
-	response_header_s(void);
+	response_header_s( void );
 }	response_header_t;
 
 #endif

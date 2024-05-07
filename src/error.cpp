@@ -3,7 +3,7 @@
 void
 throwSysErr( const str_t& fncName, uint_t code ) {
 	perror( fncName.c_str() );
-	std::clog << "errno: " << errno << "\n";
+	// std::clog << "errno: " << errno << "\n";
 	throw errstat_t( code );
 }
 

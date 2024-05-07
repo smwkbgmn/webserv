@@ -1,13 +1,13 @@
 #ifndef ERROR_HPP
-#define ERROR_HPP
+# define ERROR_HPP
 
-#include <exception>
-#include <sys/errno.h>
+# include <exception>
+# include <sys/errno.h>
 
-#include "structure.hpp"
-#include "log.hpp"
+# include "structure.hpp"
 
-#define ERROR -1
+# define ERROR -1
+# define SUCCESS 0
 
 extern int errno;
 
@@ -35,6 +35,8 @@ typedef struct errstat_s: err_t {
 }	errstat_t;
 
 void	throwSysErr( const str_t&, uint_t );
+
+# include "log.hpp"
 
 #endif
 

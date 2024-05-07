@@ -3,7 +3,7 @@
 #include "log.hpp"
 
 const std::time_t	begin	= std::time( NULL );
-File				logging( "log/" + logFname(), W );
+File				logging( "log/" + logFname(), WRITE );
 
 std::string logFname( void ) {
 	std::string	fname = strTime() + ".log";
@@ -31,7 +31,7 @@ void timestamp( void ) {
 	std::clog << buf << " ";
 }
 
-void clog( const str_t& msg ) {
+void log( const str_t& msg ) {
 	timestamp();
 	std::clog << msg << std::endl;
 }

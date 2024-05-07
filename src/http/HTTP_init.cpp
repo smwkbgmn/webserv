@@ -8,8 +8,9 @@ void
 HTTP::init( const str_t& type, const name_t& cgi ) {
 	http.signature		= "HTTP";
 	http.typeDefault	= type;
+
 	http.locationCGI	= cgi;
-	http.fileAtidx		= cgi + "/autoindex_v2.cgi";
+	http.fileAtidx		= cgi + "/autoindex_v5.cgi";
 
 	_assignVec( http.version, strVersion, CNT_VERSION );
 	_assignVec( http.method, strMethod, CNT_METHOD );
@@ -17,27 +18,29 @@ HTTP::init( const str_t& type, const name_t& cgi ) {
 	_assignHeader();
 	_assignStatus();
 	_assignMime();
+
+	CGI::init();
 }
 
 void
 HTTP::_assignHeader( void ) {
 	str_t header;
 
-	File fileIn( fileHeaderIn, R );
+	File fileIn( fileHeaderIn, READ );
 	while ( std::getline( fileIn.fs, header ) )
 		key.header_in.push_back( header );
 
-	File fileOut( fileHeaderOut, R );
+	File fileOut( fileHeaderOut, READ );
 	while ( std::getline( fileOut.fs, header ) ) key.header_out.push_back( header );
 }
 
 void
 HTTP::_assignStatus( void ) {
-	File file( fileStatus, R );
+	File file( fileStatus, READ );
 
 	while ( !file.fs.eof() ) {
-		uint_t code;
-		str_t reason;
+		uint_t	code;
+		str_t	reason;
 
 		file.fs >> code;
 		file.fs.get();
@@ -49,7 +52,7 @@ HTTP::_assignStatus( void ) {
 
 void
 HTTP::_assignMime(void) {
-	File	file( fileMime, R );
+	File	file( fileMime, READ );
 	str_t	type, exts, ext;
 
 	while ( !file.fs.eof() ) {
@@ -67,8 +70,7 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 		target.push_back(source[idx]);
 }
 
-/* METHOD - getLocationConf: get index of vec_config_t matching with request URI
- */
+/* METHOD - getLocationConf: get index of vec_config_t matching with request URI */
 size_t HTTP::getLocationConf( const str_t& uri, const vec_config_t& config ) {
 	if ( config.size() > 1 ) {
 		vec_config_t::const_iterator	iter	= config.begin();
@@ -84,20 +86,17 @@ size_t HTTP::getLocationConf( const str_t& uri, const vec_config_t& config ) {
 	return 0;
 }
 
-/* FILTER INIT */
-
+/* STRUCT */
 config_s::config_s( void ) {
 	location		= "/";
 	root			= "html";
-	file40x			= "/40x.html";
-	file50x			= "/50x.html";
 
 	atidx			= FALSE;
 	sizeBodyMax		= 1000;
 
 	allow.insert( std::make_pair( GET, TRUE ) );
 	allow.insert( std::make_pair( POST, TRUE ) );
-	allow.insert( std::make_pair( DELETE, TRUE ) );
+	allow.insert( std::make_pair( DELETE, FALSE ) );
 }
 
 request_header_s::request_header_s( void ) {
@@ -115,15 +114,4 @@ response_header_s::response_header_s( void ) {
 	connection		= KEEP_ALIVE;
 	chunked			= FALSE;
 	content_length	= 0;
-}
-
-char* dupStreamBuf( std::ios& obj, size_t& size ) {
-	std::streambuf* pbuf = obj.rdbuf();
-	size = pbuf->pubseekoff( 0, obj.end, obj.in );
-	pbuf->pubseekpos( 0, obj.in );
-
-	char* buf = new char[size];
-	pbuf->sgetn( buf, size );
-
-	return buf;
 }
