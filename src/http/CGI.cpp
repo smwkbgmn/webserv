@@ -27,7 +27,7 @@ CGI::_assignScriptBin( void ) {
 
 void
 CGI::_assignEnvironList( void ) {
-	File	fileEnv( fileEnviron, R );
+	File	fileEnv( fileEnviron, READ );
 	str_t	key;
 	
 	for ( uint_t keyidx = 0; std::getline( fileEnv.fs, key ); ++keyidx )
