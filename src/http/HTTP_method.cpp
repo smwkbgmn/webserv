@@ -43,7 +43,7 @@ HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
 		File target( rqst.line().uri, READ_BINARY );
 		
 		*bufptr = dupStreamBuf( target.fs, size );
-	} catch ( err_t& exc ) { log( "HTTP\t: " + str_t( exc.what() ) ); throw errstat_t( 404 ); }
+	} catch ( err_t& err ) { log( "HTTP\t: " + str_t( err.what() ) ); throw errstat_t( 404 ); }
 }
 
 void
@@ -52,7 +52,7 @@ HTTP::GET( const str_t& uri, char** bufptr, size_t& size ) {
 		File target( uri, READ_BINARY );
 		
 		*bufptr = dupStreamBuf( target.fs, size );
-	} catch ( err_t& exc ) { log( "HTTP\t: " + str_t( exc.what() ) ); throw errstat_t( 404 ); }
+	} catch ( err_t& err ) { log( "HTTP\t: " + str_t( err.what() ) ); throw errstat_t( 404 ); }
 }
  
 void

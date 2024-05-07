@@ -39,8 +39,8 @@ HTTP::_assignStatus( void ) {
 	File file( fileStatus, READ );
 
 	while ( !file.fs.eof() ) {
-		uint_t code;
-		str_t reason;
+		uint_t	code;
+		str_t	reason;
 
 		file.fs >> code;
 		file.fs.get();

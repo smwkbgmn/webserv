@@ -37,15 +37,14 @@ CGI::_assignEnvironList( void ) {
 /* METHOD - proceed: get outsourcing data */
 void
 CGI::proceed( const Request& rqst, process_t& procs, osstream_t& oss ) {
-	osstream_t source;
 	log( "CGI\t: proceed" );
 
 	if ( _detach( rqst, procs ) == SUCCESS ) {
 		_write( procs, rqst );
 		_wait( procs );
-		
-		_read( procs, source );
-		_build( source, oss );
+
+		osstream_t source;
+		_build( source, oss, _read( procs, source ) );
 
 		if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
 			throw errstat_t( 500, "the CGI fail to exit as SUCCESS" );
@@ -82,7 +81,7 @@ CGI::_wait( process_t& procs ) {
 		throwSysErr( "wait", 500 );
 }
 
-void
+size_t
 CGI::_read( process_t& procs, osstream_t& source ) {
 	c_buffer_t	buf;
 	
@@ -93,12 +92,11 @@ CGI::_read( process_t& procs, osstream_t& source ) {
 	if ( buf.read == ERROR ) throwSysErr( "read", 500 );
 	
 	close( procs.fd[R] );
+	return buf.total;
 }
 
 void
-CGI::_build( osstream_t& source, osstream_t& oss ) {
-	size_t size = source.str().length();
-
+CGI::_build( osstream_t& source, osstream_t& oss, size_t size ) {
 	_buildLine( oss, size );
 	_buildHeader( source, oss, size );
 }
@@ -117,7 +115,7 @@ CGI::_buildLine( osstream_t& oss, const size_t& size ) {
 void
 CGI::_buildHeader( const osstream_t& source, osstream_t& oss, size_t& size ) {
 	if ( size ) {
-		size_t pos_header_end = source.str().find( MSG_END );
+		size_t	pos_header_end	= source.str().find( MSG_END );
 
 		if ( source.str().find( HTTP::key.header_out.at( OUT_CONTENT_TYPE ) ) == str_t::npos )
 			oss <<
@@ -133,8 +131,8 @@ CGI::_buildHeader( const osstream_t& source, osstream_t& oss, size_t& size ) {
 			size << CRLF;
 		}
 		
-		if ( pos_header_end == str_t::npos )
-			oss << CRLF;
+		// if ( pos_header_end == str_t::npos )
+		// 	oss << CRLF;
 
 		oss << source.str();
 	}

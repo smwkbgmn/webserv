@@ -62,6 +62,14 @@ void Client::processClientRequest(Client& client) {
 
         if (isMsgDone( buf, byte ) && isBodyDone( byte ) ) {
             HTTP::transaction( *this, client.subprocs, response );
+            if ( subprocs.pid != 0 ) {
+                // Regist event
+            }
+
+            // if ( subprocs is done )
+            // _read ( from pipe )
+            // _build
+            // send
             
             // Consider write a Client reset method
             client.oss.str( "" );

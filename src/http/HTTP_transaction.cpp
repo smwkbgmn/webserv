@@ -78,6 +78,7 @@ HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {
 	if ( dot != str_t::npos )
 		ext = rqst.line().uri.substr( dot );
 
+	// Add condition if the autoindexing is TRUE
 	if ( *rqst.line().uri.rbegin() == '/' )
 		procs.argv.push_back( HTTP::http.fileAtidx );
 	else {

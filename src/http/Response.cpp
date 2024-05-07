@@ -55,7 +55,8 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 			while ( iter != rqst.config().allow.end() )
 				if ( iter->second ) _header.allow.push_back( iter->first );
 			_header.list.push_back( OUT_ALLOW );
-			_errpage( 405, rqst.config() );
+			_errpage( 501, rqst.config() );
+			break;
 			
 	}
 }

@@ -10,6 +10,7 @@
 	- Apply corrected config structures
 	- Add program option for toggle of logging
 	- See if other connection headers should be handled 
+	- Rewrite redirection
 	- Implement cookies
 
 	Done
