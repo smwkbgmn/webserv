@@ -137,10 +137,8 @@ HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, osstream_t&
 			vec_uint_t::const_iterator iter = header.allow.begin();
 			while ( iter != header.allow.end() ) {
 				oss << HTTP::http.method.at( *iter );
-				if ( ++iter != header.allow.end() ) 
-					oss << ", ";
-			}
-			break;
+				if ( ++iter != header.allow.end() ) oss << ", ";
+			} break;
 	}
 	oss << CRLF;
 }

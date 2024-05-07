@@ -43,6 +43,7 @@ CGI::proceed( const Request& rqst, process_t& procs, osstream_t& oss ) {
 	if ( _detach( rqst, procs ) == SUCCESS ) {
 		_write( procs, rqst );
 		_wait( procs );
+		
 		_read( procs, source );
 		_build( source, oss );
 
@@ -98,22 +99,43 @@ void
 CGI::_build( osstream_t& source, osstream_t& oss ) {
 	size_t size = source.str().length();
 
-	if ( !size )
-		oss << "HTTP/1.1 204" << SP << HTTP::key.status.at( 204 ) << CRLF;
+	_buildLine( oss, size );
+	_buildHeader( source, oss, size );
+}
 
-	else {
-		oss << "HTTP/1.1 200 OK" << CRLF;
+void
+CGI::_buildLine( osstream_t& oss, const size_t& size ) {
+	oss << 
+	HTTP::http.signature << '/' << HTTP::http.version.at( VERSION_11 ) << SP;
 
-		if ( source.str().find( "Content-Type" ) == str_t::npos )
-			oss << "Content-Type: text/plain" << CRLF;
+	if ( !size ) oss << "204" << SP << HTTP::key.status.at( 204 ) << CRLF;
+	else oss << "200" << SP << HTTP::key.status.at( 200 );
+	
+	oss << CRLF;
+}
 
-		if ( source.str().find( "Content-Length" ) == str_t::npos ) {
-			size_t pos_header_end = source.str().find( MSG_END );
+void
+CGI::_buildHeader( const osstream_t& source, osstream_t& oss, size_t& size ) {
+	if ( size ) {
+		size_t pos_header_end = source.str().find( MSG_END );
 
+		if ( source.str().find( HTTP::key.header_out.at( OUT_CONTENT_TYPE ) ) == str_t::npos )
+			oss <<
+			HTTP::key.header_out.at( OUT_CONTENT_TYPE ) << ':' << SP <<
+			HTTP::key.mime.at( "txt" ) << CRLF;
+
+		if ( source.str().find( HTTP::key.header_out.at( OUT_CONTENT_LEN ) ) == str_t::npos ) {
 			if ( pos_header_end != str_t::npos )
 				size -= pos_header_end - 4;
-			oss << "Content-Length: " << size << CRLF;
+
+			oss <<
+			HTTP::key.header_out.at( OUT_CONTENT_LEN ) << ':' << SP <<
+			size << CRLF;
 		}
+		
+		if ( pos_header_end == str_t::npos )
+			oss << CRLF;
+
 		oss << source.str();
 	}
 }
