@@ -96,24 +96,26 @@ CGI::_read( process_t& procs, osstream_t& source ) {
 
 void
 CGI::_build( osstream_t& source, osstream_t& oss ) {
-	size_t len = source.str().length();
+	size_t size = source.str().length();
 
-	if ( len > 0 ) {
+	if ( !size )
+		oss << "HTTP/1.1 204" << SP << HTTP::key.status.at( 204 ) << CRLF;
+
+	else {
 		oss << "HTTP/1.1 200 OK" << CRLF;
 
 		if ( source.str().find( "Content-Type" ) == str_t::npos )
 			oss << "Content-Type: text/plain" << CRLF;
 
 		if ( source.str().find( "Content-Length" ) == str_t::npos ) {
-			size_t	pos_header_end = source.str().find( MSG_END );
+			size_t pos_header_end = source.str().find( MSG_END );
 
 			if ( pos_header_end != str_t::npos )
-				len -= pos_header_end - 4;
-			oss << "Content-Length: " << len << CRLF;
+				size -= pos_header_end - 4;
+			oss << "Content-Length: " << size << CRLF;
 		}
 		oss << source.str();
 	}
-	else oss << "HTTP/1.1 204" << SP << HTTP::key.status.at( 204 ) << CRLF;
 }
 
 /* CHILD */
