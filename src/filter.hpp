@@ -136,32 +136,19 @@ typedef struct config_s {
 	vec_location_t		locations;
 }	config_t;
 
-// typedef struct config_s {
-// 	name_t				location;
-// 	path_t				root;
-// 	map_method_bool_t	allow;
-
-// 	bool				atidx;
-// 	size_t				sizeBodyMax;
-
-// 	path_t				file40x;
-// 	path_t				file50x;
-
-// 	config_s( void );
-// }	config_t;
-
-// typedef std::vector<config_t> vec_config_t;
-
 typedef struct msg_buffer_s {
 	msg_buffer_s( void );
 
 	void				reset( void );
 	
-	sstream_t			ss;
+	sstream_t			msg;
+	bool				msg_done;
+	ssize_t				msg_read;
+
+	sstream_t			body;
 	ssize_t				body_size;
 	ssize_t				body_read;
 
-	bool				header_done;
 }	msg_buffer_t;
 
 /* STRUCT - Request & Response */
@@ -184,6 +171,7 @@ typedef struct request_header_s {
 	str_t				content_type;
 
 	vec_uint_t			list;
+
 }	request_header_t;
 
 typedef struct response_line_s {
@@ -191,6 +179,7 @@ typedef struct response_line_s {
 
 	version_e			version;
 	uint_t				status;
+
 }	response_line_t;
 
 typedef struct response_header_s {
@@ -207,6 +196,7 @@ typedef struct response_header_s {
 	vec_uint_t			allow;
 
 	vec_uint_t			list;
+
 }	response_header_t;
 
 #endif

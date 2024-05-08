@@ -69,7 +69,7 @@ CGI::_detach( const Request& rqst, process_t& procs ) {
 void
 CGI::_write( const process_t& procs, const Request& rqst ) {
 	if ( rqst.line().method == POST &&
-		write( procs.fd[W], rqst.body(), rqst.header().content_length ) == ERROR ) 
+		write( procs.fd[W], rqst.body().str().c_str(), rqst.header().content_length ) == ERROR ) 
 			throwSysErr( "write", 500 );
 	close( procs.fd[W] );
 }

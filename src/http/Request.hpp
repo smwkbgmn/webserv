@@ -14,7 +14,8 @@ class Request {
 
 		const request_line_t&		line( void ) const;
 		const request_header_t&		header( void ) const;
-		const char*					body( void ) const;
+		// const char*					body( void ) const;
+		const sstream_t&			body( void ) const;
 
 		fstat_t						info;
 
@@ -24,16 +25,17 @@ class Request {
 
 		request_line_t				_line;
 		request_header_t			_header;
-		char*						_body;
+		// char*						_body;
+		
+		// void						_parse( const char* );
+		void						_parse( const sstream_t& );
 
-		void						_parse( const char* );
-
-		void						_parseLine( str_t );
+		void						_parseLine( const str_t& );
 		void						_assignMethod( str_t );
 		void						_assignURI( str_t );
 		void						_assignVersion( str_t );
 
-		void						_parseHeader( str_t );
+		void						_parseHeader( const str_t& );
 		ssize_t						_add( vec_uint_t&, ssize_t );
 
 		void						_assignBody( const size_t&, const char* );

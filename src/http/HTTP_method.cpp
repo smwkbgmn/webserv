@@ -63,7 +63,7 @@ HTTP::POST( const Request& rqst, char** bufptr, size_t& size ) {
 	try {
 		File target( rqst.line().uri, WRITE_APP );
 
-		target.fs << rqst.body();
+		target.fs << rqst.body().str();
 	} catch ( exception_t& exc ) { log( str_t( exc.what() ) ); throw errstat_t( 400 ); }
 }
 

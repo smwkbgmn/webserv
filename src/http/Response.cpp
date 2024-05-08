@@ -20,7 +20,7 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 	switch ( rqst.line().method ) {
 		case GET:
 			try {
-				if ( rqst.body() || rqst.header().content_length || !rqst.header().content_type.empty() )
+				if ( rqst.body().str().length() || rqst.header().content_length || !rqst.header().content_type.empty() )
 					throw errstat_t( 400, ": the GET request may not be with body" );
 
 				HTTP::GET( rqst, &_body, _header.content_length );
