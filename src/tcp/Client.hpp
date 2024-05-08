@@ -21,23 +21,16 @@ private:
     Server&		srv;
     int			client_socket;
 
-    // osstream_t	oss;  
-	sstream_t	oss;  
-    osstream_t	response;
+	msg_buffer_t	msg;
+    osstream_t		response;
 
-    bool		msg;
-    ssize_t		body_size;
-    ssize_t		body_read;
-
-    process_t   subprocs;
+    process_t		subprocs;
 
 public:
-
-
     Client(Server& server);
     ~Client();
 
-    bool sendData();
+    bool sendData();              
     void disconnect_client(int client_fd);
     void processClientRequest( Client &);
 
@@ -48,6 +41,7 @@ public:
     bool isBodyDone( const size_t& );
 
     const Server& getServer() const;
+	const Server& server() const;
     const int& getSocket() const;
 
     void setSocket(const int& );

@@ -80,7 +80,7 @@ HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {
 
 	// Add condition if the autoindexing is TRUE
 	if ( *rqst.line().uri.rbegin() == '/' )
-		procs.argv.push_back( HTTP::http.fileAtidx );
+		procs.argv.push_back( HTTP::http.file_autoindex );
 	else {
 		if ( !ext.empty() && ext != ".cgi" && ext != ".exe" ) {
 			try { procs.argv.push_back( CGI::script_bin.at( ext ) );  }

@@ -10,6 +10,7 @@ class Request {
 
 		const Client&				client( void ) const;
 		const config_t&				config( void ) const;
+		const location_t&			location( void ) const;
 
 		const request_line_t&		line( void ) const;
 		const request_header_t&		header( void ) const;
@@ -18,8 +19,8 @@ class Request {
 		fstat_t						info;
 
 	private:
-		const Client&				_client;
-		size_t						_configIdx;
+		const Client&				_client; 
+		size_t						_location;
 
 		request_line_t				_line;
 		request_header_t			_header;
