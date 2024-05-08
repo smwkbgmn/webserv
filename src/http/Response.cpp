@@ -24,7 +24,7 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 					throw errstat_t( 400, ": the GET request may not be with body" );
 
 				HTTP::GET( rqst, &_body, _header.content_length );
-				_mime( rqst.line().uri, _header.content_type, HTTP::http.typeDefault );
+				_mime( rqst.line().uri, _header.content_type, HTTP::http.type_unknown );
 				_header.list.push_back( OUT_CONTENT_LEN );
 				_header.list.push_back( OUT_CONTENT_TYPE );
 			} catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
@@ -51,9 +51,9 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 			break;
 		
 		case UNKNOWN:
-			map_method_bool_t::const_iterator iter = rqst.config().allow.begin();
-			while ( iter != rqst.config().allow.end() )
-				if ( iter->second ) _header.allow.push_back( iter->first );
+			vec_uint_t::const_iterator iter = rqst.location().allow.begin();
+			while ( iter != rqst.location().allow.end() )
+				_header.allow.push_back( *iter );
 			_header.list.push_back( OUT_ALLOW );
 			_errpage( 501, rqst.config() );
 			break;
@@ -74,9 +74,7 @@ Response::_mime( const str_t& uri, str_t& typeHeader, const str_t& typeUnrecog )
 }
 
 Response::Response( const Client& client, const uint_t& errstat ): _body( NULL ) { 
-	const config_t&	config = client.getServer().config().at( 0 );
-
-	_errpage( errstat, config );
+	_errpage( errstat, client.server().config() );
 }
 
 void
@@ -86,8 +84,8 @@ Response::_errpage( const uint_t& status, const config_t& config ) {
 
 	path_t	page;
 
-	if ( status < 500 ) page = config.file40x;
-	else page = config.file50x;
+	if ( status < 500 ) page = config.file_40x;
+	else page = config.file_50x;
 
 	if ( !page.empty() && isExist( page ) ) HTTP::GET( page, &_body, _header.content_length );
 	else _errpageBuild( status );
@@ -107,3 +105,15 @@ Response::_errpageBuild( const uint_t& status ) {
 }
 
 Response::~Response( void ) { if ( _body ) delete _body; }
+
+/* STRUCT */
+response_line_s::response_line_s( void ) {
+	version			= VERSION_11;
+	status			= 200;
+}
+
+response_header_s::response_header_s( void ) {
+	connection		= KEEP_ALIVE;
+	chunked			= FALSE;
+	content_length	= 0;
+}

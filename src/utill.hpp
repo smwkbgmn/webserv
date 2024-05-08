@@ -6,6 +6,9 @@
 template<typename Container, typename Target> typename Container::iterator
 lookup( Container& obj, Target token ) { return std::find( obj.begin(), obj.end(), token ); }
 
+template<typename Container, typename Target> typename Container::const_iterator
+lookup( const Container& obj, Target token ) { return std::find( obj.begin(), obj.end(), token ); }
+
 template<typename Container, typename Target> ssize_t
 distance( Container& obj, Target token ) {
 	typename Container::iterator	iter = lookup( obj, token );

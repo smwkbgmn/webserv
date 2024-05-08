@@ -5,19 +5,18 @@
 	- CGI
 		Replace _wait NONE mode with WNOHANG
 	- Replace buffers
-	- Make GET method to check all index files in case of target not found 
-    - Handle chunked request/response
-	- Apply corrected config structures
-	- Add program option for toggle of logging
-	- See if other connection headers should be handled 
 	- Rewrite redirection
+    - Handle chunked request/response
 	- Implement cookies
+
+	- Make GET method to check all index files in case of target not found 
 
 	Done
 	- CGI
 		Add building of argument and envs for CGI
 		-> retrieve the PATH_INFO and QUERY_STRING from the URI
 		CGI header build
+	- Apply corrected config structures
 	- Add seeing how the file stat() is before proceeding HTTP methods
 	- File upload
 	- Add retrived location to Request obj after replace uri with real path
@@ -32,11 +31,13 @@
 	- Take some time to think of what would happen when the request msg is splited
 	by buffer size and it cause the fractured part at the end of request taht is
 	resulting unavailable to find the "\r\n\r\n" while taking request
+	- Add program option for toggle of logging
+	- See if other connection headers should be handled 
 */
 
 int main( void ) {
 	try {
-		HTTP::init( "text/plain", "html/cgi-bin" );
+		HTTP::init();
 		
 		Server server;
 

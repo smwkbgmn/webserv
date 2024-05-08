@@ -2,7 +2,8 @@
 
 /* ACCESS */
 const Client&			Request::client( void ) const { return _client; }
-const config_t&			Request::config( void ) const { return client().getServer().config().at( _configIdx ); }
+const config_t&			Request::config( void ) const { return client().server().config(); }
+const location_t&		Request::location( void ) const { return config().locations.at( _location ); }
 
 const request_line_t&	Request::line( void ) const { return _line; }
 const request_header_t&	Request::header( void ) const { return _header; }
@@ -17,11 +18,9 @@ Request::Request( const Client& client ): _client( client ), _body( NULL ) {
 	_parse( buf );
 
 	// If the method is not allowed at this location config, set method_e as NOT_ALLOWED
-	try {
-		if ( _line.method != UNKNOWN && !config().allow.at( _line.method ) )
-			_line.method = NOT_ALLOWED;
-	}
-	catch ( exception_t& exc ) { log( "HTTP\t: please assign TRUE or FALSE to all supported method on the config" ); }
+	if ( _line.method != UNKNOWN &&
+		lookup( location().allow, static_cast<uint_t>( _line.method ) ) == location().allow.end() ) 
+		_line.method = NOT_ALLOWED;
 }
 
 void
@@ -70,12 +69,12 @@ Request::_assignMethod( str_t token ) {
 
 void
 Request::_assignURI( str_t token ) { 
-	_configIdx	= HTTP::getLocationConf( _line.uri, _client.getServer().config() );
+	_location = HTTP::setLocation( _line.uri, _client.server().config().locations );
 
-	if ( config().location.length() == 1 )
-		_line.uri = token.replace( 0, config().location.length(), config().root + "/" );
+	if ( location().alias.length() == 1 )
+		_line.uri = token.replace( 0, location().alias.length(), location().root + "/" );
 	else
-		_line.uri = token.replace( 0, config().location.length(), config().root );
+		_line.uri = token.replace( 0, location().alias.length(), location().root );
 
 	size_t	pos_query = _line.uri.find( '?' );
 	if ( pos_query != str_t::npos ) {
@@ -141,3 +140,9 @@ Request::_token( isstream_t& iss, char delim ) {
 
 Request::~Request( void ) { if ( _body ) delete _body; }
 
+/* STRUCT */
+request_header_s::request_header_s( void ) {
+	connection		= KEEP_ALIVE;
+	chunked			= FALSE;
+	content_length	= 0;
+}

@@ -13,20 +13,24 @@
 class Request;
 class Response;
 
-const path_t	dirKeys			= "src/http/key";
-const path_t	fileStatus		= dirKeys + "/keyStatus.txt";
-const path_t	fileMime		= dirKeys + "/keyMime.txt";
-const path_t	fileHeaderIn	= dirKeys + "/keyHeaderIn.txt";
-const path_t	fileHeaderOut	= dirKeys + "/keyHeaderOut.txt";
-const path_t	fileEnviron		= dirKeys + "/keyEnviron.txt";
+// the cgi dir should be combined the server root later
+// const path_t	dir_cgi			= "cgi-bin/";
+const path_t	dir_cgi			= "html/cgi-bin/";
 
-const str_t strMethod[] = {
+const path_t	dir_keys		= "src/http/key/";
+const path_t	file_status		= dir_keys + "keyStatus.txt";
+const path_t	file_mime		= dir_keys + "keyMime.txt";
+const path_t	file_header_in	= dir_keys + "keyHeaderIn.txt";
+const path_t	file_header_out	= dir_keys + "keyHeaderOut.txt";
+const path_t	file_environ	= dir_keys + "keyEnviron.txt";
+
+const str_t str_method[] = {
 	"GET",
 	"POST",
 	"DELETE"
 };
 
-const str_t strVersion[] = {
+const str_t str_version[] = {
 	"0.9",
 	"1.0",
 	"1.1",
@@ -38,9 +42,9 @@ class HTTP {
 		static http_t	http;
 		static keys_t	key;
 
-		static void		init( const str_t&, const str_t& );
+		static void		init( void );
 		static void		transaction( const Client&, process_t&, osstream_t& );
-		static size_t	getLocationConf( const str_t&, const vec_config_t& );
+		static size_t	setLocation( const str_t&, const vec_location_t& );
 	
 		static void		GET( const Request&, char**, size_t& );
 		static void		GET( const str_t&, char**, size_t& ); // For getting internal target

@@ -3,7 +3,7 @@
 map_str_path_t	CGI::script_bin;
 map_uint_str_t	CGI::environ_list;
 
-/*
+/*k
 	.cgi, .exe and files in configured cgi-bin directory
 	-> execute directly
 
@@ -27,11 +27,11 @@ CGI::_assignScriptBin( void ) {
 
 void
 CGI::_assignEnvironList( void ) {
-	File	fileEnv( fileEnviron, READ );
+	File	fileEnv( file_environ, READ );
 	str_t	key;
 	
 	for ( uint_t keyidx = 0; std::getline( fileEnv.fs, key ); ++keyidx )
-		environ_list.insert( std::make_pair<uint_t, str_t>( keyidx, key ) );
+		environ_list.insert( std::make_pair( keyidx, key ) );
 }
 
 /* METHOD - proceed: get outsourcing data */
@@ -157,11 +157,11 @@ CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
 			case REMOTE_ADDR		: break;
 			case REMOTE_HOST		: break;
 			case GATEWAY_INTERFACE	: break;
-			case REQUEST_METHOD		: oss << strMethod[rqst.line().method]; break;
+			case REQUEST_METHOD		: oss << str_method[rqst.line().method]; break;
 			case SCRIPT_NAME		: oss << rqst.line().uri.substr( rqst.line().uri.rfind( '/' ) + 1 ); break;
 			case CONTENT_LENGTH		: if ( rqst.line().method == POST ) oss << rqst.header().content_length; break;
 			case CONTENT_TYPE		: oss << rqst.header().content_type; break;
-			case PATH_INFO			: oss << rqst.line().uri.substr( rqst.config().root.length() + 1 ); break;
+			case PATH_INFO			: oss << rqst.line().uri.substr( rqst.location().root.length() + 1 ); break;
 			case PATH_TRANSLATED	: oss << rqst.line().uri; break;
 			case QUERY_STRING		: oss << rqst.line().query; break;
 		}
@@ -205,14 +205,4 @@ CGI::_assignVectorChar( vec_cstr_t& vec_char, const vec_str_t& vec_str ) {
 c_buffer_s::c_buffer_s( void ) {
 	total	= 0;
 	read	= 0;
-}
-
-process_s::process_s( void ) { reset();	}
-
-void
-process_s::reset( void ) {
-	pid		= NONE;
-	stat	= NONE;
-	fd[R]	= NONE;
-	fd[W]	= NONE;	
 }

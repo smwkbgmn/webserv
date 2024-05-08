@@ -21,7 +21,7 @@
 	https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 */
 
-# define NONE	0
+# define NONE		0
 
 # define CR			'\r'
 # define LF			'\n'
@@ -44,7 +44,8 @@ enum version_e {
 	VERSION_10,
 	VERSION_11,
 	VERSION_20,
-	NOT_SUPPORTED };
+	NOT_SUPPORTED
+};
 
 enum connection_e {
 	KEEP_ALIVE
@@ -95,55 +96,73 @@ typedef struct {
 
 typedef std::map<method_e, bool> map_method_bool_t;
 
-typedef struct {
+typedef struct http_s {
 	str_t				signature;
 	vec_str_t			version;
 	vec_str_t			method;
 
-	type_t				typeDefault;
-	
-	path_t				locationCGI;
-	name_t				fileAtidx;
+	type_t				type_unknown;
+	path_t				file_autoindex;
 }	http_t;
 
-// typedef struct location_s {
-// 	str_t				name;
-// 	str_t				root;
-// 	// map_method_bool_t	allow;
-// 	vec_str_t			allow;
-// 	bool 				atidx;
-// 	vec_name_t			indexFiles;
+struct config_s;
 
-// 	location_s( void );
-// }	location_t;
+typedef struct location_s {
+	location_s( const config_s& );
 
-// typedef std::vector<location_t>	vec_location_t;
+	str_t				alias;
+	path_t				root;
 
-// typedef struct config_s {
-// 	str_t				name;
-// 	port_t				listen;
-// 	size_t				clientBodySize;
-// 	name_t				file40x;
-// 	name_t				file50x;
+	vec_uint_t			allow;
 
-// 	vec_location_t		locations;
-// }	config_t;
+	vec_name_t			index;
+	bool 				index_auto;
+}	location_t;
+
+typedef std::vector<location_t>	vec_location_t;
 
 typedef struct config_s {
-	name_t				location;
-	path_t				root;
-	map_method_bool_t	allow;
-
-	bool				atidx;
-	size_t				sizeBodyMax;
-
-	path_t				file40x;
-	path_t				file50x;
-
 	config_s( void );
+
+	str_t				name;
+	port_t				listen;
+	path_t				root;
+
+	name_t				file_40x;
+	name_t				file_50x;
+
+	size_t				client_max_body;
+
+	vec_location_t		locations;
 }	config_t;
 
-typedef std::vector<config_t> vec_config_t;
+// typedef struct config_s {
+// 	name_t				location;
+// 	path_t				root;
+// 	map_method_bool_t	allow;
+
+// 	bool				atidx;
+// 	size_t				sizeBodyMax;
+
+// 	path_t				file40x;
+// 	path_t				file50x;
+
+// 	config_s( void );
+// }	config_t;
+
+// typedef std::vector<config_t> vec_config_t;
+
+typedef struct msg_buffer_s {
+	msg_buffer_s( void );
+
+	void				reset( void );
+	
+	sstream_t			ss;
+	ssize_t				body_size;
+	ssize_t				body_read;
+
+	bool				header_done;
+}	msg_buffer_t;
 
 /* STRUCT - Request & Response */
 typedef struct {
@@ -155,6 +174,8 @@ typedef struct {
 }	request_line_t;
 
 typedef struct request_header_s {
+	request_header_s( void );
+
 	str_t 				host;
 	// date_t				date;
 	unsigned 			connection : 2;
@@ -163,18 +184,18 @@ typedef struct request_header_s {
 	str_t				content_type;
 
 	vec_uint_t			list;
-
-	request_header_s( void );
 }	request_header_t;
 
 typedef struct response_line_s {
+	response_line_s( void );
+
 	version_e			version;
 	uint_t				status;
-
-	response_line_s( void );
 }	response_line_t;
 
 typedef struct response_header_s {
+	response_header_s( void );
+
 	str_t				server;
 	// date_t				date;
 	// date_t				last_modified;
@@ -186,8 +207,6 @@ typedef struct response_header_s {
 	vec_uint_t			allow;
 
 	vec_uint_t			list;
-
-	response_header_s( void );
 }	response_header_t;
 
 #endif

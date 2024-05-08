@@ -1,7 +1,7 @@
 #include "Client.hpp"
 #include "HTTP.hpp"
 
-Client::Client(Server &connect_server) : srv(connect_server),client_socket(-1), msg( FALSE ), body_size( 0 ), body_read( 0 ) {}
+Client::Client(Server &connect_server) : srv(connect_server),client_socket(-1) {}
 
 Client::~Client() {}
 
@@ -11,13 +11,15 @@ const Server& Client::getServer() const {
     return srv;
 }
 
+const Server& Client::server() const { return srv; }
+
 const int& Client::getSocket() const {
     return client_socket;
 }
 
 const char* Client::buffer() const {
 	size_t	size;
-	return dupStreamBuf( oss, size );
+	return dupStreamBuf( msg.ss, size );
 }
 
 void Client::setSocket(const int& socket ){
@@ -36,10 +38,10 @@ void Client::disconnect_client(int client_fd) {
 
 
 void Client::processClientRequest(Client& client) {
-    char buf[BuffSize];
+    char buf[SIZE_BUF];
 
     log( "TCP\t: receiving data" );
-    ssize_t byte = recv(client_socket, buf, BuffSize, 0);
+    ssize_t byte = recv(client_socket, buf, SIZE_BUF, 0);
 
     osstream_t stream;
     stream << "TCP\t: receiving done by " << byte;
@@ -56,15 +58,15 @@ void Client::processClientRequest(Client& client) {
     }
     
     else {
-        client.oss.write( buf, byte );
+        msg.ss.write( buf, byte );
 
-        logging.fs << oss.str() << std::endl;
+        logging.fs << msg.ss.str() << std::endl;
 
         if (isMsgDone( buf, byte ) && isBodyDone( byte ) ) {
             HTTP::transaction( *this, client.subprocs, response );
-            if ( subprocs.pid != 0 ) {
+            // if ( subprocs.pid != 0 ) {
                 // Regist event
-            }
+            // }
 
             // if ( subprocs is done )
             // _read ( from pipe )
@@ -72,14 +74,9 @@ void Client::processClientRequest(Client& client) {
             // send
             
             // Consider write a Client reset method
-            client.oss.str( "" );
-            client.oss.clear();
 
-            client.msg          = FALSE;
-            client.body_size    = 0;
-            client.body_read	= 0;
-
-            client.subprocs.reset();
+			msg.reset();
+        	subprocs.reset();
 
             srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
         }
@@ -111,15 +108,15 @@ bool Client::sendData()
 
 bool
 Client::isMsgDone( const char* buf, ssize_t& byte_read ) {
-	if ( !msg ) {
+	if ( !msg.header_done ) {
 		str_t data_read( buf );
 
 		size_t pos_header_end = str_t( buf ).find( "\r\n\r\n" );
 		if ( pos_header_end != str_t::npos ) {
 			// log( "TCP\t: end of header has found" );
-			msg         = TRUE;
-			body_read	= byte_read - pos_header_end - 4;
-			byte_read	= 0;
+			msg.header_done	= TRUE;
+			msg.body_read	= byte_read - pos_header_end - 4;
+			byte_read		= 0;
 
 			size_t pos_header_len = data_read.find( "Content-Length" );
 			if ( pos_header_len != str_t::npos ) {
@@ -128,22 +125,45 @@ Client::isMsgDone( const char* buf, ssize_t& byte_read ) {
 				str_t       discard;
 
 				std::getline( iss, discard, ':' );
-				iss >> std::ws >> body_size;
+				iss >> std::ws >> msg.body_size;
 			}
 		}
 	}
-	return msg;
+	return msg.header_done;
 }
 
 bool Client::isBodyDone(const size_t& byte_read) {
-	body_read += byte_read;
+	msg.body_read += byte_read;
 
     if ( byte_read ) {
         osstream_t oss;
-        oss << "TCP\t: body read by " << byte_read << " so far: " << body_read << " / " << body_size << std::endl;
+        oss << "TCP\t: body read by " << byte_read << " so far: " << msg.body_read << " / " << msg.body_size << std::endl;
         log( oss.str() );
     }
 	
-	return body_size == body_read;
+	return msg.body_size == msg.body_read;
 }
 
+/* STRUCT */
+msg_buffer_s::msg_buffer_s( void ) { reset(); }
+
+void
+msg_buffer_s::reset( void ) {
+	ss.str( "" );
+	ss.clear();
+
+	body_size	= 0;
+	body_read	= 0;
+	
+	header_done	= FALSE;
+}
+
+process_s::process_s( void ) { reset();	}
+
+void
+process_s::reset( void ) {
+	pid			= NONE;
+	stat		= NONE;
+	fd[R]		= NONE;
+	fd[W]		= NONE;	
+}

@@ -8,7 +8,7 @@ Server::Server() : ASocket(), EventList(8), client_event("client"), server_event
     timeout.tv_sec = 5;
     timeout.tv_nsec = 0;
 
-    conf.push_back( config_t() );
+    // conf.push_back( config_t() );
 }
 
 Server::~Server() {
@@ -108,5 +108,3 @@ void Server::connectsever() {
         }
     }
 }
-
-
