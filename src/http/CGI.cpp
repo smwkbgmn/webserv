@@ -43,8 +43,8 @@ CGI::proceed( const Request& rqst, process_t& procs, osstream_t& oss ) {
 		_write( procs, rqst );
 		_wait( procs );
 
-		osstream_t source;
-		_build( source, oss, _read( procs, source ) );
+		osstream_t data;
+		_build( data, oss, _read( procs, data ) );
 
 		if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
 			throw errstat_t( 500, "the CGI fail to exit as SUCCESS" );
@@ -82,11 +82,11 @@ CGI::_wait( process_t& procs ) {
 }
 
 size_t
-CGI::_read( process_t& procs, osstream_t& source ) {
+CGI::_read( process_t& procs, osstream_t& data ) {
 	c_buffer_t	buf;
 	
 	while ( ( buf.read = read( procs.fd[R], buf.ptr, SIZE_BUF ) ) > 0 ) {
-		source.write( buf.ptr, buf.read );
+		data.write( buf.ptr, buf.read );
 		buf.total += buf.read;
 	}
 	if ( buf.read == ERROR ) throwSysErr( "read", 500 );
@@ -96,33 +96,33 @@ CGI::_read( process_t& procs, osstream_t& source ) {
 }
 
 void
-CGI::_build( osstream_t& source, osstream_t& oss, size_t size ) {
+CGI::_build( osstream_t& data, osstream_t& oss, size_t size ) {
 	_buildLine( oss, size );
-	_buildHeader( source, oss, size );
+	_buildHeader( data, oss, size );
 }
 
 void
-CGI::_buildLine( osstream_t& oss, const size_t& size ) {
-	oss << 
+CGI::_buildLine( osstream_t& data, const size_t& size ) {
+	data << 
 	HTTP::http.signature << '/' << HTTP::http.version.at( VERSION_11 ) << SP;
 
-	if ( !size ) oss << "204" << SP << HTTP::key.status.at( 204 ) << CRLF;
-	else oss << "200" << SP << HTTP::key.status.at( 200 );
+	if ( !size ) data << "204" << SP << HTTP::key.status.at( 204 ) << CRLF;
+	else data << "200" << SP << HTTP::key.status.at( 200 );
 	
-	oss << CRLF;
+	data << CRLF;
 }
 
 void
-CGI::_buildHeader( const osstream_t& source, osstream_t& oss, size_t& size ) {
+CGI::_buildHeader( const osstream_t& data, osstream_t& oss, size_t& size ) {
 	if ( size ) {
-		size_t	pos_header_end	= source.str().find( MSG_END );
+		size_t	pos_header_end	= data.str().find( MSG_END );
 
-		if ( source.str().find( HTTP::key.header_out.at( OUT_CONTENT_TYPE ) ) == str_t::npos )
+		if ( data.str().find( HTTP::key.header_out.at( OUT_CONTENT_TYPE ) ) == str_t::npos )
 			oss <<
 			HTTP::key.header_out.at( OUT_CONTENT_TYPE ) << ':' << SP <<
 			HTTP::key.mime.at( "txt" ) << CRLF;
 
-		if ( source.str().find( HTTP::key.header_out.at( OUT_CONTENT_LEN ) ) == str_t::npos ) {
+		if ( data.str().find( HTTP::key.header_out.at( OUT_CONTENT_LEN ) ) == str_t::npos ) {
 			if ( pos_header_end != str_t::npos )
 				size -= pos_header_end - 4;
 
@@ -134,7 +134,7 @@ CGI::_buildHeader( const osstream_t& source, osstream_t& oss, size_t& size ) {
 		// if ( pos_header_end == str_t::npos )
 		// 	oss << CRLF;
 
-		oss << source.str();
+		oss << data.str();
 	}
 }
 
@@ -151,9 +151,9 @@ CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
 		oss << environ_list.at( idx ) << '=';
 
 		switch ( idx ) {
-			case SERVER_NAME		: oss << "webserv"; break;
-			case SERVER_PORT		: oss << "8080"; break;
-			case SERVER_PROTOCOL	: oss << "HTTP/1.1"; break;
+			case SERVER_NAME		: oss << rqst.config().name; break;
+			case SERVER_PORT		: oss << rqst.config().listen; break;
+			case SERVER_PROTOCOL	: oss << HTTP::http.signature << '/' << HTTP::http.version.at( VERSION_11 ); break;
 			case REMOTE_ADDR		: break;
 			case REMOTE_HOST		: break;
 			case GATEWAY_INTERFACE	: break;

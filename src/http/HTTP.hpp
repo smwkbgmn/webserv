@@ -46,9 +46,8 @@ class HTTP {
 		static void		transaction( const Client&, process_t&, osstream_t& );
 		static size_t	setLocation( const str_t&, const vec_location_t& );
 	
-		static void		GET( const Request&, char**, size_t& );
-		static void		GET( const str_t&, char**, size_t& ); // For getting internal target
-		static void		POST( const Request&, char**, size_t& );
+		static void		GET( const str_t&, sstream_t&, size_t& );
+		static void		POST( const Request&, sstream_t&, size_t& );
 		static void		DELETE( const Request& );
 
 	private:

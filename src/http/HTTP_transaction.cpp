@@ -146,5 +146,5 @@ HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, osstream_t&
 
 void
 HTTP::_buildBody( const Response& rspn, osstream_t& oss ) {
-	oss.write( rspn.body(), rspn.header().content_length );
+	oss << rspn.body().rdbuf();
 }

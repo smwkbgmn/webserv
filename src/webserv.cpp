@@ -4,11 +4,9 @@
 	To do
 	- CGI
 		Replace _wait NONE mode with WNOHANG
-	- Replace buffers
-	- Rewrite redirection
     - Handle chunked request/response
+	- Rewrite redirection
 	- Implement cookies
-
 	- Make GET method to check all index files in case of target not found 
 
 	Done
@@ -16,6 +14,7 @@
 		Add building of argument and envs for CGI
 		-> retrieve the PATH_INFO and QUERY_STRING from the URI
 		CGI header build
+	- Replace buffers
 	- Apply corrected config structures
 	- Add seeing how the file stat() is before proceeding HTTP methods
 	- File upload

@@ -3,9 +3,9 @@
 
 const response_line_t&		Response::line( void ) const { return _line; }
 const response_header_t&	Response::header( void ) const { return _header; }
-const char*					Response::body( void ) const { return _body; }
+const sstream_t&			Response::body( void ) const { return _body; }
 
-Response::Response( const Request& rqst ): _body( NULL ) {
+Response::Response( const Request& rqst ) {
 	/*
 		The CGI could be invoked by several tokens
 		1. extension	: POST, .exe
@@ -23,7 +23,7 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 				if ( rqst.body().str().length() || rqst.header().content_length || !rqst.header().content_type.empty() )
 					throw errstat_t( 400, ": the GET request may not be with body" );
 
-				HTTP::GET( rqst, &_body, _header.content_length );
+				HTTP::GET( rqst.line().uri, _body, _header.content_length );
 				_mime( rqst.line().uri, _header.content_type, HTTP::http.type_unknown );
 				_header.list.push_back( OUT_CONTENT_LEN );
 				_header.list.push_back( OUT_CONTENT_TYPE );
@@ -34,7 +34,7 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 			// The POST can append data to or create target source
 			// Do I have to send different status code?
 			try {
-				HTTP::POST( rqst, &_body, _header.content_length );
+				HTTP::POST( rqst, _body, _header.content_length );
 				_line.status = 204;
 			} catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
 			break;
@@ -57,7 +57,6 @@ Response::Response( const Request& rqst ): _body( NULL ) {
 			_header.list.push_back( OUT_ALLOW );
 			_errpage( 501, rqst.config() );
 			break;
-			
 	}
 }
 
@@ -73,7 +72,7 @@ Response::_mime( const str_t& uri, str_t& typeHeader, const str_t& typeUnrecog )
 	}
 }
 
-Response::Response( const Client& client, const uint_t& errstat ): _body( NULL ) { 
+Response::Response( const Client& client, const uint_t& errstat ) { 
 	_errpage( errstat, client.server().config() );
 }
 
@@ -87,7 +86,7 @@ Response::_errpage( const uint_t& status, const config_t& config ) {
 	if ( status < 500 ) page = config.file_40x;
 	else page = config.file_50x;
 
-	if ( !page.empty() && isExist( page ) ) HTTP::GET( page, &_body, _header.content_length );
+	if ( !page.empty() && isExist( page ) ) HTTP::GET( page, _body, _header.content_length );
 	else _errpageBuild( status );
 
 	_header.content_type = HTTP::key.mime.at( "html" );
@@ -98,13 +97,11 @@ Response::_errpage( const uint_t& status, const config_t& config ) {
 
 void
 Response::_errpageBuild( const uint_t& status ) {
-	sstream_t page;
-
-	errpageScript( page, status, HTTP::key.status.at( status ) );
-	_body = dupStreamBuf( page, _header.content_length );
+	errpageScript( _body, status, HTTP::key.status.at( status ) );
+	_header.content_length = _body.str().size();
 }
 
-Response::~Response( void ) { if ( _body ) delete _body; }
+Response::~Response( void ) {}
 
 /* STRUCT */
 response_line_s::response_line_s( void ) {

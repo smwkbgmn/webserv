@@ -38,26 +38,19 @@
 
 // When fail to get all of default index files, set status as 403 forbidden
 void
-HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
-	try {
-		File target( rqst.line().uri, READ_BINARY );
-		
-		*bufptr = dupStreamBuf( target.fs, size );
-	} catch ( err_t& err ) { log( "HTTP\t: " + str_t( err.what() ) ); throw errstat_t( 404 ); }
-}
-
-void
-HTTP::GET( const str_t& uri, char** bufptr, size_t& size ) {
+// HTTP::GET( const Request& rqst, char** buf, size_t& size ) {
+HTTP::GET( const str_t& uri, sstream_t& body, size_t& size ) {
 	try {
 		File target( uri, READ_BINARY );
 		
-		*bufptr = dupStreamBuf( target.fs, size );
+		body << target.fs.rdbuf();
+		size = body.str().size();
 	} catch ( err_t& err ) { log( "HTTP\t: " + str_t( err.what() ) ); throw errstat_t( 404 ); }
 }
  
 void
-HTTP::POST( const Request& rqst, char** bufptr, size_t& size ) {
-	( void )bufptr;
+HTTP::POST( const Request& rqst, sstream_t& body, size_t& size ) {
+	( void )body;
 	( void )size;
 
 	try {
