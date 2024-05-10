@@ -1,33 +1,35 @@
 #include "utill.hpp"
 
 /* BUFFER */
-char*
-dupStreamBuf( std::ios& obj, size_t& size ) {
-	std::streambuf* pbuf = obj.rdbuf();
-	size = pbuf->pubseekoff( 0, obj.end, obj.in );
-	pbuf->pubseekpos( 0, obj.in );
+// char*
+// dupStreamBuf( std::ios& obj, size_t& size ) {
+// 	std::streambuf* pbuf = obj.rdbuf();
+// 	size = pbuf->pubseekoff( 0, obj.end, obj.in );
+// 	pbuf->pubseekpos( 0, obj.in );
 
-	char* buf = new char[size];
-	pbuf->sgetn( buf, size );
+// 	char* buf = new char[size];
+// 	pbuf->sgetn( buf, size );
 
-	return buf;
-}
+// 	return buf;
+// }
 
-const char*
-dupStreamBuf( const std::ios& obj, size_t& size ) {
-	std::streambuf* pbuf = obj.rdbuf();
-	size = pbuf->pubseekoff( 0, obj.end, obj.in );
-	pbuf->pubseekpos( 0, obj.in );
+// const char*
+// dupStreamBuf( const std::ios& obj, size_t& size ) {
+// 	std::streambuf* pbuf = obj.rdbuf();
+// 	size = pbuf->pubseekoff( 0, obj.end, obj.in );
+// 	pbuf->pubseekpos( 0, obj.in );
 
-	char* buf = new char[size];
-	pbuf->sgetn( buf, size );
+// 	char* buf = new char[size];
+// 	pbuf->sgetn( buf, size );
 
-	return buf;
-}
+// 	return buf;
+// }
 
 /* FILE INFO */
 bool
 getInfo( const str_t& target, fstat_t& info ) {
+	// if ( *target.rbegin() == '/' )
+	// 	return stat( target.substr( 0, target.length() - 1 ).c_str(), &info ) != ERROR;
 	return stat( target.c_str(), &info ) != ERROR;
 }
 
@@ -63,8 +65,8 @@ errpageScript( sstream_t& page, const uint_t& status, const str_t& explanation )
 	"padding: 20px;\n" <<
 	"border-radius: 5px;\n" <<
 	"box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);\n" <<
-	"overflow: auto;" <<
-	"positon: relative;" <<
+	"overflow: auto;\n" <<
+	"positon: relative;\n" <<
 	"}\n" <<
 	"h1 {\n" <<
 	"color: #007bff;\n" <<
@@ -72,21 +74,20 @@ errpageScript( sstream_t& page, const uint_t& status, const str_t& explanation )
 	"p {\n" <<
 	"margin-bottom: 20px;\n" <<
 	"}\n" <<
-	".image-container {" <<
-	"position: absolute;" <<
-	"bottom: 20px;" <<
-	"right: 25px;" <<
-	"}" <<
-	"img {" <<
-	"width: 100px;" <<
-	"height: auto;" <<
-	"}" <<
+	".image-container {\n" <<
+	"position: absolute;\n" <<
+	"bottom: 20px;\n" <<
+	"right: 25px;\n" <<
+	"}\n" <<
+	"img {\n" <<
+	"width: 100px;\n" <<
+	"height: auto;\n" <<
+	"}\n" <<
 	"</style>\n" <<
 	"</head>\n" <<
 	"<body>\n" <<
 	"<div class=\"container\">\n" <<
-	// Modify title as the server name later
-	"<h1>Webserv responsing with error state</h1>\n" <<
+	"<h1>HTTP responsing with error state</h1>\n" <<
 	"<div class=\"image-container\">" <<
     "<img src=\"favicon.ico\" alt=\"Image\">" <<
 	"</div>" <<
@@ -95,4 +96,76 @@ errpageScript( sstream_t& page, const uint_t& status, const str_t& explanation )
 	"</div>\n" <<
 	"</body>\n" <<
 	"</html>";
+}
+
+#include <sys/types.h>
+#include <dirent.h>
+
+void
+autoindexScript(const path_t& directoryPath, sstream_t& body ) {
+    DIR* dir = opendir(directoryPath.c_str());
+    if (!dir) {
+        std::cerr << "Error: Unable to open directory." << std::endl;
+        return;
+    }
+
+    // std::ofstream outputFile(outputPath.c_str());
+    // if (!outputFile.is_open()) {
+    //     std::cerr << "Error: Unable to open output file." << std::endl;
+    //     closedir(dir);
+    //     return;
+    // }
+
+    body << "<!DOCTYPE html>\n"
+                  "<html lang=\"en\">\n"
+                  "<head>\n"
+                  "    <meta charset=\"UTF-8\">\n"
+                  "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+                  "    <title>Directory Listing</title>\n"
+                  "    <style>\n"
+                  "        body {\n"
+                  "            font-family: Arial, sans-serif;\n"
+                  "            margin: 20px;\n"
+                  "        }\n"
+                  "        h1 {\n"
+                  "            margin-bottom: 20px;\n"
+                  "        }\n"
+                  "        ul {\n"
+                  "            list-style-type: none;\n"
+                  "            padding: 0;\n"
+                  "        }\n"
+                  "        li {\n"
+                  "            margin-bottom: 5px;\n"
+                  "        }\n"
+                  "        a {\n"
+                  "            color: #007bff;\n"
+                  "            text-decoration: none;\n"
+                  "        }\n"
+                  "        a:hover {\n"
+                  "            text-decoration: underline;\n"
+                  "        }\n"
+                  "    </style>\n"
+                  "</head>\n"
+                  "<body>\n"
+                  "    <h1>Directory Listing</h1>\n"
+                  "    <ul>\n";
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL) {
+        std::string fileName = entry->d_name;
+        if (fileName != "." && fileName != "..") {
+            std::string filePath = directoryPath + "/" + fileName;
+            if (entry->d_type == DT_DIR) {
+                body << "        <li><strong>[DIR] </strong><a href=\"" << fileName << "/\">" << fileName << "</a></li>\n";
+            } else {
+                body << "        <li><a href=\"" << fileName << "\">" << fileName << "</a></li>\n";
+            }
+        }
+    }
+
+    body << "    </ul>\n"
+                  "</body>\n"
+                  "</html>\n";
+
+    closedir(dir);
 }

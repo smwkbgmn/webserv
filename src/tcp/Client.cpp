@@ -18,8 +18,6 @@ const int& Client::getSocket() const {
 }
 
 const msg_buffer_t& Client::buffer() const {
-	// size_t	size;
-	// return dupStreamBuf( in.msg, size );
 	return in;
 }
 

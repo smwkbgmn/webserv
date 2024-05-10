@@ -4,10 +4,10 @@
 	To do
 	- CGI
 		Replace _wait NONE mode with WNOHANG
+	- Make GET method to check all index files in case of target not found 
     - Handle chunked request/response
 	- Rewrite redirection
 	- Implement cookies
-	- Make GET method to check all index files in case of target not found 
 
 	Done
 	- CGI

@@ -19,15 +19,19 @@ Response::Response( const Request& rqst ) {
 
 	switch ( rqst.line().method ) {
 		case GET:
-			try {
-				if ( rqst.body().str().length() || rqst.header().content_length || !rqst.header().content_type.empty() )
-					throw errstat_t( 400, ": the GET request may not be with body" );
+			if ( isDir( rqst.info ) ) _index( rqst );
+			else {
+				try {
+					if ( rqst.body().str().length() || rqst.header().content_length || !rqst.header().content_type.empty() )
+						throw errstat_t( 400, ": the GET request may not be with body" );
 
-				HTTP::GET( rqst.line().uri, _body, _header.content_length );
-				_mime( rqst.line().uri, _header.content_type, HTTP::http.type_unknown );
-				_header.list.push_back( OUT_CONTENT_LEN );
-				_header.list.push_back( OUT_CONTENT_TYPE );
-			} catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
+					HTTP::GET( rqst.line().uri, _body, _header.content_length );
+					_mime( rqst.line().uri );
+					_header.list.push_back( OUT_CONTENT_LEN );
+					_header.list.push_back( OUT_CONTENT_TYPE );
+				}
+				catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
+			}
 			break;
 
 		case POST:
@@ -61,19 +65,70 @@ Response::Response( const Request& rqst ) {
 }
 
 void
-Response::_mime( const str_t& uri, str_t& typeHeader, const str_t& typeUnrecog ) {
+Response::_mime( const str_t& uri ) {
 	size_t pos = uri.rfind( '.' );
 	
 	if ( pos != str_t::npos ) {
 		str_t ext = uri.substr( pos + 1 );
 
-		try { typeHeader = HTTP::key.mime.at( ext ); }
-		catch ( exception_t &exc ) { typeHeader = typeUnrecog; }
+		try { _header.content_type = HTTP::key.mime.at( ext ); }
+		catch ( exception_t &exc ) { _header.content_type = HTTP::http.type_unknown; }
 	}
 }
 
 Response::Response( const Client& client, const uint_t& errstat ) { 
 	_errpage( errstat, client.server().config() );
+}
+
+void
+Response::_index( const Request& rqst ) {
+	if ( *rqst.line().uri.rbegin() != '/' ) _redirect( _indexURIConceal( rqst, "" ) + "/", 301 );
+	else {
+		path_t	index;
+		fstat_t	index_info;
+
+		if ( rqst.location().index.size() && !( index = _indexValid( rqst, index_info ) ).empty() ) {
+			if ( isDir( index_info ) ) _redirect( _indexURIConceal( rqst, index ) + "/", 301 );
+			else HTTP::GET( index, _body, _header.content_length );
+		}
+		else {
+			if ( rqst.location().index_auto ) {
+				autoindexScript( rqst.line().uri, _body );
+				_header.content_type	= HTTP::key.mime.at( "html" );
+				_header.content_length	= _body.str().size();
+			}
+			else _errpage( 403, rqst.config() );
+		}
+	}
+}
+
+path_t
+Response::_indexValid( const Request& rqst, fstat_t& info ) {
+	for ( vec_str_t::const_iterator iter = rqst.location().index.begin();
+		iter != rqst.location().index.end(); ++iter ) {
+		if ( getInfo( rqst.line().uri + *iter, info ) ) 
+			return *iter;
+	}
+	return "";
+}
+
+path_t
+Response::_indexURIConceal( const Request& rqst, const path_t& index  ) {
+	path_t	concealed = rqst.location().alias + rqst.line().uri.substr( rqst.location().root.length() );
+
+	if ( !index.empty() )
+		concealed += "/" + index;
+
+	std::clog << "_uriConceal: " << concealed << std::endl;
+
+	return concealed;
+}
+
+void
+Response::_redirect( const path_t& dest, const uint_t& status ) {
+	_line.status		= status;
+	_header.location	= dest;
+	_header.list.push_back( OUT_LOCATION );
 }
 
 void
