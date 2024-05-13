@@ -25,7 +25,7 @@ Response::Response( const Request& rqst ) {
 
 		case POST:
 			try {
-				HTTP::POST( rqst, _body, _header.content_length );
+				HTTP::POST( rqst );
 				_line.status = 204;
 			} catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
 			break;
@@ -49,6 +49,8 @@ Response::Response( const Request& rqst ) {
 			_errpage( 501, rqst.config() );
 			break;
 	}
+	_header.server = rqst.config().name;
+	_header.list.push_back( OUT_SERVER );
 }
 
 void
@@ -93,10 +95,12 @@ Response::_index( const Request& rqst ) {
 				autoindexScript( rqst.line().uri, _body );
 				_header.content_type	= HTTP::key.mime.at( "html" );
 				_header.content_length	= _body.str().size();
+				_header.list.push_back( OUT_CONTENT_LEN );
+				_header.list.push_back( OUT_CONTENT_TYPE );
 			}
 			else _errpage( 403, rqst.config() );
 		}
-	}
+	} 
 }
 
 path_t

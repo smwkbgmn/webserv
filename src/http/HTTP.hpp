@@ -44,7 +44,7 @@ class HTTP {
 	
 		// static void		GET( const Request&, sstream_t&, size_t& );
 		static void		GET( const str_t&, sstream_t&, size_t& );
-		static void		POST( const Request&, sstream_t&, size_t& );
+		static void		POST( const Request& );
 		static void		DELETE( const Request& );
 
 	private:

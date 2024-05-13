@@ -4,8 +4,10 @@
 	To do
 	- CGI 
 		Replace _wait NONE mode with WNOHANG
+		> Move the _read and _build to Client implementation 
 		Get correct content_length for CGI source body
 		> it causes the infinite waiting on browser
+	- Add function for appending header and list for contetnts ( CONTENT_LEN, _TYPE ) at response
 	- Apply the client_max_body config
     - Handle chunked request/response
 	- Rewrite redirection

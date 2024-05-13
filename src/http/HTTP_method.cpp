@@ -43,26 +43,20 @@ HTTP::GET( const str_t& uri, sstream_t& body, size_t& size ) {
 		
 		body << target.fs.rdbuf();
 		size = body.str().size();
-	} catch ( err_t& err ) { log( "HTTP\t: " + str_t( err.what() ) ); throw errstat_t( 404 ); }
+	} catch ( exception_t& exc ) { log( "HTTP\t: " + str_t( exc.what() ) ); throw errstat_t( 500 ); }
 }
  
 void
-HTTP::POST( const Request& rqst, sstream_t& body, size_t& size ) {
-	( void )body;
-	( void )size;
-
+HTTP::POST( const Request& rqst ) {
 	try {
 		File target( rqst.line().uri, WRITE_APP );
 
 		target.fs << rqst.body().str();
-	} catch ( exception_t& exc ) { log( str_t( exc.what() ) ); throw errstat_t( 400 ); }
+	} catch ( exception_t& exc ) { log( "HTTP\t: " + str_t( exc.what() ) ); throw errstat_t( 500 ); }
 }
 
 void
 HTTP::DELETE( const Request& rqst ) {
-	// stat_t	statbuf;
-
-	// if ( stat( rqst.line().uri.c_str(), &statbuf ) != ERROR )
 	if ( std::remove( rqst.line().uri.c_str() ) == ERROR )
-		throw errstat_t( 404 );
+		throwSysErr( "remove", 500 );
 }
