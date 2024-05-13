@@ -102,7 +102,6 @@ typedef struct http_s {
 	vec_str_t			method;
 
 	type_t				type_unknown;
-	path_t				file_autoindex;
 }	http_t;
 
 struct config_s;

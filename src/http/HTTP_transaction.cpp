@@ -75,6 +75,9 @@ HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {
 	size_t	dot = rqst.line().uri.rfind( "." );
 	str_t	ext;
 
+	if ( isDir( rqst.info ) )
+		return FALSE;
+
 	if ( dot != str_t::npos )
 		ext = rqst.line().uri.substr( dot );
 

@@ -36,38 +36,6 @@
 	#endif
 */
 
-// When fail to get all of default index files, set status as 403 forbidden
-// void
-// HTTP::GET( const Request& rqst, sstream_t& body, size_t& size ) {
-// 	path_t				uri;
-// 	fstat_t				uri_info;
-
-// 	if ( isDir( rqst.info ) ) {
-// 		if ( *uri.rbegin() != '/' ) throw errstat_t( 301 );
-
-// 		const vec_str_t&	index = rqst.location().index;
-// 		if ( index.empty() ) {
-// 			if ( rqst.location().index_auto ) {
-// 				autoindexScript( rqst.line().uri, body );
-// 				size = body.str().size();
-// 			}
-// 			else throw errstat_t( 403 );
-// 		}
-// 		else {
-// 			for ( vec_str_t::const_iterator iter = index.begin(); iter != index.end(); ++iter ) {
-// 				if ( stat( ))
-// 			}
-// 		}
-// 	}
-
-// 	try {
-// 		File target( uri, READ_BINARY );
-		
-// 		body << target.fs.rdbuf();
-// 		size = body.str().size();
-// 	} catch ( err_t& err ) { log( "HTTP\t: " + str_t( err.what() ) ); throw errstat_t( 404 ); }
-// }
-
 void
 HTTP::GET( const str_t& uri, sstream_t& body, size_t& size ) {
 	try {
