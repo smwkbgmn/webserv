@@ -23,6 +23,7 @@ class Response {
 		void 						_index( const Request& );
 		path_t						_indexValid( const Request&, fstat_t& );
 		path_t						_indexURIConceal( const Request&, const path_t& );
+		void						_indexAutoBuild( const Request& );
 
 		void						_redirect( const path_t&, const uint_t& );
 

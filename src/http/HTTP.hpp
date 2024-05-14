@@ -16,8 +16,8 @@ class Response;
 const path_t	dir_keys		= "src/http/key/";
 const path_t	file_status		= dir_keys + "key_status.txt";
 const path_t	file_mime		= dir_keys + "key_mime.txt";
-const path_t	file_header_in	= dir_keys + "key_headerIn.txt";
-const path_t	file_header_out	= dir_keys + "key_headerOut.txt";
+const path_t	file_header_in	= dir_keys + "key_header_in.txt";
+const path_t	file_header_out	= dir_keys + "key_header_out.txt";
 const path_t	file_environ	= dir_keys + "key_environ.txt";
 
 const str_t str_method[] = {
@@ -31,6 +31,10 @@ const str_t str_version[] = {
 	"1.0",
 	"1.1",
 	"2.0"
+};
+
+const str_t str_connection[] = {
+	"keep-alive"
 };
 
 class HTTP {

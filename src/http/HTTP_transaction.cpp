@@ -127,7 +127,7 @@ HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, osstream_t&
 	switch( id ) {
 		case OUT_SERVER			: oss << header.server; break;
 		case OUT_DATE			: break;
-		case OUT_CONNECTION		: break;
+		case OUT_CONNECTION		: oss << str_connection[header.connection]; break;
 		case OUT_CHUNK			: break;
 		case OUT_CONTENT_LEN	: oss << header.content_length; break;
 		case OUT_CONTENT_TYPE	: oss << header.content_type; break;

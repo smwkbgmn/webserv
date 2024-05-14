@@ -7,10 +7,9 @@ const sstream_t&			Response::body( void ) const { return _body; }
 Response::Response( const Request& rqst ) {
 	switch ( rqst.line().method ) {
 		case GET:
-			if ( rqst.line().uri.length() == 1 || isDir( rqst.info ) )
-				_index( rqst );
-			else {
-				try {
+			try {
+				if ( rqst.line().uri.length() == 1 || isDir( rqst.info ) ) _index( rqst );
+				else {
 					if ( rqst.body().str().length() || rqst.header().content_length || !rqst.header().content_type.empty() )
 						throw errstat_t( 400, ": the GET request may not be with body" );
 
@@ -19,22 +18,27 @@ Response::Response( const Request& rqst ) {
 					_header.list.push_back( OUT_CONTENT_LEN );
 					_header.list.push_back( OUT_CONTENT_TYPE );
 				}
-				catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
 			}
+			catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
 			break;
 
 		case POST:
 			try {
+				if ( rqst.header().content_length > rqst.config().client_max_body )
+					throw errstat_t( 405, ": the requested body size exceeds configured size of limitation" );
+
 				HTTP::POST( rqst );
 				_line.status = 204;
-			} catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
+			}
+			catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
 			break;
 
 		case DELETE:
 			try {
 				HTTP::DELETE( rqst );
 				_line.status = 204;
-			} catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
+			}
+			catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
  			break;
 
 		case NOT_ALLOWED:
@@ -49,8 +53,12 @@ Response::Response( const Request& rqst ) {
 			_errpage( 501, rqst.config() );
 			break;
 	}
-	_header.server = rqst.config().name;
+
+	_header.server		= rqst.config().name;
+	_header.connection	= KEEP_ALIVE;
+
 	_header.list.push_back( OUT_SERVER );
+	_header.list.push_back( OUT_CONNECTION );
 }
 
 void
@@ -91,13 +99,7 @@ Response::_index( const Request& rqst ) {
 		}
 		else {
 			std::clog << "responsing with index - autoindex\n";
-			if ( rqst.location().index_auto ) {
-				autoindexScript( rqst.line().uri, _body );
-				_header.content_type	= HTTP::key.mime.at( "html" );
-				_header.content_length	= _body.str().size();
-				_header.list.push_back( OUT_CONTENT_LEN );
-				_header.list.push_back( OUT_CONTENT_TYPE );
-			}
+			if ( rqst.location().index_auto ) _indexAutoBuild( rqst );
 			else _errpage( 403, rqst.config() );
 		}
 	} 
@@ -134,8 +136,18 @@ Response::_indexURIConceal( const Request& rqst, const path_t& index  ) {
 }
 
 void
+Response::_indexAutoBuild( const Request& rqst ) {
+	autoindexScript( rqst.line().uri, _body );
+	_header.content_type	= HTTP::key.mime.at( "html" );
+	_header.content_length	= _body.str().size();
+	_header.list.push_back( OUT_CONTENT_LEN );
+	_header.list.push_back( OUT_CONTENT_TYPE );
+}
+
+void
 Response::_redirect( const path_t& dest, const uint_t& status ) {
 	_line.status		= status;
+
 	_header.location	= dest;
 	_header.list.push_back( OUT_LOCATION );
 }

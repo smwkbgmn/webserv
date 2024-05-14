@@ -39,6 +39,9 @@ void
 CGI::proceed( const Request& rqst, process_t& procs, osstream_t& oss ) {
 	log( "CGI\t: proceed" );
 
+	if ( rqst.line().method == POST && rqst.header().content_length > rqst.config().client_max_body )
+		throw errstat_t( 405, ": the requested body size exceeds configured size of limitation" );
+
 	if ( _detach( rqst, procs ) == SUCCESS ) {
 		_write( procs, rqst );
 		_wait( procs );
@@ -130,7 +133,7 @@ CGI::_buildHeader( const osstream_t& data, osstream_t& oss, size_t& size ) {
 			HTTP::key.header_out.at( OUT_CONTENT_LEN ) << ':' << SP <<
 			size << CRLF;
 		}
-		
+
 		// if ( pos_header_end == str_t::npos )
 		// 	oss << CRLF;
 

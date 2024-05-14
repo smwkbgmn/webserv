@@ -89,7 +89,7 @@ config_s::config_s( void ) {
 	
 	root			= "html"; // mandatory
 
-	client_max_body	= 10240;
+	client_max_body	= 10240; // 10M
 
 	/*
 		The root configuration (i.e. location for "/") could be set or not and
