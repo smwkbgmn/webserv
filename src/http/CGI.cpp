@@ -40,7 +40,7 @@ CGI::proceed( const Request& rqst, process_t& procs, osstream_t& oss ) {
 	log( "CGI\t: proceed" );
 
 	if ( rqst.line().method == POST && rqst.header().content_length > rqst.config().client_max_body )
-		throw errstat_t( 405, ": the requested body size exceeds configured size of limitation" );
+		throw errstat_t( 405, "the requested body size exceeds configured size of limitation" );
 
 	if ( _detach( rqst, procs ) == SUCCESS ) {
 		_write( procs, rqst );
@@ -134,8 +134,8 @@ CGI::_buildHeader( const osstream_t& data, osstream_t& oss, size_t& size ) {
 			size << CRLF;
 		}
 
-		// if ( pos_header_end == str_t::npos )
-		// 	oss << CRLF;
+		if ( pos_header_end == str_t::npos )
+			oss << CRLF;
 
 		oss << data.str();
 	}
@@ -163,7 +163,7 @@ CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
 			case REQUEST_METHOD		: oss << str_method[rqst.line().method]; break;
 			case SCRIPT_NAME		: oss << rqst.line().uri.substr( rqst.line().uri.rfind( '/' ) + 1 ); break;
 			case CONTENT_LENGTH		: if ( rqst.line().method == POST ) oss << rqst.header().content_length; break;
-			case CONTENT_TYPE		: oss << rqst.header().content_type; break;
+			case CONTENT_TYPE		: if ( rqst.line().method == POST ) oss << rqst.header().content_type; break;
 			case PATH_INFO			: oss << rqst.line().uri.substr( rqst.location().root.length() + 1 ); break;
 			case PATH_TRANSLATED	: oss << rqst.line().uri; break;
 			case QUERY_STRING		: oss << rqst.line().query; break;

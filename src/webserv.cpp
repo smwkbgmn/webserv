@@ -5,13 +5,16 @@
 	- CGI 
 		Replace _wait NONE mode with WNOHANG
 		> move the _read and _build to Client implementation 
-		Get correct content_length for CGI source body
-		> it causes the infinite waiting on browser
-	- Add function for appending header and list for contetnts ( CONTENT_LEN, _TYPE ) at response
-	- Apply the client_max_body config
+		Define a directory or a file from where the file should be searched (for example, if url /kapouet is rooted to /tmp/www, url /kapouet/pouic/toto/pouet is /tmp/www/pouic/toto/pouet)
+		Execute CGI based on certain file extension (for example .php)
+		Make the route able to accept uploaded files and configure where they should be saved
+		ust remember that, for chunked request, your server needs to unchunk it, the CGI will expect EOF as end of the body
+		Same things for the output of the CGI. If no content_length is returned from the CGI, EOF will mark the end of the returned data
+
     - Handle chunked request/response
 	- Rewrite redirection
 	- Implement cookies
+		> RFC 6265
 
 	Done
 	- CGI
@@ -20,6 +23,7 @@
 		CGI header build
 	- Make GET method to check all index files in case of target not found 
 	- Replace buffers
+	- Apply the client_max_body config
 	- Apply corrected config structures
 	- Add seeing how the file stat() is before proceeding HTTP methods
 	- File upload

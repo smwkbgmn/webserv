@@ -37,7 +37,7 @@
 */
 
 void
-HTTP::GET( const str_t& uri, sstream_t& body, size_t& size ) {
+HTTP::GET( const path_t& uri, sstream_t& body, size_t& size ) {
 	try {
 		File target( uri, READ_BINARY );
 		

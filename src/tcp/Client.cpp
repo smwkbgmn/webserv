@@ -114,7 +114,7 @@ Client::isMsgDone( const char* buf, ssize_t& byte_read ) {
 
 		if ( pos_header_end == str_t::npos ) in.msg_read += byte_read;
 		else {
-			log( "TCP\t: end of header has found" );
+			// log( "TCP\t: end of header has found" );
 			in.msg_done			= TRUE;
 			
 			size_t body_start	= pos_header_end - in.msg_read + 4;
@@ -127,7 +127,7 @@ Client::isMsgDone( const char* buf, ssize_t& byte_read ) {
 
 			size_t pos_header_len = in.msg.str().find( HTTP::key.header_in.at( IN_CONTENT_LEN ) );
 			if ( pos_header_len != str_t::npos ) {
-				log( "TCP\t: content-length header has found" );
+				// log( "TCP\t: content-length header has found" );
 				isstream_t  iss( in.msg.str().substr( pos_header_len, in.msg.str().find( CRLF, pos_header_len ) ) ); 
 				str_t       discard;
 
@@ -216,5 +216,8 @@ process_s::reset( void ) {
 	pid			= NONE;
 	stat		= NONE;
 	fd[R]		= NONE;
-	fd[W]		= NONE;	
+	fd[W]		= NONE;
+
+	argv.clear();
+	env.clear();
 }

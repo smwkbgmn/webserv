@@ -25,7 +25,7 @@ Response::Response( const Request& rqst ) {
 		case POST:
 			try {
 				if ( rqst.header().content_length > rqst.config().client_max_body )
-					throw errstat_t( 405, ": the requested body size exceeds configured size of limitation" );
+					throw errstat_t( 405, "the requested body size exceeds configured size of limitation" );
 
 				HTTP::POST( rqst );
 				_line.status = 204;
