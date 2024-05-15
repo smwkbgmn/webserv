@@ -39,6 +39,8 @@
 	resulting unavailable to find the "\r\n\r\n" while taking request
 	- Add program option for toggle of logging
 	- See if other connection headers should be handled 
+	- When send response, intead of copying the body at the building message, 
+	just build the msg and use body directly from the response object
 */
 
 int main( void ) {

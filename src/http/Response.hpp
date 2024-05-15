@@ -19,11 +19,17 @@ class Response {
 		response_line_t				_line;
 		response_header_t			_header;
 		sstream_t					_body;
+
+		void						_doMethod( const Request& );
+		void						_doMethodValid( const Request& );
+		void						_addServerInfo( const Request& );
 		
 		void 						_index( const Request& );
-		path_t						_indexValid( const Request&, fstat_t& );
-		path_t						_indexURIConceal( const Request&, const path_t& );
+		void						_indexFile( const Request&, const path_t&, const fstat_t& );
+		path_t						_indexFileValid( const Request&, fstat_t& );
+		void						_indexAuto( const Request& );
 		void						_indexAutoBuild( const Request& );
+		path_t						_indexURIConceal( const Request&, const path_t& );
 
 		void						_redirect( const path_t&, const uint_t& );
 

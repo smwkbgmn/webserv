@@ -81,7 +81,7 @@ Request::_assignVersion( str_t token ) {
 	isstream_t iss( token );
 
 	if ( _token( iss, '/' ) != HTTP::http.signature )
-		throw err_t( "_assignVersion: " + errMsg[INVALID_REQUEST_LINE] );
+		throw err_t( "_assignVersion: " + err_msg[INVALID_REQUEST_LINE] );
 	
 	vec_str_iter_t iter = lookup( HTTP::http.version, _token( iss, NONE ) );
 	if ( iter == HTTP::http.version.end() )
@@ -116,7 +116,7 @@ Request::_token( isstream_t& iss, char delim ) {
 
 	if ( ( delim && !std::getline( iss, token, delim ) ) ||
 		( !delim && !std::getline( iss, token ) ) )
-		throw err_t( "_token: " + errMsg[INVALID_REQUEST_LINE] );
+		throw err_t( "_token: " + err_msg[INVALID_REQUEST_LINE] );
 
 	return token;
 }

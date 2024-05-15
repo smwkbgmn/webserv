@@ -37,10 +37,12 @@ clean		:
 
 fclean		:
 			make clean
+			make rmlog
 			$(RM) $(NAME)
 
 rmlog		:
-			$(RM) $(wildcard log/*.log)
+#			$(RM) $(wildcard log/*.log)
+			$(RM) -r log
 
 re			:
 			make fclean

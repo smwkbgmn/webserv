@@ -4,42 +4,42 @@ const response_line_t&		Response::line( void ) const { return _line; }
 const response_header_t&	Response::header( void ) const { return _header; }
 const sstream_t&			Response::body( void ) const { return _body; }
 
+/* CONSTRUCT */
 Response::Response( const Request& rqst ) {
+	try {
+		_doMethodValid( rqst );
+		_doMethod( rqst );
+	}
+	catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
+	_addServerInfo( rqst );
+}
+
+void
+Response::_doMethod( const Request& rqst ) {
 	switch ( rqst.line().method ) {
 		case GET:
-			try {
-				if ( rqst.line().uri.length() == 1 || isDir( rqst.info ) ) _index( rqst );
-				else {
-					if ( rqst.body().str().length() || rqst.header().content_length || !rqst.header().content_type.empty() )
-						throw errstat_t( 400, ": the GET request may not be with body" );
+			if ( rqst.line().uri.length() == 1 || isDir( rqst.info ) )
+				_index( rqst );
+			else {
+				HTTP::GET( rqst.line().uri, _body, _header.content_length );
 
-					HTTP::GET( rqst.line().uri, _body, _header.content_length );
-					_mime( rqst.line().uri );
-					_header.list.push_back( OUT_CONTENT_LEN );
-					_header.list.push_back( OUT_CONTENT_TYPE );
-				}
+				_mime( rqst.line().uri );
+				_header.list.push_back( OUT_CONTENT_LEN );
+				_header.list.push_back( OUT_CONTENT_TYPE );
 			}
-			catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
 			break;
 
 		case POST:
-			try {
-				if ( rqst.header().content_length > rqst.config().client_max_body )
-					throw errstat_t( 405, "the requested body size exceeds configured size of limitation" );
+			HTTP::POST( rqst );
 
-				HTTP::POST( rqst );
-				_line.status = 204;
-			}
-			catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
+			_line.status = 204;
 			break;
 
 		case DELETE:
-			try {
-				HTTP::DELETE( rqst );
-				_line.status = 204;
-			}
-			catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
- 			break;
+			HTTP::DELETE( rqst );
+
+			_line.status = 204;
+			break;
 
 		case NOT_ALLOWED:
 			_errpage( 405, rqst.config() );
@@ -50,10 +50,35 @@ Response::Response( const Request& rqst ) {
 			while ( iter != rqst.location().allow.end() )
 				_header.allow.push_back( *iter );
 			_header.list.push_back( OUT_ALLOW );
+
 			_errpage( 501, rqst.config() );
 			break;
 	}
+}
 
+void
+_doMethodValid( const Request& rqst ) {
+	switch ( rqst.line().method ) {
+		case GET:
+			if ( rqst.body().str().length() || rqst.header().content_length || !rqst.header().content_type.empty() )
+					throw errstat_t( 400, err_msg[GET_WITH_BODY] );
+			break;
+
+		case POST:
+			if ( lookup( rqst.header().list, IN_CONTENT_LEN ) == rqst.header().list.end() )
+				throw errstat_t( 411, err_msg[POST_EMPTY_CONTENT_LEN] );
+
+			if ( rqst.header().content_length > rqst.config().client_max_body )
+				throw errstat_t( 405, err_msg[POST_OVER_CONTENT_LEN] );
+			break;
+
+		case DELETE:
+			break;
+	}
+}
+
+void
+Response::_addServerInfo( const Request& rqst ) {	
 	_header.server		= rqst.config().name;
 	_header.connection	= KEEP_ALIVE;
 
@@ -77,48 +102,49 @@ Response::Response( const Client& client, const uint_t& errstat ) {
 	_errpage( errstat, client.server().config() );
 }
 
+/* METHOD - index: proceed responsing with indexing */
 void
 Response::_index( const Request& rqst ) {
-	if ( *rqst.line().uri.rbegin() != '/' ) {
-		std::clog << "responsing with index - slash redirection\n";
+	if ( *rqst.line().uri.rbegin() != '/' )
 		_redirect( _indexURIConceal( rqst, "" ) + "/", 301 );
-	}
 	else {
 		path_t	index;
-		fstat_t	index_info;
+		fstat_t	info;
 
-		if ( rqst.location().index.size() && !( index = _indexValid( rqst, index_info ) ).empty() ) {
-			std::clog << "responsing with index - files\n";
-			if ( isDir( index_info ) ) _redirect( _indexURIConceal( rqst, index ) + "/", 301 );
-			else {
-				HTTP::GET( rqst.location().root + '/' + index, _body, _header.content_length );
-				_mime( rqst.location().root + '/' + index );
-				_header.list.push_back( OUT_CONTENT_LEN );
-				_header.list.push_back( OUT_CONTENT_TYPE );
-			}
-		}
-		else {
-			std::clog << "responsing with index - autoindex\n";
-			if ( rqst.location().index_auto ) _indexAutoBuild( rqst );
-			else _errpage( 403, rqst.config() );
-		}
+		if ( rqst.location().index.size() && !( index = _indexFileValid( rqst, info ) ).empty() )
+			_indexFile( rqst, index, info );
+		else
+			_indexAuto( rqst );
 	} 
 }
 
+void
+Response::_indexFile( const Request& rqst, const path_t& index, const fstat_t& info ) {
+	if ( isDir( info ) ) _redirect( _indexURIConceal( rqst, index ) + "/", 301 );
+	else {
+		HTTP::GET( rqst.location().root + '/' + index, _body, _header.content_length );
+		_mime( rqst.location().root + '/' + index );
+		_header.list.push_back( OUT_CONTENT_LEN );
+		_header.list.push_back( OUT_CONTENT_TYPE );
+	}
+}
+
 path_t
-Response::_indexValid( const Request& rqst, fstat_t& info ) {
+Response::_indexFileValid( const Request& rqst, fstat_t& info ) {
 	for ( vec_str_t::const_iterator iter = rqst.location().index.begin();
 		iter != rqst.location().index.end(); ++iter ) {
-
-		std::clog << "_indexValid checking the index file for uri " <<
-			rqst.line().uri << ", " << *iter << std::endl;
-			
 		if ( getInfo( rqst.line().uri + *iter, info ) ) 
 			return *iter;
-	}
+		}
 	return "";
 }
 
+void
+Response::_indexAuto( const Request& rqst ) {
+	if ( rqst.location().index_auto ) _indexAutoBuild( rqst );
+	else _errpage( 403, rqst.config() );
+}
+ 
 path_t
 Response::_indexURIConceal( const Request& rqst, const path_t& index  ) {
 	path_t	concealed;
@@ -144,6 +170,7 @@ Response::_indexAutoBuild( const Request& rqst ) {
 	_header.list.push_back( OUT_CONTENT_TYPE );
 }
 
+/* METHOD - redirect: add location header and set the path value */
 void
 Response::_redirect( const path_t& dest, const uint_t& status ) {
 	_line.status		= status;
@@ -152,6 +179,8 @@ Response::_redirect( const path_t& dest, const uint_t& status ) {
 	_header.list.push_back( OUT_LOCATION );
 }
 
+
+/* METHOD - errpage: proceed responsing with error status */
 void
 Response::_errpage( const uint_t& status, const config_t& config ) {
 	path_t	page;
