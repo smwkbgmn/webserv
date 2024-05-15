@@ -3,6 +3,8 @@
 
 # include "structure.hpp"
 
+# define NOT_FOUND -1
+
 template<typename Container, typename Target> typename Container::iterator
 lookup( Container& obj, Target token ) { return std::find( obj.begin(), obj.end(), token ); }
 

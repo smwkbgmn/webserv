@@ -50,8 +50,11 @@ HTTP::transaction( const Client& client, process_t& procs, osstream_t& oss ) {
 	try {
 		Request	rqst( client );
 
+		if ( rqst.header().transfer_encoding == TE_UNKNOWN )
+			throw errstat_t( 501, err_msg[TE_NOT_IMPLEMENTED] );
+
 		if ( !getInfo( rqst.line().uri, rqst.info ) ) {
-			if ( errno == 2 ) throw errstat_t( 404, "target source is not exist" );
+			if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
 			else throw errstat_t( 500 );
 		}
 
@@ -110,7 +113,8 @@ HTTP::_buildLine( const Response& rspn, osstream_t& oss ) {
 
 void
 HTTP::_buildHeader( const Response& rspn, osstream_t& oss ) {
-	for ( vec_uint_t::const_iterator iter = rspn.header().list.begin(); iter != rspn.header().list.end(); ++iter ) {
+	for ( vec_uint_t::const_iterator iter = rspn.header().list.begin();
+		iter != rspn.header().list.end(); ++iter ) {
 		_buildHeaderName( *iter, oss );
 		_buildHeaderValue( rspn.header(), *iter, oss );
 	}
@@ -128,16 +132,18 @@ HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, osstream_t&
 		case OUT_SERVER			: oss << header.server; break;
 		case OUT_DATE			: break;
 		case OUT_CONNECTION		: oss << str_connection[header.connection]; break;
-		case OUT_CHUNK			: break;
+		case OUT_TRANSFER_ENC	: oss << HTTP::http.encoding.at( header.transfer_encoding ); break;
 		case OUT_CONTENT_LEN	: oss << header.content_length; break;
 		case OUT_CONTENT_TYPE	: oss << header.content_type; break;
 		case OUT_LOCATION		: oss << header.location; break;
 		case OUT_ALLOW			:
 			vec_uint_t::const_iterator iter = header.allow.begin();
+
 			while ( iter != header.allow.end() ) {
 				oss << HTTP::http.method.at( *iter );
 				if ( ++iter != header.allow.end() ) oss << ", ";
-			} break;
+			}
+			break;
 	}
 	oss << CRLF;
 }

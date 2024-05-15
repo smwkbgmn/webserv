@@ -99,11 +99,16 @@ Request::_parseHeader( const str_t& field ) {
 	iss >> std::ws;
 
 	switch ( _add( _header.list, distance( HTTP::key.header_in, header ) ) ) {
-		case IN_HOST		: iss >> _header.host; break;
-		case IN_CONNECTION	: _header.connection = KEEP_ALIVE; break;
-		case IN_CHUNK		: break;
-		case IN_CONTENT_LEN	: iss >> _header.content_length; break;
-		case IN_CONTENT_TYPE: iss >> _header.content_type; break;
+		case IN_HOST			: iss >> _header.host; break;
+		case IN_CONNECTION		: _header.connection = KEEP_ALIVE; break;
+		case IN_TRANSFER_ENC	:
+			ssize_t idx = distance( HTTP::http.encoding, iss.str() );
+
+			if ( idx != NOT_FOUND ) _header.transfer_encoding = idx;
+			else _header.transfer_encoding = TE_UNKNOWN;
+			break;
+		case IN_CONTENT_LEN		: iss >> _header.content_length; break;
+		case IN_CONTENT_TYPE	: iss >> _header.content_type; break;
 	}
 }
 
@@ -125,7 +130,7 @@ Request::~Request( void ) {};
 
 /* STRUCT */
 request_header_s::request_header_s( void ) {
-	connection		= KEEP_ALIVE;
-	chunked			= FALSE;
-	content_length	= 0;
+	connection			= KEEP_ALIVE;
+	transfer_encoding	= TE_IDENTITY;
+	content_length		= 0;
 }

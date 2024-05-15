@@ -107,17 +107,17 @@ Client::isMsgDone( const char* buf, ssize_t& byte_read ) {
 			// log( "TCP\t: end of header has found" );
 			in.msg_done			= TRUE;
 			
-			size_t body_start	= pos_header_end - in.msg_read + 4;
-			in.body_read		= byte_read - body_start;
+			size_t body_begin	= pos_header_end - in.msg_read + 4;
+			in.body_read		= byte_read - body_begin;
 
 			if ( in.body_read )
-				in.body.write( &buf[body_start], in.body_read );
+				in.body.write( &buf[body_begin], in.body_read );
 
 			byte_read			= 0;
 
 			size_t pos_header_len = in.msg.str().find( HTTP::key.header_in.at( IN_CONTENT_LEN ) );
 			if ( found( pos_header_len ) ) {
-				// log( "TCP\t: content-length header has found" );
+				// log( "TCP\t: header content-length has found" );
 				isstream_t  iss( in.msg.str().substr( pos_header_len, in.msg.str().find( CRLF, pos_header_len ) ) ); 
 				str_t       discard;
 

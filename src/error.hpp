@@ -18,15 +18,22 @@ typedef std::exception		exception_t;
 enum err_msg_e {
 	INVALID_REQUEST_LINE,
 	INVALID_REQUEST_FIELD,
+
+	TE_NOT_IMPLEMENTED,
+	SOURCE_NOT_FOUND,
+
 	GET_WITH_BODY,
 	POST_EMPTY_CONTENT_LEN,
 	POST_OVER_CONTENT_LEN,
+
 	FAIL_SEND
 };
 
 const str_t	err_msg[] = {
 	"invalid request line",
 	"invalid request field",
+	"requested Transfer-Encoding way is not implemented",
+	"target source is not exist",
 	"the GET request may not be with body",
 	"the requested body size is unknown from client request",
 	"the requested body size exceeds configured size of limitation",

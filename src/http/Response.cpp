@@ -216,12 +216,12 @@ Response::~Response( void ) {}
 
 /* STRUCT */
 response_line_s::response_line_s( void ) {
-	version			= VERSION_11;
-	status			= 200;
+	version				= VERSION_11;
+	status				= 200;
 }
 
 response_header_s::response_header_s( void ) {
-	connection		= KEEP_ALIVE;
-	chunked			= FALSE;
-	content_length	= 0;
+	connection			= KEEP_ALIVE;
+	transfer_encoding	= TE_IDENTITY;
+	content_length		= 0;
 }
