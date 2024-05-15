@@ -141,12 +141,12 @@ typedef struct msg_buffer_s {
 	void				reset( void );
 	
 	sstream_t			msg;
-	bool				msg_done;
 	ssize_t				msg_read;
+	bool				msg_done;
 
 	sstream_t			body;
-	ssize_t				body_size;
 	ssize_t				body_read;
+	ssize_t				body_size;
 
 }	msg_buffer_t;
 

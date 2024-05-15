@@ -5,6 +5,8 @@
 	- CGI 
 		Replace _wait NONE mode with WNOHANG
 		> move the _read and _build to Client implementation 
+		Correct Content_length when it found the CRLF
+
 		Define a directory or a file from where the file should be searched (for example, if url /kapouet is rooted to /tmp/www, url /kapouet/pouic/toto/pouet is /tmp/www/pouic/toto/pouet)
 		Execute CGI based on certain file extension (for example .php)
 		Make the route able to accept uploaded files and configure where they should be saved

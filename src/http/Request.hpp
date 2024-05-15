@@ -14,7 +14,6 @@ class Request {
 
 		const request_line_t&		line( void ) const;
 		const request_header_t&		header( void ) const;
-		// const char*					body( void ) const;
 		const sstream_t&			body( void ) const;
 
 		fstat_t						info;
@@ -25,9 +24,7 @@ class Request {
 
 		request_line_t				_line;
 		request_header_t			_header;
-		// char*						_body;
 		
-		// void						_parse( const char* );
 		void						_parse( const sstream_t& );
 
 		void						_parseLine( const str_t& );

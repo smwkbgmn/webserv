@@ -1,11 +1,14 @@
 #include "Response.hpp"
 
+/* ACCESS */
 const response_line_t&		Response::line( void ) const { return _line; }
 const response_header_t&	Response::header( void ) const { return _header; }
 const sstream_t&			Response::body( void ) const { return _body; }
 
 /* CONSTRUCT */
 Response::Response( const Request& rqst ) {
+	log( "HTTP\t: constructing response" );
+
 	try {
 		_doMethodValid( rqst );
 		_doMethod( rqst );
@@ -57,10 +60,11 @@ Response::_doMethod( const Request& rqst ) {
 }
 
 void
-_doMethodValid( const Request& rqst ) {
+Response::_doMethodValid( const Request& rqst ) {
 	switch ( rqst.line().method ) {
 		case GET:
-			if ( rqst.body().str().length() || rqst.header().content_length || !rqst.header().content_type.empty() )
+			if ( rqst.header().content_length || !rqst.header().content_type.empty() ||
+				rqst.body().str().size() )
 					throw errstat_t( 400, err_msg[GET_WITH_BODY] );
 			break;
 
@@ -73,6 +77,9 @@ _doMethodValid( const Request& rqst ) {
 			break;
 
 		case DELETE:
+			break;
+
+		default:
 			break;
 	}
 }
@@ -88,10 +95,10 @@ Response::_addServerInfo( const Request& rqst ) {
 
 void
 Response::_mime( const str_t& uri ) {
-	size_t pos = uri.rfind( '.' );
+	size_t dot = uri.rfind( '.' );
 	
-	if ( pos != str_t::npos ) {
-		str_t ext = uri.substr( pos + 1 );
+	if ( found( dot ) ) {
+		str_t ext = uri.substr( dot + 1 );
 
 		try { _header.content_type = HTTP::key.mime.at( ext ); }
 		catch ( exception_t &exc ) { _header.content_type = HTTP::http.type_unknown; }
@@ -99,14 +106,15 @@ Response::_mime( const str_t& uri ) {
 }
 
 Response::Response( const Client& client, const uint_t& errstat ) { 
+	log( "HTTP\t: constructing response_errorcase" );
+
 	_errpage( errstat, client.server().config() );
 }
 
 /* METHOD - index: proceed responsing with indexing */
 void
 Response::_index( const Request& rqst ) {
-	if ( *rqst.line().uri.rbegin() != '/' )
-		_redirect( _indexURIConceal( rqst, "" ) + "/", 301 );
+	if ( *rqst.line().uri.rbegin() != '/' ) _redirect( _indexURIConceal( rqst, "" ) + "/", 301 );
 	else {
 		path_t	index;
 		fstat_t	info;
@@ -123,6 +131,7 @@ Response::_indexFile( const Request& rqst, const path_t& index, const fstat_t& i
 	if ( isDir( info ) ) _redirect( _indexURIConceal( rqst, index ) + "/", 301 );
 	else {
 		HTTP::GET( rqst.location().root + '/' + index, _body, _header.content_length );
+
 		_mime( rqst.location().root + '/' + index );
 		_header.list.push_back( OUT_CONTENT_LEN );
 		_header.list.push_back( OUT_CONTENT_TYPE );

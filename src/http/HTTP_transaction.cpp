@@ -78,7 +78,7 @@ HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {
 	if ( isDir( rqst.info ) )
 		return FALSE;
 
-	if ( dot != str_t::npos )
+	if ( found( dot ) )
 		ext = rqst.line().uri.substr( dot );
 
 	if ( !ext.empty() && ext != ".cgi" && ext != ".exe" ) {

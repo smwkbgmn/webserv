@@ -1,29 +1,7 @@
 #include "utill.hpp"
 
-/* BUFFER */
-// char*
-// dupStreamBuf( std::ios& obj, size_t& size ) {
-// 	std::streambuf* pbuf = obj.rdbuf();
-// 	size = pbuf->pubseekoff( 0, obj.end, obj.in );
-// 	pbuf->pubseekpos( 0, obj.in );
-
-// 	char* buf = new char[size];
-// 	pbuf->sgetn( buf, size );
-
-// 	return buf;
-// }
-
-// const char*
-// dupStreamBuf( const std::ios& obj, size_t& size ) {
-// 	std::streambuf* pbuf = obj.rdbuf();
-// 	size = pbuf->pubseekoff( 0, obj.end, obj.in );
-// 	pbuf->pubseekpos( 0, obj.in );
-
-// 	char* buf = new char[size];
-// 	pbuf->sgetn( buf, size );
-
-// 	return buf;
-// }
+/* UTILL */
+bool found( const size_t& pos ) { return pos != str_t::npos; }
 
 /* FILE INFO */
 bool
@@ -43,7 +21,7 @@ isExist( const str_t& target ) {
 
 bool isDir( const fstat_t& info ) { return S_ISDIR( info.st_mode ); }
 
-/* ERROR PAGE */
+/* BUILT-IN SCRIPT */
 void
 errpageScript( sstream_t& page, const uint_t& status, const str_t& explanation ) {
 	page <<

@@ -43,7 +43,12 @@ HTTP::GET( const path_t& uri, sstream_t& body, size_t& size ) {
 		
 		body << target.fs.rdbuf();
 		size = body.str().size();
-	} catch ( exception_t& exc ) { log( "HTTP\t: " + str_t( exc.what() ) ); throw errstat_t( 500 ); }
+	}
+
+	catch ( exception_t& exc ) {
+		log( "HTTP\t: " + str_t( exc.what() ) );
+		throw errstat_t( 500 );
+	}
 }
  
 void
@@ -52,7 +57,12 @@ HTTP::POST( const Request& rqst ) {
 		File target( rqst.line().uri, WRITE_APP );
 
 		target.fs << rqst.body().str();
-	} catch ( exception_t& exc ) { log( "HTTP\t: " + str_t( exc.what() ) ); throw errstat_t( 500 ); }
+	}
+	
+	catch ( exception_t& exc ) {
+		log( "HTTP\t: " + str_t( exc.what() ) );
+		throw errstat_t( 500 );
+	}
 }
 
 void

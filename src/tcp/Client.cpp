@@ -62,16 +62,6 @@ void Client::processClientRequest(Client& client) {
 			logging.fs << in.body.str() << std::endl;
 
             HTTP::transaction( *this, client.subprocs, out );
-            // if ( subprocs.pid != 0 ) {
-                // Regist event
-            // }
-
-            // if ( subprocs is done )
-            // _read ( from pipe )
-            // _build
-            // send
-            
-            // Consider write a Client reset method
 
 			in.reset();
         	subprocs.reset();
@@ -112,7 +102,7 @@ Client::isMsgDone( const char* buf, ssize_t& byte_read ) {
 		size_t pos_header_end = in.msg.str().find( MSG_END, in.msg_read - \
 			( in.msg_read * ( in.msg_read < 3 ) + 3 * !( in.msg_read < 3 ) ) );
 
-		if ( pos_header_end == str_t::npos ) in.msg_read += byte_read;
+		if ( !found( pos_header_end ) ) in.msg_read += byte_read;
 		else {
 			// log( "TCP\t: end of header has found" );
 			in.msg_done			= TRUE;
@@ -126,7 +116,7 @@ Client::isMsgDone( const char* buf, ssize_t& byte_read ) {
 			byte_read			= 0;
 
 			size_t pos_header_len = in.msg.str().find( HTTP::key.header_in.at( IN_CONTENT_LEN ) );
-			if ( pos_header_len != str_t::npos ) {
+			if ( found( pos_header_len ) ) {
 				// log( "TCP\t: content-length header has found" );
 				isstream_t  iss( in.msg.str().substr( pos_header_len, in.msg.str().find( CRLF, pos_header_len ) ) ); 
 				str_t       discard;
@@ -143,7 +133,7 @@ bool Client::isBodyDone(const char* buf, const size_t& byte_read) {
 	in.body.write( buf, byte_read );
 	in.body_read += byte_read;
 
-    if ( byte_read ) {
+    if ( in.body_read ) {
         osstream_t oss;
         oss << "TCP\t: body read by " << byte_read << " so far: " << in.body_read << " / " << in.body_size << std::endl;
         log( oss.str() );
@@ -151,45 +141,6 @@ bool Client::isBodyDone(const char* buf, const size_t& byte_read) {
 	
 	return in.body_size == in.body_read;
 }
-
-
-// bool
-// Client::isMsgDone( const char* buf, ssize_t& byte_read ) {
-// 	if ( !in.msg_done ) {
-// 		str_t data_read( buf );
-
-// 		size_t pos_header_end = str_t( buf ).find( "\r\n\r\n" );
-// 		if ( pos_header_end != str_t::npos ) {
-// 			// log( "TCP\t: end of header has found" );
-// 			in.msg_done	= TRUE;
-// 			in.body_read	= byte_read - pos_header_end - 4;
-// 			byte_read		= 0;
-
-// 			size_t pos_header_len = data_read.find( "Content-Length" );
-// 			if ( pos_header_len != str_t::npos ) {
-// 				// log( "TCP\t: content-length header has found" );
-// 				isstream_t  iss( data_read.substr( pos_header_len, data_read.find( CRLF, pos_header_len ) ) ); 
-// 				str_t       discard;
-
-// 				std::getline( iss, discard, ':' );
-// 				iss >> std::ws >> in.body_size;
-// 			}
-// 		}
-// 	}
-// 	return in.msg_done;
-// }
-
-// bool Client::isBodyDone(const size_t& byte_read) {
-// 	in.body_read += byte_read;
-
-//     if ( byte_read ) {
-//         osstream_t oss;
-//         oss << "TCP\t: body read by " << byte_read << " so far: " << in.body_read << " / " << in.body_size << std::endl;
-//         log( oss.str() );
-//     }
-	
-// 	return in.body_size == in.body_read;
-// }
 
 /* STRUCT */
 msg_buffer_s::msg_buffer_s( void ) { reset(); }

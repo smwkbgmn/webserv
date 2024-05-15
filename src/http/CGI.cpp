@@ -120,13 +120,13 @@ CGI::_buildHeader( const osstream_t& data, osstream_t& oss, size_t& size ) {
 	if ( size ) {
 		size_t	pos_header_end	= data.str().find( MSG_END );
 
-		if ( data.str().find( HTTP::key.header_out.at( OUT_CONTENT_TYPE ) ) == str_t::npos )
+		if ( !found( data.str().find( HTTP::key.header_out.at( OUT_CONTENT_TYPE ) ) ) )
 			oss <<
 			HTTP::key.header_out.at( OUT_CONTENT_TYPE ) << ':' << SP <<
 			HTTP::key.mime.at( "txt" ) << CRLF;
 
-		if ( data.str().find( HTTP::key.header_out.at( OUT_CONTENT_LEN ) ) == str_t::npos ) {
-			if ( pos_header_end != str_t::npos )
+		if ( !found( data.str().find( HTTP::key.header_out.at( OUT_CONTENT_LEN ) ) ) ) {
+			if ( found( pos_header_end ) )
 				size -= pos_header_end - 4;
 
 			oss <<
@@ -134,7 +134,7 @@ CGI::_buildHeader( const osstream_t& data, osstream_t& oss, size_t& size ) {
 			size << CRLF;
 		}
 
-		if ( pos_header_end == str_t::npos )
+		if ( !found( pos_header_end ) )
 			oss << CRLF;
 
 		oss << data.str();
