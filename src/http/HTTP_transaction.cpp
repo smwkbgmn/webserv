@@ -75,19 +75,17 @@ HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {
 	size_t	dot = rqst.line().uri.rfind( "." );
 	str_t	ext;
 
+	if ( isDir( rqst.info ) )
+		return FALSE;
+
 	if ( dot != str_t::npos )
 		ext = rqst.line().uri.substr( dot );
 
-	// Add condition if the autoindexing is TRUE
-	if ( *rqst.line().uri.rbegin() == '/' )
-		procs.argv.push_back( HTTP::http.file_autoindex );
-	else {
-		if ( !ext.empty() && ext != ".cgi" && ext != ".exe" ) {
-			try { procs.argv.push_back( CGI::script_bin.at( ext ) );  }
-			catch( exception_t& exc ) { return FALSE; }
-		}
-		procs.argv.push_back( rqst.line().uri );
+	if ( !ext.empty() && ext != ".cgi" && ext != ".exe" ) {
+		try { procs.argv.push_back( CGI::script_bin.at( ext ) );  }
+		catch( exception_t& exc ) { return FALSE; }
 	}
+	procs.argv.push_back( rqst.line().uri );
 	return TRUE;
 }
 
@@ -129,7 +127,7 @@ HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, osstream_t&
 	switch( id ) {
 		case OUT_SERVER			: oss << header.server; break;
 		case OUT_DATE			: break;
-		case OUT_CONNECTION		: break;
+		case OUT_CONNECTION		: oss << str_connection[header.connection]; break;
 		case OUT_CHUNK			: break;
 		case OUT_CONTENT_LEN	: oss << header.content_length; break;
 		case OUT_CONTENT_TYPE	: oss << header.content_type; break;
@@ -146,5 +144,5 @@ HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, osstream_t&
 
 void
 HTTP::_buildBody( const Response& rspn, osstream_t& oss ) {
-	oss.write( rspn.body(), rspn.header().content_length );
+	oss << rspn.body().rdbuf();
 }

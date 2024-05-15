@@ -13,16 +13,12 @@
 class Request;
 class Response;
 
-// the cgi dir should be combined the server root later
-// const path_t	dir_cgi			= "cgi-bin/";
-const path_t	dir_cgi			= "html/cgi-bin/";
-
 const path_t	dir_keys		= "src/http/key/";
-const path_t	file_status		= dir_keys + "keyStatus.txt";
-const path_t	file_mime		= dir_keys + "keyMime.txt";
-const path_t	file_header_in	= dir_keys + "keyHeaderIn.txt";
-const path_t	file_header_out	= dir_keys + "keyHeaderOut.txt";
-const path_t	file_environ	= dir_keys + "keyEnviron.txt";
+const path_t	file_status		= dir_keys + "key_status.txt";
+const path_t	file_mime		= dir_keys + "key_mime.txt";
+const path_t	file_header_in	= dir_keys + "key_header_in.txt";
+const path_t	file_header_out	= dir_keys + "key_header_out.txt";
+const path_t	file_environ	= dir_keys + "key_environ.txt";
 
 const str_t str_method[] = {
 	"GET",
@@ -37,6 +33,10 @@ const str_t str_version[] = {
 	"2.0"
 };
 
+const str_t str_connection[] = {
+	"keep-alive"
+};
+
 class HTTP {
 	public:
 		static http_t	http;
@@ -46,9 +46,8 @@ class HTTP {
 		static void		transaction( const Client&, process_t&, osstream_t& );
 		static size_t	setLocation( const str_t&, const vec_location_t& );
 	
-		static void		GET( const Request&, char**, size_t& );
-		static void		GET( const str_t&, char**, size_t& ); // For getting internal target
-		static void		POST( const Request&, char**, size_t& );
+		static void		GET( const path_t&, sstream_t&, size_t& );
+		static void		POST( const Request& );
 		static void		DELETE( const Request& );
 
 	private:

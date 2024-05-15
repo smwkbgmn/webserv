@@ -13,16 +13,23 @@ class Response {
 
 		const response_line_t&		line( void ) const;
 		const response_header_t&	header( void ) const ;
-		const char*					body( void ) const;
+		const sstream_t&			body( void ) const;
 
 	private:
 		response_line_t				_line;
 		response_header_t			_header;
-		char*						_body;
+		sstream_t					_body;
+		
+		void 						_index( const Request& );
+		path_t						_indexValid( const Request&, fstat_t& );
+		path_t						_indexURIConceal( const Request&, const path_t& );
+		void						_indexAutoBuild( const Request& );
+
+		void						_redirect( const path_t&, const uint_t& );
 
 		void						_errpage( const uint_t&, const config_t& );
 		void						_errpageBuild( const uint_t& );
-		void						_mime( const str_t&, str_t&, const str_t& );
+		void						_mime( const str_t& );
 };
 
 # include "HTTP.hpp"

@@ -36,42 +36,27 @@
 	#endif
 */
 
-// When fail to get all of default index files, set status as 403 forbidden
 void
-HTTP::GET( const Request& rqst, char** bufptr, size_t& size ) {
-	try {
-		File target( rqst.line().uri, READ_BINARY );
-		
-		*bufptr = dupStreamBuf( target.fs, size );
-	} catch ( err_t& err ) { log( "HTTP\t: " + str_t( err.what() ) ); throw errstat_t( 404 ); }
-}
-
-void
-HTTP::GET( const str_t& uri, char** bufptr, size_t& size ) {
+HTTP::GET( const path_t& uri, sstream_t& body, size_t& size ) {
 	try {
 		File target( uri, READ_BINARY );
 		
-		*bufptr = dupStreamBuf( target.fs, size );
-	} catch ( err_t& err ) { log( "HTTP\t: " + str_t( err.what() ) ); throw errstat_t( 404 ); }
+		body << target.fs.rdbuf();
+		size = body.str().size();
+	} catch ( exception_t& exc ) { log( "HTTP\t: " + str_t( exc.what() ) ); throw errstat_t( 500 ); }
 }
  
 void
-HTTP::POST( const Request& rqst, char** bufptr, size_t& size ) {
-	( void )bufptr;
-	( void )size;
-
+HTTP::POST( const Request& rqst ) {
 	try {
 		File target( rqst.line().uri, WRITE_APP );
 
-		target.fs << rqst.body();
-	} catch ( exception_t& exc ) { log( str_t( exc.what() ) ); throw errstat_t( 400 ); }
+		target.fs << rqst.body().str();
+	} catch ( exception_t& exc ) { log( "HTTP\t: " + str_t( exc.what() ) ); throw errstat_t( 500 ); }
 }
 
 void
 HTTP::DELETE( const Request& rqst ) {
-	// stat_t	statbuf;
-
-	// if ( stat( rqst.line().uri.c_str(), &statbuf ) != ERROR )
 	if ( std::remove( rqst.line().uri.c_str() ) == ERROR )
-		throw errstat_t( 404 );
+		throwSysErr( "remove", 500 );
 }

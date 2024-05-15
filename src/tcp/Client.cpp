@@ -17,9 +17,8 @@ const int& Client::getSocket() const {
     return client_socket;
 }
 
-const char* Client::buffer() const {
-	size_t	size;
-	return dupStreamBuf( msg.ss, size );
+const msg_buffer_t& Client::buffer() const {
+	return in;
 }
 
 void Client::setSocket(const int& socket ){
@@ -58,12 +57,11 @@ void Client::processClientRequest(Client& client) {
     }
     
     else {
-        msg.ss.write( buf, byte );
+        if (isMsgDone( buf, byte ) && isBodyDone( buf, byte ) ) {
+			logging.fs << in.msg.str() << std::endl;
+			logging.fs << in.body.str() << std::endl;
 
-        logging.fs << msg.ss.str() << std::endl;
-
-        if (isMsgDone( buf, byte ) && isBodyDone( byte ) ) {
-            HTTP::transaction( *this, client.subprocs, response );
+            HTTP::transaction( *this, client.subprocs, out );
             // if ( subprocs.pid != 0 ) {
                 // Regist event
             // }
@@ -75,7 +73,7 @@ void Client::processClientRequest(Client& client) {
             
             // Consider write a Client reset method
 
-			msg.reset();
+			in.reset();
         	subprocs.reset();
 
             srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
@@ -85,22 +83,22 @@ void Client::processClientRequest(Client& client) {
 
 bool Client::sendData() 
 {
-        std::string data = response.str(); 
+        std::string data = out.str(); 
         const char* buffer = data.c_str();  
         size_t length = data.size(); 
 
         log( "TCP\t: sending\n" );
-        // std::clog << response.str() << std::endl;
-        logging.fs << response.str() << "\n" << std::endl;
+        // std::clog << out.str() << std::endl;
+        logging.fs << out.str() << "\n" << std::endl;
 
         ssize_t bytesSent = send(client_socket, buffer, length, 0);  
         if (bytesSent < 0) {
             return false;
         }
 
-        // response.flush();
-        response.str( "" );
-        response.clear();  
+        // out.flush();
+        out.str( "" );
+        out.clear();  
 
         return true;
 }
@@ -108,54 +106,107 @@ bool Client::sendData()
 
 bool
 Client::isMsgDone( const char* buf, ssize_t& byte_read ) {
-	if ( !msg.header_done ) {
-		str_t data_read( buf );
+	if ( !in.msg_done ) {
+		in.msg.write( buf, byte_read );
 
-		size_t pos_header_end = str_t( buf ).find( "\r\n\r\n" );
-		if ( pos_header_end != str_t::npos ) {
+		size_t pos_header_end = in.msg.str().find( MSG_END, in.msg_read - \
+			( in.msg_read * ( in.msg_read < 3 ) + 3 * !( in.msg_read < 3 ) ) );
+
+		if ( pos_header_end == str_t::npos ) in.msg_read += byte_read;
+		else {
 			// log( "TCP\t: end of header has found" );
-			msg.header_done	= TRUE;
-			msg.body_read	= byte_read - pos_header_end - 4;
-			byte_read		= 0;
+			in.msg_done			= TRUE;
+			
+			size_t body_start	= pos_header_end - in.msg_read + 4;
+			in.body_read		= byte_read - body_start;
 
-			size_t pos_header_len = data_read.find( "Content-Length" );
+			if ( in.body_read )
+				in.body.write( &buf[body_start], in.body_read );
+
+			byte_read			= 0;
+
+			size_t pos_header_len = in.msg.str().find( HTTP::key.header_in.at( IN_CONTENT_LEN ) );
 			if ( pos_header_len != str_t::npos ) {
 				// log( "TCP\t: content-length header has found" );
-				isstream_t  iss( data_read.substr( pos_header_len, data_read.find( CRLF, pos_header_len ) ) ); 
+				isstream_t  iss( in.msg.str().substr( pos_header_len, in.msg.str().find( CRLF, pos_header_len ) ) ); 
 				str_t       discard;
 
 				std::getline( iss, discard, ':' );
-				iss >> std::ws >> msg.body_size;
+				iss >> std::ws >> in.body_size;
 			}
 		}
 	}
-	return msg.header_done;
+	return in.msg_done;
 }
 
-bool Client::isBodyDone(const size_t& byte_read) {
-	msg.body_read += byte_read;
+bool Client::isBodyDone(const char* buf, const size_t& byte_read) {
+	in.body.write( buf, byte_read );
+	in.body_read += byte_read;
 
     if ( byte_read ) {
         osstream_t oss;
-        oss << "TCP\t: body read by " << byte_read << " so far: " << msg.body_read << " / " << msg.body_size << std::endl;
+        oss << "TCP\t: body read by " << byte_read << " so far: " << in.body_read << " / " << in.body_size << std::endl;
         log( oss.str() );
     }
 	
-	return msg.body_size == msg.body_read;
+	return in.body_size == in.body_read;
 }
+
+
+// bool
+// Client::isMsgDone( const char* buf, ssize_t& byte_read ) {
+// 	if ( !in.msg_done ) {
+// 		str_t data_read( buf );
+
+// 		size_t pos_header_end = str_t( buf ).find( "\r\n\r\n" );
+// 		if ( pos_header_end != str_t::npos ) {
+// 			// log( "TCP\t: end of header has found" );
+// 			in.msg_done	= TRUE;
+// 			in.body_read	= byte_read - pos_header_end - 4;
+// 			byte_read		= 0;
+
+// 			size_t pos_header_len = data_read.find( "Content-Length" );
+// 			if ( pos_header_len != str_t::npos ) {
+// 				// log( "TCP\t: content-length header has found" );
+// 				isstream_t  iss( data_read.substr( pos_header_len, data_read.find( CRLF, pos_header_len ) ) ); 
+// 				str_t       discard;
+
+// 				std::getline( iss, discard, ':' );
+// 				iss >> std::ws >> in.body_size;
+// 			}
+// 		}
+// 	}
+// 	return in.msg_done;
+// }
+
+// bool Client::isBodyDone(const size_t& byte_read) {
+// 	in.body_read += byte_read;
+
+//     if ( byte_read ) {
+//         osstream_t oss;
+//         oss << "TCP\t: body read by " << byte_read << " so far: " << in.body_read << " / " << in.body_size << std::endl;
+//         log( oss.str() );
+//     }
+	
+// 	return in.body_size == in.body_read;
+// }
 
 /* STRUCT */
 msg_buffer_s::msg_buffer_s( void ) { reset(); }
 
 void
 msg_buffer_s::reset( void ) {
-	ss.str( "" );
-	ss.clear();
+	msg.str( "" );
+	msg.clear();
+
+	msg_done	= FALSE;
+	msg_read	= 0;
+
+	body.str( "" );
+	body.clear();
 
 	body_size	= 0;
 	body_read	= 0;
-	
-	header_done	= FALSE;
 }
 
 process_s::process_s( void ) { reset();	}
@@ -165,5 +216,8 @@ process_s::reset( void ) {
 	pid			= NONE;
 	stat		= NONE;
 	fd[R]		= NONE;
-	fd[W]		= NONE;	
+	fd[W]		= NONE;
+
+	argv.clear();
+	env.clear();
 }

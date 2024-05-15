@@ -28,5 +28,6 @@ bool		isDir( const fstat_t& );
 
 /* ERROR PAGE */
 void		errpageScript( sstream_t&, const uint_t&, const str_t& );
+void		autoindexScript( const path_t&, sstream_t& );
 
 #endif

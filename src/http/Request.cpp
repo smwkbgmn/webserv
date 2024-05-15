@@ -7,49 +7,42 @@ const location_t&		Request::location( void ) const { return config().locations.a
 
 const request_line_t&	Request::line( void ) const { return _line; }
 const request_header_t&	Request::header( void ) const { return _header; }
-const char*				Request::body( void ) const { return _body; }
+const sstream_t&		Request::body( void ) const { return _client.buffer().body; }
 
 /* CONSTRUCT */
-Request::Request( const Client& client ): _client( client ), _body( NULL ) {
+Request::Request( const Client& client ): _client( client ) {
 	log( "HTTP\t: constructing requeset" );
 
-	const char* buf = client.buffer();
-
-	_parse( buf );
-
-	// If the method is not allowed at this location config, set method_e as NOT_ALLOWED
+	_parse( _client.buffer().msg );
+	
 	if ( _line.method != UNKNOWN &&
 		lookup( location().allow, static_cast<uint_t>( _line.method ) ) == location().allow.end() ) 
 		_line.method = NOT_ALLOWED;
 }
 
 void
-Request::_parse( const char* buf ) {
-	str_t	msgRqst( buf );
+Request::_parse( const sstream_t& msg ) {
 	size_t	begin	= 0;
 	size_t	end		= 0;
 
 	// CRLF could be replaced with only LF (see RFC)
-	end = msgRqst.find( CRLF, begin );
-	_parseLine( msgRqst.substr( begin, end ) );
+	end = msg.str().find( CRLF, begin );
+	_parseLine( msg.str().substr( begin, end ) );
 	begin = end + 2;
 
-	while ( ( end = msgRqst.find( CRLF, begin ) ) != str_t::npos ) {
+	while ( ( end = msg.str().find( CRLF, begin ) ) != str_t::npos ) {
 		if ( end == begin ) {
 			begin += 2;
 			break;
 		}
 		
-		_parseHeader( msgRqst.substr( begin, end ) );
+		_parseHeader( msg.str().substr( begin, end ) );
 		begin = end + 2;
 	}
-
-	if ( _header.content_length )
-		_assignBody( begin, buf );
 } 
 
 void
-Request::_parseLine( str_t line ) {
+Request::_parseLine( const str_t& line ) {
 	isstream_t iss( line );
 
 	_assignMethod( _token( iss, SP ) );
@@ -69,10 +62,10 @@ Request::_assignMethod( str_t token ) {
 
 void
 Request::_assignURI( str_t token ) { 
-	_location = HTTP::setLocation( _line.uri, _client.server().config().locations );
+	_location = HTTP::setLocation( token, _client.server().config().locations );
 
 	if ( location().alias.length() == 1 )
-		_line.uri = token.replace( 0, location().alias.length(), location().root + "/" );
+		_line.uri = token.replace( 0, 0, location().root );
 	else
 		_line.uri = token.replace( 0, location().alias.length(), location().root );
 
@@ -98,7 +91,7 @@ Request::_assignVersion( str_t token ) {
 }
 
 void
-Request::_parseHeader( str_t field ) {
+Request::_parseHeader( const str_t& field ) {
 	isstream_t		iss( field );
 	str_t			header;
 
@@ -117,16 +110,6 @@ Request::_parseHeader( str_t field ) {
 ssize_t
 Request::_add( vec_uint_t& list, ssize_t id ) { if ( id != -1 ) list.push_back( id ); return id; }
 
-void
-Request::_assignBody( const size_t& bodyBegin, const char* buf ) {
-	_body = new char[_header.content_length];
-	memcpy( _body, &buf[bodyBegin], _header.content_length );
-	
-	// log( "HTTP\t: the rqst body" );
-	// std::clog.write( _body, _header.content_length );
-	// std::clog << std::endl;
-}
-
 str_t
 Request::_token( isstream_t& iss, char delim ) {
 	str_t token;
@@ -138,7 +121,7 @@ Request::_token( isstream_t& iss, char delim ) {
 	return token;
 }
 
-Request::~Request( void ) { if ( _body ) delete _body; }
+Request::~Request( void ) {};
 
 /* STRUCT */
 request_header_s::request_header_s( void ) {
