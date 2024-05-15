@@ -22,7 +22,11 @@ private:
     int			client_socket;
 
 	msg_buffer_t	in;
-    osstream_t		out;
+	msg_buffer_t	out;
+    // osstream_t		out;
+
+	Request*		rqst;
+	Response*		rspn;
 
     process_t		subprocs;
 
@@ -34,13 +38,11 @@ public:
     void disconnect_client(int client_fd);
     void processClientRequest( Client &);
 
-    // const char* buffer() const;
 	const msg_buffer_t&	buffer() const;
 
     const std::string getBufferContents() const;
-    // bool isRequestComplete(const std::string& request);
-    bool isMsgDone( const char*, ssize_t& );
-    bool isBodyDone( const char*, const size_t& );
+    bool recvMsg( const char*, ssize_t& );
+    bool recvBody( const char*, const size_t& );
 
     const Server& getServer() const;
 	const Server& server() const;

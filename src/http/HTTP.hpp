@@ -27,9 +27,13 @@ class HTTP {
 		static keys_t	key;
 
 		static void		init( void );
-		static void		transaction( const Client&, process_t&, osstream_t& );
+
+		static bool		invokeCGI( const Request&, process_t& );
 		static size_t	setLocation( const str_t&, const vec_location_t& );
-	
+
+		static void		transaction( const Client&, process_t&, osstream_t& );
+		static void		build( const Response&, osstream_t& );
+		
 		static void		GET( const path_t&, sstream_t&, size_t& );
 		static void		POST( const Request& );
 		static void		DELETE( const Request& );
@@ -42,7 +46,7 @@ class HTTP {
 		static void		_assignVec( vec_str_t &, const str_t[], size_t );
 
 		/* transaction */
-		static void		_build( const Response&, osstream_t& );
+		// static void		_build( const Response&, osstream_t& );
 		static void		_buildLine( const Response&, osstream_t& );
 		static void		_buildHeader( const Response&, osstream_t& );
 		static void		_buildHeaderName( uint_t, osstream_t& );
@@ -50,7 +54,7 @@ class HTTP {
 		static void		_buildBody( const Response&, osstream_t& );
 
 		/* method */
-		static bool		_invokeCGI( const Request&, process_t& );
+		// static bool		_invokeCGI( const Request&, process_t& );
 
 };
 

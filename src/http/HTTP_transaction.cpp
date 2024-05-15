@@ -48,18 +48,18 @@
 void
 HTTP::transaction( const Client& client, process_t& procs, osstream_t& oss ) {
 	try {
-		Request	rqst( client );
+		// Request	rqst( client );
 
-		if ( rqst.header().transfer_encoding == TE_UNKNOWN )
-			throw errstat_t( 501, err_msg[TE_NOT_IMPLEMENTED] );
+		// if ( rqst.header().transfer_encoding == TE_UNKNOWN )
+		// 	throw errstat_t( 501, err_msg[TE_NOT_IMPLEMENTED] );
 
-		if ( !getInfo( rqst.line().uri, rqst.info ) ) {
-			if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
-			else throw errstat_t( 500 );
-		}
+		// if ( !getInfo( rqst.line().uri, rqst.info ) ) {
+		// 	if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
+		// 	else throw errstat_t( 500 );
+		// }
 
-		if ( _invokeCGI( rqst, procs ) ) CGI::proceed( rqst, procs, oss );
-		else _build( Response( rqst ), oss );
+		// if ( _invokeCGI( rqst, procs ) ) CGI::proceed( rqst, procs, oss );
+		// else _build( Response( rqst ), oss );
 	}
 
 	catch ( errstat_t& err ) {
@@ -74,7 +74,8 @@ HTTP::transaction( const Client& client, process_t& procs, osstream_t& oss ) {
 }
 
 bool
-HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {	
+// HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {	
+HTTP::invokeCGI( const Request& rqst, process_t& procs ) {	
 	size_t	dot = rqst.line().uri.rfind( "." );
 	str_t	ext;
 
@@ -93,7 +94,8 @@ HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {
 }
 
 void
-HTTP::_build( const Response& rspn, osstream_t& oss ) {
+// HTTP::_build( const Response& rspn, osstream_t& oss ) {
+HTTP::build( const Response& rspn, osstream_t& oss ) {
 	_buildLine( rspn, oss );
 	_buildHeader( rspn, oss );
 	if ( rspn.body() )

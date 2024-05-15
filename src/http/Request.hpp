@@ -8,6 +8,8 @@ class Request {
 		Request( const Client& );
 		~Request( void );
 
+		fstat_t						info;
+
 		const Client&				client( void ) const;
 		const config_t&				config( void ) const;
 		const location_t&			location( void ) const;
@@ -16,7 +18,7 @@ class Request {
 		const request_header_t&		header( void ) const;
 		const sstream_t&			body( void ) const;
 
-		fstat_t						info;
+		// static void					unchunk( osstream_t& );
 
 	private:
 		const Client&				_client; 
@@ -35,9 +37,8 @@ class Request {
 		void						_parseHeader( const str_t& );
 		ssize_t						_add( vec_uint_t&, ssize_t );
 
-		void						_assignBody( const size_t&, const char* );
-
 		str_t						_token( isstream_t&, char );
+		
 };
 
 # include "HTTP.hpp"

@@ -14,6 +14,14 @@ Request::Request( const Client& client ): _client( client ) {
 	log( "HTTP\t: constructing requeset" );
 
 	_parse( _client.buffer().msg );
+
+	// if ( _header.transfer_encoding == TE_CHUNKED ) {
+	// 	if ( distance( _header.list, IN_CONTENT_LEN ) != NOT_FOUND )
+	// 		throw errstat_t( 400, err_msg[TE_WITH_CONTENT_LEN] );
+
+	// 	_header.content_length = _client.buffer().body.str().size();
+	// 	_header.list.push_back( IN_CONTENT_LEN );
+	// }
 	
 	if ( _line.method != UNKNOWN &&
 		lookup( location().allow, static_cast<uint_t>( _line.method ) ) == location().allow.end() ) 
@@ -101,19 +109,21 @@ Request::_parseHeader( const str_t& field ) {
 	switch ( _add( _header.list, distance( HTTP::key.header_in, header ) ) ) {
 		case IN_HOST			: iss >> _header.host; break;
 		case IN_CONNECTION		: _header.connection = KEEP_ALIVE; break;
+
 		case IN_TRANSFER_ENC	:
 			ssize_t idx = distance( HTTP::http.encoding, iss.str() );
 
 			if ( idx != NOT_FOUND ) _header.transfer_encoding = idx;
 			else _header.transfer_encoding = TE_UNKNOWN;
 			break;
+
 		case IN_CONTENT_LEN		: iss >> _header.content_length; break;
 		case IN_CONTENT_TYPE	: iss >> _header.content_type; break;
 	}
 }
 
 ssize_t
-Request::_add( vec_uint_t& list, ssize_t id ) { if ( id != -1 ) list.push_back( id ); return id; }
+Request::_add( vec_uint_t& list, ssize_t id ) { if ( id != NOT_FOUND ) list.push_back( id ); return id; }
 
 str_t
 Request::_token( isstream_t& iss, char delim ) {
@@ -125,6 +135,12 @@ Request::_token( isstream_t& iss, char delim ) {
 
 	return token;
 }
+
+// /* METHOD - unchunk: parse chunked request body */
+// void
+// Request::unchunk( osstream_t& body ) {
+	
+// }
 
 Request::~Request( void ) {};
 

@@ -46,7 +46,8 @@ const str_t str_version[] = {
 };
 
 const str_t str_connection[] = {
-	"keep-alive"
+	"keep-alive",
+	"close"
 };
 
 const str_t str_transfer_enc[] = {
@@ -72,7 +73,8 @@ enum version_e {
 };
 
 enum connection_e {
-	KEEP_ALIVE
+	KEEP_ALIVE,
+	CLOSE
 };
 
 enum transfer_enc_e {
@@ -178,6 +180,8 @@ typedef struct msg_buffer_s {
 	sstream_t			body;
 	ssize_t				body_read;
 	ssize_t				body_size;
+
+	bool				chunked;
 
 }	msg_buffer_t;
 
