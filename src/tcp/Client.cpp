@@ -201,7 +201,7 @@ bool Client::recvBodyChunk( const char* buf, const size_t& byte_read ) {
 		else CGI::writeTo( subprocs, buf, byte_read - SIZE_CRLF );
 
 		in.incomplete	= FALSE;
-		in.next_read	= SIZE_CHUNK_HEAD;
+		in.next_read	= SIZE_BUFF;
 	}
 
 	// In case of first body receiving right after receving message done
@@ -219,15 +219,12 @@ bool Client::recvBodyChunk( const char* buf, const size_t& byte_read ) {
 		sstream_t	chunk( buf );
 
 		while ( chunk.str().size() ) {
-			std::clog << "proceeding chunk parse\n";
-			std::clog << "---- now chunk ----\n";
-			std::clog << chunk.str();
-
 			//  Get chunk head
 			chunk >> std::hex >> in.chunk_size >> std::ws;
 
 			// If chunk size is0, the message is end
 			if ( !in.chunk_size ) return TRUE;
+			if ( in.chunk_size > 0xf ) throw errstat_t( 400, err_msg[CHUNK_EXCEED_HEX] );
 
 			// Write body from chunk 
 			hex = in.chunk_size;
@@ -246,10 +243,11 @@ bool Client::recvBodyChunk( const char* buf, const size_t& byte_read ) {
 				return FALSE;
 			}
 
+			if ( chunk.peek() != CR ) throw errstat_t( 400, err_msg[CHUNK_EXCEED_HEX] );
+
 			// If writing body is done well, discard the CRLF and
 			// set the next_read with size of next chunk line head
 			chunk >> std::ws;
-			in.next_read = SIZE_CHUNK_HEAD;
 		}
 	}
 

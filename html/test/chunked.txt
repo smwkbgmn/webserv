@@ -1,0 +1,6 @@
+curl -X POST http://localhost:8080/freeboard.txt \
+     -H "Content-Type: application/octet-stream" \
+     -H "Transfer-Encoding: chunked" \
+     --data-raw 'This is the first chunk' \
+     --data-raw 'This is the second chunk' \
+     --data-raw 'And this is the final chunk'

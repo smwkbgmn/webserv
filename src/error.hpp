@@ -18,6 +18,7 @@ typedef std::exception		exception_t;
 enum err_msg_e {
 	INVALID_REQUEST_LINE,
 	INVALID_REQUEST_FIELD,
+	CHUNK_EXCEED_HEX,
 	
 	TE_WITH_CONTENT_LEN,
 	TE_NOT_IMPLEMENTED,
@@ -33,6 +34,7 @@ enum err_msg_e {
 const str_t	err_msg[] = {
 	"invalid request line",
 	"invalid request field",
+	"a cnunked data exceeding hexsize",
 	"the transfer_encoding and content_length can not be taken at the same time",
 	"requested Transfer-Encoding way is not implemented",
 	"target source is not exist",
