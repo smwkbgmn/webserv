@@ -15,13 +15,9 @@ Request::Request( const Client& client ): _client( client ) {
 
 	_parse( _client.buffer().msg );
 
-	// if ( _header.transfer_encoding == TE_CHUNKED ) {
-	// 	if ( distance( _header.list, IN_CONTENT_LEN ) != NOT_FOUND )
-	// 		throw errstat_t( 400, err_msg[TE_WITH_CONTENT_LEN] );
-
-	// 	_header.content_length = _client.buffer().body.str().size();
-	// 	_header.list.push_back( IN_CONTENT_LEN );
-	// }
+	if ( _header.transfer_encoding == TE_CHUNKED &&
+		distance( _header.list, IN_CONTENT_LEN ) != NOT_FOUND )
+		throw err_t( err_msg[TE_WITH_CONTENT_LEN] );
 	
 	if ( _line.method != UNKNOWN &&
 		lookup( location().allow, static_cast<uint_t>( _line.method ) ) == location().allow.end() ) 
@@ -35,7 +31,7 @@ Request::_parse( const sstream_t& msg ) {
 
 	// CRLF could be replaced with only LF
 	end = msg.str().find( CRLF, begin );
-	_parseLine( msg.str().substr( begin, end ) );
+	_parseLine( msg.str().substr( begin, end - begin ) );
 	begin = end + 2;
 
 	while ( found( end = msg.str().find( CRLF, begin ) ) ) {
@@ -44,7 +40,7 @@ Request::_parse( const sstream_t& msg ) {
 			break;
 		}
 		
-		_parseHeader( msg.str().substr( begin, end ) );
+		_parseHeader( msg.str().substr( begin, end - begin ) );
 		begin = end + 2;
 	}
 } 
@@ -110,12 +106,13 @@ Request::_parseHeader( const str_t& field ) {
 		case IN_HOST			: iss >> _header.host; break;
 		case IN_CONNECTION		: _header.connection = KEEP_ALIVE; break;
 
-		case IN_TRANSFER_ENC	:
-			ssize_t idx = distance( HTTP::http.encoding, iss.str() );
+		case IN_TRANSFER_ENC	: {	 
+			ssize_t te = distance( HTTP::http.encoding, _token( iss, NONE ) );
 
-			if ( idx != NOT_FOUND ) _header.transfer_encoding = idx;
+			if ( te != NOT_FOUND ) _header.transfer_encoding = static_cast<transfer_enc_e>( te );
 			else _header.transfer_encoding = TE_UNKNOWN;
 			break;
+		}
 
 		case IN_CONTENT_LEN		: iss >> _header.content_length; break;
 		case IN_CONTENT_TYPE	: iss >> _header.content_type; break;

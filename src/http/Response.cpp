@@ -21,7 +21,7 @@ void
 Response::_doMethod( const Request& rqst ) {
 	switch ( rqst.line().method ) {
 		case GET:
-			if ( rqst.line().uri.length() == 1 || isDir( rqst.info ) )
+			if ( isDir( rqst.info ) )
 				_index( rqst );
 			else {
 				HTTP::GET( rqst.line().uri, _body, _header.content_length );
@@ -69,8 +69,8 @@ Response::_doMethodValid( const Request& rqst ) {
 			break;
 
 		case POST:
-			if ( lookup( rqst.header().list, IN_CONTENT_LEN ) == rqst.header().list.end() )
-				throw errstat_t( 411, err_msg[POST_EMPTY_CONTENT_LEN] );
+			// if ( lookup( rqst.header().list, IN_CONTENT_LEN ) == rqst.header().list.end() )
+			// 	throw errstat_t( 411, err_msg[POST_EMPTY_CONTENT_LEN] );
 
 			if ( rqst.header().content_length > rqst.config().client_max_body )
 				throw errstat_t( 405, err_msg[POST_OVER_CONTENT_LEN] );

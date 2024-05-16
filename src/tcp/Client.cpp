@@ -40,35 +40,83 @@ void Client::processClientRequest(Client& client) {
     char buf[SIZE_BUF];
 
     log( "TCP\t: receiving data" );
-    ssize_t byte = recv(client_socket, buf, SIZE_BUF, 0);
+    ssize_t byte = recv(client_socket, buf, in.next_read, 0);
 
     osstream_t stream;
     stream << "TCP\t: receiving done by " << byte;
     log( stream.str() );
 
     if ( byte > 0 && recvMsg( buf, byte ) ) {
-		if ( !rqst ) {
-			rqst = new Request( *this );
+		try {
+			if ( !rqst ) {
+				rqst = new Request( *this );
 
-			if ( HTTP::invokeCGI( *rqst, subprocs ) )
-				CGI::proceed( *rqst, subprocs, out.body );
+				if ( rqst->line().method == POST ) {
+					if ( rqst->header().transfer_encoding == TE_CHUNKED )
+						in.chunk = TRUE;
+					else
+						in.body_size = rqst->header().content_length;
+				}
+			}
+
+			// if ( HTTP::invokeCGI( *rqst, subprocs ) )
+			// 	CGI::proceed( *rqst, subprocs, out.body );
+
+			if ( rqst->header().transfer_encoding == TE_UNKNOWN )
+				throw errstat_t( 501, err_msg[TE_NOT_IMPLEMENTED] );
+
+			if ( !getInfo( rqst->line().uri, rqst->info ) ) {
+				if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
+				else throw errstat_t( 500 );
+			}
+
+			if ( recvBody( buf, byte ) ) {
+				logging.fs << in.msg.str() << std::endl;
+				logging.fs << in.body.str() << std::endl;
+
+				// HTTP::transaction( *this, client.subprocs, out );
+
+				if ( !subprocs.pid ) {
+					rspn = new Response( *rqst );
+					HTTP::build( *rspn, out );
+				}
+
+				else {
+					if ( !in.chunk )
+						CGI::writeTo ( subprocs, in.body.str().c_str(), in.body.str().size() );
+					close( subprocs.fd[W] );
+
+					CGI::wait( subprocs );
+					CGI::readFrom( subprocs, out.body );
+					CGI::build( out );
+				}
+
+				in.reset();
+				subprocs.reset();
+
+				srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+			}
 		}
 
-		if ( recvBody( buf, byte ) ) {
-			logging.fs << in.msg.str() << std::endl;
-			logging.fs << in.body.str() << std::endl;
+		catch ( errstat_t& err ) {
+			log( "HTTP\t: transaction: " + str_t( err.what() ) );
 
-			// HTTP::transaction( *this, client.subprocs, out );
-			if ( !subprocs.pid ) rspn = new Response( *rqst );
-			else {
-				CGI::wait( subprocs );
-				CGI::readFrom( subprocs, out.body );
-				CGI::build( out );
-			}
+			out.msg.str( "" );
+			out.body.str( "" );
+
+			HTTP::build( Response( client, err.code ), out );
 
 			in.reset();
 			subprocs.reset();
+			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+		}
 
+		catch ( err_t& err ) {
+			log( "HTTP\t: Request: " + str_t( err.what() ) );
+
+			HTTP::build( Response( client, 400 ), out );
+
+			in.reset();
 			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 		}
     }
@@ -96,87 +144,159 @@ Client::recvMsg( const char* buf, ssize_t& byte_read ) {
 		if ( !found( pos_header_end ) ) in.msg_read += byte_read;
 		else {
 			in.msg_done			= TRUE;
-			
+
 			size_t body_begin	= pos_header_end - in.msg_read + 4;
 			in.body_read		= byte_read - body_begin;
 
-			if ( in.body_read )
+			if ( in.body_read ) {
 				in.body.write( &buf[body_begin], in.body_read );
 
+				// in.msg.seekg( pos_header_end + 4 );
+				// in.body.write( in.msg.str().c_str(), in.body_read );
+				// char body[in.body_read];
+				// in.msg.getline( body, in.body_read );
+				// in.msg.seekg( 0 );
+				
+				// in.msg.str( in.msg.str().substr( 0, pos_header_end + 3 ) );
+			}
+
+			// std::clog << "--------------- completed msg ---------------\n" << in.msg.str() << "\n\n\n";
+
 			byte_read			= 0;
-
-			// size_t pos;
-			// if ( found( pos = in.msg.str().find( HTTP::key.header_in.at( IN_TRANSFER_ENC ) ) ) ) {
-			// 	isstream_t	iss( in.msg.str().substr( pos, in.msg.str().find( CRLF, pos ) ) );
-			// 	str_t		discard;
-			// 	str_t		te;
-
-			// 	std::getline( iss, discard, ':' );
-			// 	iss >> std::ws >> te;
-
-			// 	if ( found( te.find( "chunked" ) ) )
-			// 		in.chunked = TRUE;
-			// }
-			// else if ( found( pos = in.msg.str().find( HTTP::key.header_in.at( IN_CONTENT_LEN ) ) ) ) {
-			// 	isstream_t  iss( in.msg.str().substr( pos, in.msg.str().find( CRLF, pos ) ) ); 
-			// 	str_t       discard;
-
-			// 	std::getline( iss, discard, ':' );
-			// 	iss >> std::ws >> in.body_size;
-			// }
 		}
 	}
 	return in.msg_done;
 }
 
 bool Client::recvBody(const char* buf, const size_t& byte_read) {
-	if ( !subprocs.pid ) {
-		in.body.write( buf, byte_read );
-		in.body_read += byte_read;
+	// keep FALSE untill meet the content-length or tail of chunk (0CRLFCRLF)
+	if ( !in.chunk ) return recvBodyPlain( buf, byte_read );
+	else return recvBodyChunk( buf, byte_read );
+}
 
-		if ( !in.chunked ) {
-			if ( in.body_read ) {
-				osstream_t oss;
-				oss << "TCP\t: body read by " << byte_read << " so far: " << in.body_read << " / " << in.body_size << std::endl;
-				log( oss.str() );
+
+bool Client::recvBodyPlain( const char* buf, const size_t& byte_read ) {
+	in.body.write( buf, byte_read );
+	in.body_read += byte_read;
+
+	if ( in.body_read ) {
+		osstream_t oss;
+		oss << "TCP\t: body read by " << byte_read << " so far: " << in.body_read << " / " << in.body_size << std::endl;
+		log( oss.str() );
+	}
+	
+	return in.body_size == in.body_read;
+ }
+
+bool Client::recvBodyChunk( const char* buf, const size_t& byte_read ) {
+	// In case of following read for chunk head
+	if ( in.incomplete ) {
+		std::clog << "recvBodyChunk - incomplete\n";
+		// Handle following read is fail, 
+		// if ( byte_read != in.next_read ) {
+		// 	in.next_read -= byte_read;
+		// }
+
+		if ( !subprocs.pid ) in.body.write( buf, byte_read - SIZE_CRLF );
+		else CGI::writeTo( subprocs, buf, byte_read - SIZE_CRLF );
+
+		in.incomplete	= FALSE;
+		in.next_read	= SIZE_CHUNK_HEAD;
+	}
+
+	// In case of first body receiving right after receving message done
+	if ( !byte_read && in.body_read ) {
+		std::clog << "recvBodyChunk - right after receving message done\n";
+		char buf_temp[in.body_read];
+
+		in.body.read( buf_temp, in.body_read );
+		in.body.str( "" );
+
+		buf = buf_temp;
+
+		size_t		hex;
+		char		data;
+		sstream_t	chunk( buf );
+
+		while ( chunk.str().size() ) {
+			std::clog << "proceeding chunk parse\n";
+			std::clog << "---- now chunk ----\n";
+			std::clog << chunk.str();
+
+			//  Get chunk head
+			chunk >> std::hex >> in.chunk_size >> std::ws;
+
+			// If chunk size is0, the message is end
+			if ( !in.chunk_size ) return TRUE;
+
+			// Write body from chunk 
+			hex = in.chunk_size;
+			while ( hex && chunk.get( data ) ) {
+				if ( !subprocs.pid ) in.body.write( &data, 1 );
+				else CGI::writeTo( subprocs, &data, 1 );
+
+				hex--;
 			}
 
-			return in.body_size == in.body_read;
-		}
+			// If unread byte is left, set the next_read
+			// as rest of byte and read it following read 
+			if ( hex ) {
+				in.incomplete	= TRUE;
+				in.next_read	= hex + SIZE_CRLF;
+				return FALSE;
+			}
 
-		else {
-			if ( in.body_read > 4 ) return found( in.body.str().rfind( MSG_END, in.body_read - 4 ) );
-			else return found( in.body.str().rfind( MSG_END ) );
+			// If writing body is done well, discard the CRLF and
+			// set the next_read with size of next chunk line head
+			chunk >> std::ws;
+			in.next_read = SIZE_CHUNK_HEAD;
 		}
-
 	}
 
+	// In case of getting the chunk head
 	else {
+		std::clog << "recvBodyChunk - set chunk head\n";
+
+		sstream_t	chunk( buf );
+
+		chunk >> std::hex >> in.chunk_size >> std::ws;
+		
+		if ( !in.chunk_size ) return TRUE;
+
+		in.next_read	= in.chunk_size;
+		in.incomplete	= TRUE;
 	}
+
+	return FALSE;
 }
 
 bool Client::sendData() 
 {
-        std::string data = out.str(); 
-        const char* buffer = data.c_str();  
-        size_t length = data.size(); 
+	size_t length = out.msg.str().size(); 
 
-        log( "TCP\t: sending\n" );
-        // std::clog << out.str() << std::endl;
-        logging.fs << out.str() << "\n" << std::endl;
+	log( "TCP\t: sending\n" );
+	logging.fs << out.msg.str() << "\n" << std::endl;
 
-        ssize_t bytesSent = send(client_socket, buffer, length, 0);  
-        if (bytesSent < 0) {
-            return false;
-        }
+	ssize_t bytesSent = send(client_socket, out.msg.str().c_str(), length, 0);  
+	if (bytesSent < 0) return false;
 
-        out.str( "" );
-        out.clear();  
+	length = out.body.str().size(); 
 
-		if ( rqst ) { delete rqst; rqst = NULL; }
-		if ( rspn ) { delete rspn; rspn = NULL; }
 
-        return true;
+	///////////////////////////////////////////////
+
+
+	logging.fs << out.body.str() << "\n" << std::endl;
+
+	bytesSent = send(client_socket, out.body.str().c_str(), length, 0);  
+	if (bytesSent < 0) return false;
+
+	out.reset();
+
+	if ( rqst ) { delete rqst; rqst = NULL; }
+	if ( rspn ) { delete rspn; rspn = NULL; }
+
+	return true;
 }
 
 /* STRUCT */
@@ -196,7 +316,11 @@ msg_buffer_s::reset( void ) {
 	body_size	= 0;
 	body_read	= 0;
 
-	chunked		= FALSE;
+	chunk		= FALSE;
+	chunk_size	= 0;
+
+	incomplete	= FALSE;
+	next_read	= SIZE_BUFF;
 }
 
 process_s::process_s( void ) { reset();	}

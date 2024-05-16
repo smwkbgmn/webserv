@@ -31,8 +31,8 @@ class HTTP {
 		static bool		invokeCGI( const Request&, process_t& );
 		static size_t	setLocation( const str_t&, const vec_location_t& );
 
-		static void		transaction( const Client&, process_t&, osstream_t& );
-		static void		build( const Response&, osstream_t& );
+		// static void		transaction( const Client&, process_t&, osstream_t& );
+		static void		build( const Response&, msg_buffer_t& );
 		
 		static void		GET( const path_t&, sstream_t&, size_t& );
 		static void		POST( const Request& );
@@ -47,11 +47,11 @@ class HTTP {
 
 		/* transaction */
 		// static void		_build( const Response&, osstream_t& );
-		static void		_buildLine( const Response&, osstream_t& );
-		static void		_buildHeader( const Response&, osstream_t& );
-		static void		_buildHeaderName( uint_t, osstream_t& );
-		static void		_buildHeaderValue( const response_header_t&, uint_t, osstream_t& );
-		static void		_buildBody( const Response&, osstream_t& );
+		static void		_buildLine( const Response&, sstream_t& );
+		static void		_buildHeader( const Response&, sstream_t& );
+		static void		_buildHeaderName( uint_t, sstream_t& );
+		static void		_buildHeaderValue( const response_header_t&, uint_t, sstream_t& );
+		static void		_buildBody( const Response&, sstream_t& );
 
 		/* method */
 		// static bool		_invokeCGI( const Request&, process_t& );

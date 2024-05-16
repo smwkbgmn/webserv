@@ -45,33 +45,33 @@
 */
 
 /* METHOD - transaction: send response message */
-void
-HTTP::transaction( const Client& client, process_t& procs, osstream_t& oss ) {
-	try {
-		// Request	rqst( client );
+// void
+// HTTP::transaction( const Client& client, process_t& procs, osstream_t& oss ) {
+// 	try {
+// 		Request	rqst( client );
 
-		// if ( rqst.header().transfer_encoding == TE_UNKNOWN )
-		// 	throw errstat_t( 501, err_msg[TE_NOT_IMPLEMENTED] );
+// 		if ( rqst.header().transfer_encoding == TE_UNKNOWN )
+// 			throw errstat_t( 501, err_msg[TE_NOT_IMPLEMENTED] );
 
-		// if ( !getInfo( rqst.line().uri, rqst.info ) ) {
-		// 	if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
-		// 	else throw errstat_t( 500 );
-		// }
+// 		if ( !getInfo( rqst.line().uri, rqst.info ) ) {
+// 			if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
+// 			else throw errstat_t( 500 );
+// 		}
 
-		// if ( _invokeCGI( rqst, procs ) ) CGI::proceed( rqst, procs, oss );
-		// else _build( Response( rqst ), oss );
-	}
+// 		if ( _invokeCGI( rqst, procs ) ) CGI::proceed( rqst, procs, oss );
+// 		else _build( Response( rqst ), oss );
+// 	}
 
-	catch ( errstat_t& err ) {
-		log( "HTTP\t: transaction: " + str_t( err.what() ) );
-		oss.str( "" ); _build( Response( client, err.code ), oss );
-	}
+// 	catch ( errstat_t& err ) {
+// 		log( "HTTP\t: transaction: " + str_t( err.what() ) );
+// 		oss.str( "" ); _build( Response( client, err.code ), oss );
+// 	}
 
-	catch ( err_t& err ) {
-		log( "HTTP\t: Request: " + str_t( err.what() ) );
-		_build( Response( client, 400 ), oss );
-	}
-}
+// 	catch ( err_t& err ) {
+// 		log( "HTTP\t: Request: " + str_t( err.what() ) );
+// 		_build( Response( client, 400 ), oss );
+// 	}
+// }
 
 bool
 // HTTP::_invokeCGI( const Request& rqst, process_t& procs ) {	
@@ -95,15 +95,15 @@ HTTP::invokeCGI( const Request& rqst, process_t& procs ) {
 
 void
 // HTTP::_build( const Response& rspn, osstream_t& oss ) {
-HTTP::build( const Response& rspn, osstream_t& oss ) {
-	_buildLine( rspn, oss );
-	_buildHeader( rspn, oss );
+HTTP::build( const Response& rspn, msg_buffer_t& out ) {
+	_buildLine( rspn, out.msg );
+	_buildHeader( rspn, out.msg );
 	if ( rspn.body() )
-		_buildBody( rspn, oss );
+		_buildBody( rspn, out.body );
 }
 
 void
-HTTP::_buildLine( const Response& rspn, osstream_t& oss ) {
+HTTP::_buildLine( const Response& rspn, sstream_t& oss ) {
 	map_uint_str_t::iterator iter = key.status.find( rspn.line().status );
 
 	oss <<
@@ -114,7 +114,7 @@ HTTP::_buildLine( const Response& rspn, osstream_t& oss ) {
 }
 
 void
-HTTP::_buildHeader( const Response& rspn, osstream_t& oss ) {
+HTTP::_buildHeader( const Response& rspn, sstream_t& oss ) {
 	for ( vec_uint_t::const_iterator iter = rspn.header().list.begin();
 		iter != rspn.header().list.end(); ++iter ) {
 		_buildHeaderName( *iter, oss );
@@ -124,12 +124,12 @@ HTTP::_buildHeader( const Response& rspn, osstream_t& oss ) {
 }
 
 void
-HTTP::_buildHeaderName( uint_t id, osstream_t& oss ) {
+HTTP::_buildHeaderName( uint_t id, sstream_t& oss ) {
 	oss << key.header_out.at( id ) << ": ";
 }
 
 void
-HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, osstream_t& oss ) {
+HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, sstream_t& oss ) {
 	switch( id ) {
 		case OUT_SERVER			: oss << header.server; break;
 		case OUT_DATE			: break;
@@ -151,6 +151,6 @@ HTTP::_buildHeaderValue( const response_header_t& header, uint_t id, osstream_t&
 }
 
 void
-HTTP::_buildBody( const Response& rspn, osstream_t& oss ) {
+HTTP::_buildBody( const Response& rspn, sstream_t& oss ) {
 	oss << rspn.body().rdbuf();
 }

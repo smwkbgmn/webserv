@@ -13,8 +13,15 @@
 #include <cstring>
 
 // #define BuffSize 1024
-#define BuffSize 3000
+// #define BuffSize 3000
+#define SIZE_BUFF 1024
+
+#define SIZE_CRLF 2
+#define SIZE_CHUNK_HEAD 5
+
 class Server;
+class Request;
+class Response;
 
 class Client {
 private:
@@ -29,6 +36,10 @@ private:
 	Response*		rspn;
 
     process_t		subprocs;
+
+	bool recvBodyChunk( const char*, const size_t& );
+	bool recvBodyPlain( const char*, const size_t& );
+	
 
 public:
     Client(Server& server);

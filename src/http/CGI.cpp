@@ -50,6 +50,8 @@ CGI::proceed( const Request& rqst, process_t& procs, sstream_t& out_body ) {
 		// 	throw errstat_t( 500, "the CGI fail to exit as SUCCESS" );
 	}
 	else throwSysErr( "_detach", 500 );
+
+	( void )out_body;
 }
 
 stat_t
@@ -146,7 +148,7 @@ CGI::_buildHeader( msg_buffer_t& out ) {
 		HTTP::key.header_out.at( OUT_TRANSFER_ENC ) << ':' << SP <<
 		HTTP::http.encoding.at( TE_CHUNKED ) << CRLF;
 
-		out.chunked = TRUE;
+		out.chunk = TRUE;
 	}
 	
 	out.msg << CRLF;

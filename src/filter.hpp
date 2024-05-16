@@ -181,14 +181,17 @@ typedef struct msg_buffer_s {
 	ssize_t				body_read;
 	ssize_t				body_size;
 
-	bool				chunked;
+	bool				chunk;
+	size_t				chunk_size;
+	bool				incomplete;
+	size_t				next_read;
 
 }	msg_buffer_t;
 
 /* STRUCT - Request & Response */
 typedef struct {
-	unsigned			version: 2;
-	unsigned			method: 2;
+	version_e			version;
+	method_e			method;
 	path_t				uri;
 	str_t				query;
 
@@ -199,8 +202,8 @@ typedef struct request_header_s {
 
 	str_t 				host;
 	// date_t				date;
-	unsigned 			connection: 2;
-	unsigned 			transfer_encoding: 1;
+	connection_e 		connection; 
+	transfer_enc_e 		transfer_encoding;
 	size_t				content_length;
 	type_t				content_type;
 
@@ -221,8 +224,8 @@ typedef struct response_header_s {
 
 	str_t				server;
 	// date_t				date;
-	unsigned			connection: 2;
-	unsigned			transfer_encoding: 1;
+	connection_e		connection;
+	transfer_enc_e		transfer_encoding;
 	size_t				content_length;
 	type_t				content_type;
 	str_t				location;
