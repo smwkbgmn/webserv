@@ -16,7 +16,7 @@ class Transaction {
 		static void		build( const Response&, msg_buffer_t& );
 
 		void			act( void );
-		void			actCGI( void );
+		// void			actCGI( void );
 
 	private:
 		Client&			_cl;
@@ -24,7 +24,7 @@ class Transaction {
 		Request			_rqst;
 		Response		_rspn;
 
-		static bool		_recvBodyPlain( msg_buffer_t&, const char*, const ssize_t& );
+		static bool		_recvBodyPlain( msg_buffer_t&, const process_t&, const char*, const ssize_t& );
 		static bool		_recvBodyChunk( msg_buffer_t&, const process_t&, const char*, const ssize_t& );
 
 		static void		_buildLine( const Response&, sstream_t& );

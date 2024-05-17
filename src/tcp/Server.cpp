@@ -111,21 +111,21 @@ void Server::handleClientEvent(struct kevent &occur_event) {
 void Server::handleCGIEvent(struct kevent &occur_event) {
     int client = *(static_cast<int*>(occur_event.udata));
     ConnectClients::iterator it = ClientMap.find(client);
-    if (it == ClientMap.end()) {
-        std::clog<<"22222222222\n";
-        DisconnectClient(client);
-        return;
-    }
+	Client& cl = *it->second;
+
     try {
-        process_t& procs = it->second->get_process();
-        osstream_t source;
-        size_t readBytes = CGI::_read(procs, source);
-        CGI::_build(source, it->second->getOss(), readBytes);        
-        if (WEXITSTATUS(procs.stat) != EXIT_SUCCESS) {
+		// IF CGI DONE
+		CGI::readFrom( cl.subprocs, cl.out.body );
+		CGI::build( cl.out );
+
+        if (WEXITSTATUS(cl.subprocs.stat) != EXIT_SUCCESS) {
             throw errstat_t(500, "the CGI failed to exit as SUCCESS");
+
         }
-        it->second->get_in().reset();
-        it->second->get_process().reset();
+		cl.in.reset();
+		cl.subprocs.reset();
+
+
         if (it->second->getCgiCheck())it->second->setCgiCheck(FALSE);
         if (it->second->getCgiExit())it->second->setCgiExit(FALSE);
         add_events(it->second->get_process().pid, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
@@ -133,8 +133,10 @@ void Server::handleCGIEvent(struct kevent &occur_event) {
     } catch (const errstat_t& e) {
         std::cerr << "CGI error: " << e.what() << std::endl;
         
-        // close(it->second->get_process().fd[R]);
-        // close(it->second->get_process().fd[W]);
+		// errbuild 
+		Transaction::build( Response( cl, e.code ), cl.out );
+		// write_event;
+
         DisconnectClient(client);
     } 
 }
@@ -174,7 +176,7 @@ void Server::handleProcessExitEvent(struct kevent& event) {
 
     if (it != ClientMap.end()) {
         process_t& procs = it->second->get_process();
-        CGI::_wait(procs);
+        CGI::wait(procs);
         it->second->setCgiExit(TRUE);
         add_events(procs.fd[R], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, it->second->get_client_socket_ptr());
         // add_events(procs.fd[R], EVFILT_TIMER, EV_ONESHOT, 0,30000, it->second->get_client_socket_ptr());

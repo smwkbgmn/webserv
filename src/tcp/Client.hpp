@@ -2,7 +2,7 @@
 #define CLIENT_HPP
 
 #include "utill.hpp"
-
+ 
 #include "ASocket.hpp"
 #include "Server.hpp"
 
@@ -12,8 +12,12 @@
 
 #include <cstring>
 
-// #define BuffSize 1024
-#define BuffSize 3000
+#define SIZE_BUFF 1024
+#define SIZE_CRLF 2
+#define SIZE_CHUNK_HEAD 3
+
+#include "Transaction.hpp"
+
 class Server;
 
 class Client {
@@ -21,16 +25,19 @@ private:
     Server&		srv;
     int			client_socket;
 
-	msg_buffer_t	in;
-    osstream_t		out;
-
-    process_t		subprocs;
     bool        Cgi_check;
     bool        Cgi_exit;
+
+	Transaction*	action;
 
     
 
 public:
+	msg_buffer_t	in;
+    msg_buffer_t	out;
+
+    process_t		subprocs;
+
     Client(Server& server);
     ~Client();
 
@@ -51,7 +58,7 @@ public:
     bool getCgiExit();
     msg_buffer_t& get_in();
     process_t& get_process();
-    osstream_t& getOss();
+    // osstream_t& getOss();
 
     void setSocket(const int& );
     void setServer(const Server& );
