@@ -32,17 +32,12 @@ Transaction::act( void ) {
 	build( _rspn, _cl.out );
 }
 
-void
-Transaction::actCGI( void ) {
-	if ( !_cl.in.chunk )
-		CGI::writeTo ( _cl.subprocs, _cl.in.body.str().c_str(), _cl.in.body.str().size() );
-
-	close( _cl.subprocs.fd[W] );
-
-	CGI::wait( _cl.subprocs );
-	CGI::readFrom( _cl.subprocs, _cl.out.body );
-	CGI::build( _cl.out );
-}
+// void
+// Transaction::actCGI( void ) {
+// 	if ( !_cl.in.chunk )
+// 		CGI::writeTo ( _cl.subprocs, _cl.in.body.str().c_str(), _cl.in.body.str().size() );
+// 	close( _cl.subprocs.fd[W] );
+// }
 
 void
 Transaction::_setTransferEnc( void ) {
@@ -123,23 +118,32 @@ Transaction::recvMsg( msg_buffer_t& in, const char* buf, ssize_t& byte_read ) {
 bool
 Transaction::recvBody( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
 	// keep FALSE untill meet the content-length or tail of chunk (0CRLFCRLF)
-	if ( !in.chunk ) return _recvBodyPlain( in, buf, byte_read );
+	if ( !in.chunk ) return _recvBodyPlain( in, procs, buf, byte_read );
 	else return _recvBodyChunk( in, procs, buf, byte_read );
 }
 
 bool
-Transaction::_recvBodyPlain( msg_buffer_t& in, const char* buf, const ssize_t& byte_read ) {
-	in.body.write( buf, byte_read );
+Transaction::_recvBodyPlain( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
 	in.body_read += byte_read;
 
-	if ( in.body_read ) {
-		osstream_t oss;
-		oss << "TCP\t: body read by " << byte_read << " so far: " << in.body_read << " / " << in.body_size << std::endl;
-		log( oss.str() );
+	if ( !procs.pid ) {
+		in.body.write( buf, byte_read );
+
+		if ( in.body_read ) {
+			osstream_t oss;
+			oss << "TCP\t: body read by " << byte_read << " so far: " << in.body_read << " / " << in.body_size << std::endl;
+			log( oss.str() );
+		}
 	}
-	
+
+	else {
+		if ( byte_read == 0 && in.body_read )
+			CGI::writeTo( procs, in.body.str().c_str(), in.body_read );
+		else
+			CGI::writeTo( procs, buf, byte_read );
+	}
 	return in.body_size == in.body_read;
- }
+}
 
 bool
 Transaction::_recvBodyChunk( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {

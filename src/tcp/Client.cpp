@@ -11,7 +11,7 @@ int* Client::get_client_socket_ptr() { return &client_socket; }
 const int& Client::getSocket() const { return client_socket; }
 const msg_buffer_t& Client::buffer() const { return in; }
 process_t& Client::get_process() { return subprocs; }
-osstream_t& Client::getOss() { return out; }
+// osstream_t& Client::getOss() { return out; }
 bool Client::getCgiCheck()  { return Cgi_check; }
 bool Client::getCgiExit()  { return Cgi_exit; }
 msg_buffer_t& Client::get_in() { return in; }
@@ -31,34 +31,70 @@ void Client::processClientRequest() {
     } else if (byte == 0) {
         throw err_t("Client receive ended");
     } else {
-        if (isMsgDone(buf, byte) && isBodyDone(buf, byte)) {
-            HTTP::transaction(*this, subprocs, out);
-            if (subprocs.pid != 0) {
-                srv.add_events(subprocs.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 30000, get_client_socket_ptr());
-                srv.add_events(subprocs.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, get_client_socket_ptr());
-                return;
-            }
-            in.reset();
-            srv.add_events(client_socket, EVFILT_TIMER, EV_DELETE, 0, 0, nullptr);
-            srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-        }
+		if ( Transaction::recvMsg( in, buf, byte )) {
+			if ( !action ) {
+				action = new Transaction( *this );
+
+				if ( subprocs.pid ) {
+					srv.add_events(subprocs.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 30000, get_client_socket_ptr());
+					srv.add_events(subprocs.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, get_client_socket_ptr());
+				}
+			}
+
+			if ( Transaction::recvBody( in, subprocs, buf, byte ) ) {
+				logging.fs << in.msg.str() << std::endl;
+				logging.fs << in.body.str() << std::endl;
+
+				if ( !subprocs.pid ) action->act();
+				else { close( subprocs.fd[W] ); return; }
+
+				in.reset();
+				// subprocs.reset();
+
+				srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+			}
+		}
+
+        // if ( isMsgDone(buf, byte) && isBodyDone(buf, byte)) {
+        //     HTTP::transaction(*this, subprocs, out);
+        //     if (subprocs.pid != 0) {
+        //         srv.add_events(subprocs.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 30000, get_client_socket_ptr());
+        //         srv.add_events(subprocs.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, get_client_socket_ptr());
+        //         return;
+        //     }
+        //     in.reset();
+        //     srv.add_events(client_socket, EVFILT_TIMER, EV_DELETE, 0, 0, nullptr);
+        //     srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+        // }
     }
 }
 
 bool Client::sendData() {
-    std::string data = out.str();
-    const char* buffer = data.c_str();
-    size_t length = data.size();
+   size_t length = out.msg.str().size(); 
 
-    ssize_t bytesSent = send(client_socket, buffer, length, 0);
-    if (bytesSent < 0) {
-        return false;
-    }
+	log( "TCP\t: sending\n" );
+	logging.fs << out.msg.str() << "\n" << std::endl;
 
-    out.str("");
-    out.clear();
+	ssize_t bytesSent = send(client_socket, out.msg.str().c_str(), length, 0);  
+	if (bytesSent < 0) return false;
 
-    return true;
+	//////////////////////////////////////////////////////////////////////
+
+	if ( out.body.str().size() ) {
+		length = out.body.str().size(); 
+
+		logging.fs << out.body.str() << "\n" << std::endl;
+
+		bytesSent = send(client_socket, out.body.str().c_str(), length, 0);  
+		if (bytesSent < 0) return false;
+
+	}
+	
+	out.reset();
+
+	if ( action ) { delete action; action = NULL; }
+
+	return true;
 }
 
 bool Client::isMsgDone(const char* buf, ssize_t& byte_read) {
