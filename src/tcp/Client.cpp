@@ -31,41 +31,49 @@ void Client::processClientRequest() {
     } else if (byte == 0) {
         throw err_t("Client receive ended");
     } else {
-		if ( Transaction::recvMsg( in, buf, byte )) {
-			if ( !action ) {
-				action = new Transaction( *this );
-
-				if ( subprocs.pid ) {
-					srv.add_events(subprocs.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 30000, get_client_socket_ptr());
-					srv.add_events(subprocs.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, get_client_socket_ptr());
-				}
-			}
-
-			if ( Transaction::recvBody( in, subprocs, buf, byte ) ) {
+		try {
+			if ( Transaction::recvMsg( in, buf, byte )) {
 				logging.fs << in.msg.str() << std::endl;
-				logging.fs << in.body.str() << std::endl;
 
-				if ( !subprocs.pid ) action->act();
-				else { close( subprocs.fd[W] ); return; }
+				if ( !action ) {
+					action = new Transaction( *this );
 
-				in.reset();
-				// subprocs.reset();
+					if ( subprocs.pid ) {
+						srv.add_events(subprocs.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 30000, get_client_socket_ptr());
+						srv.add_events(subprocs.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, get_client_socket_ptr());
+					}
+				}
 
-				srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+				if ( Transaction::recvBody( in, subprocs, buf, byte ) ) {
+					logging.fs << in.body.str() << std::endl;
+
+					if ( !subprocs.pid ) action->act();
+					else { close( subprocs.fd[W] ); return; }
+
+					in.reset();
+					srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+				}
 			}
 		}
 
-        // if ( isMsgDone(buf, byte) && isBodyDone(buf, byte)) {
-        //     HTTP::transaction(*this, subprocs, out);
-        //     if (subprocs.pid != 0) {
-        //         srv.add_events(subprocs.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 30000, get_client_socket_ptr());
-        //         srv.add_events(subprocs.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, get_client_socket_ptr());
-        //         return;
-        //     }
-        //     in.reset();
-        //     srv.add_events(client_socket, EVFILT_TIMER, EV_DELETE, 0, 0, nullptr);
-        //     srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-        // }
+		catch ( errstat_t& err ) {
+			log( "HTTP\t: transaction: " + str_t( err.what() ) );
+
+			in.reset();
+			out.reset();
+
+			Transaction::build( Response( *this, err.code ), out );
+			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+		}
+
+		catch ( err_t& err ) {
+			log( "HTTP\t: Request: " + str_t( err.what() ) );
+
+			in.reset();
+
+			Transaction::build( Response( *this, 400 ), out );
+			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+		}
     }
 }
 
@@ -95,50 +103,6 @@ bool Client::sendData() {
 	if ( action ) { delete action; action = NULL; }
 
 	return true;
-}
-
-bool Client::isMsgDone(const char* buf, ssize_t& byte_read) {
-    if (!in.msg_done) {
-        in.msg.write(buf, byte_read);
-
-        size_t pos_header_end = in.msg.str().find(MSG_END, in.msg_read - (in.msg_read < 3 ? in.msg_read : 3));
-        if (pos_header_end == str_t::npos) {
-            in.msg_read += byte_read;
-        } else {
-            in.msg_done = true;
-
-            size_t body_start = pos_header_end - in.msg_read + 4;
-            in.body_read = byte_read - body_start;
-
-            if (in.body_read)
-                in.body.write(&buf[body_start], in.body_read);
-
-            byte_read = 0;
-
-            size_t pos_header_len = in.msg.str().find(HTTP::key.header_in.at(IN_CONTENT_LEN));
-            if (pos_header_len != str_t::npos) {
-                isstream_t iss(in.msg.str().substr(pos_header_len, in.msg.str().find(CRLF, pos_header_len)));
-                str_t discard;
-
-                std::getline(iss, discard, ':');
-                iss >> std::ws >> in.body_size;
-            }
-        }
-    }
-    return in.msg_done;
-}
-
-bool Client::isBodyDone(const char* buf, const size_t& byte_read) {
-    in.body.write(buf, byte_read);
-    in.body_read += byte_read;
-
-    if (byte_read) {
-        osstream_t oss;
-        oss << "TCP\t: body read by " << byte_read << " so far: " << in.body_read << " / " << in.body_size << std::endl;
-        // log(oss.str());
-    }
-
-    return in.body_size == in.body_read;
 }
 
 /* STRUCT */

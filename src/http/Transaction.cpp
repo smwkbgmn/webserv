@@ -16,37 +16,20 @@
 	field-line = field-name ":" OWS field-value OWS
 */
 
+/* INTANTIATE */
 Transaction::Transaction( Client& client ): _cl( client ), _rqst( client ) {
 	log( "HTTP\t: constructing Transaction" );
 
-	_setTransferEnc();
 	_validRequest();
-
-	if ( _invokeCGI( _rqst, _cl.subprocs ) )
-		CGI::proceed( _rqst, _cl.subprocs );
+	if ( _rqst.line().method == POST ) _setBodyEnd();
+	if ( _invokeCGI( _rqst, _cl.subprocs ) ) CGI::proceed( _rqst, _cl.subprocs );
 }
 
+/* METHOD - act: do the requested method and build plain response message */
 void
 Transaction::act( void ) {
 	_rspn.act( _rqst );
 	build( _rspn, _cl.out );
-}
-
-// void
-// Transaction::actCGI( void ) {
-// 	if ( !_cl.in.chunk )
-// 		CGI::writeTo ( _cl.subprocs, _cl.in.body.str().c_str(), _cl.in.body.str().size() );
-// 	close( _cl.subprocs.fd[W] );
-// }
-
-void
-Transaction::_setTransferEnc( void ) {
-	if ( _rqst.line().method == POST ) {
-		if ( _rqst.header().transfer_encoding == TE_CHUNKED )
-			_cl.in.chunk = TRUE;
-		else
-			_cl.in.body_size = _rqst.header().content_length;
-	}
 }
 
 void
@@ -58,6 +41,12 @@ Transaction::_validRequest( void ) {
 		if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
 		else throw errstat_t( 500 );
 	}
+}
+
+void
+Transaction::_setBodyEnd( void ) {
+	if ( _rqst.header().transfer_encoding == TE_CHUNKED ) _cl.in.chunk = TRUE;
+	else _cl.in.body_size = _rqst.header().content_length;
 }
 
 bool
@@ -79,7 +68,14 @@ Transaction::_invokeCGI( const Request& rqst, process_t& procs ) {
 	return TRUE;
 }
 
+/*	
+	METHOD -
+	recvMsg: store request line and header field at stream buffer
+	and determine if the received message is done
 
+	recvBody: store contetnt at steram buffer and
+	determine if the receved body contents is done
+*/
 bool
 Transaction::recvMsg( msg_buffer_t& in, const char* buf, ssize_t& byte_read ) {
 	if ( !in.msg_done ) {
@@ -95,19 +91,8 @@ Transaction::recvMsg( msg_buffer_t& in, const char* buf, ssize_t& byte_read ) {
 			size_t body_begin	= pos_header_end - in.msg_read + 4;
 			in.body_read		= byte_read - body_begin;
 
-			if ( in.body_read ) {
+			if ( in.body_read )
 				in.body.write( &buf[body_begin], in.body_read );
-
-				// in.msg.seekg( pos_header_end + 4 );
-				// in.body.write( in.msg.str().c_str(), in.body_read );
-				// char body[in.body_read];
-				// in.msg.getline( body, in.body_read );
-				// in.msg.seekg( 0 );
-				
-				// in.msg.str( in.msg.str().substr( 0, pos_header_end + 3 ) );
-			}
-
-			// std::clog << "--------------- completed msg ---------------\n" << in.msg.str() << "\n\n\n";
 
 			byte_read			= 0;
 		}
@@ -126,15 +111,8 @@ bool
 Transaction::_recvBodyPlain( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
 	in.body_read += byte_read;
 
-	if ( !procs.pid ) {
+	if ( !procs.pid )
 		in.body.write( buf, byte_read );
-
-		if ( in.body_read ) {
-			osstream_t oss;
-			oss << "TCP\t: body read by " << byte_read << " so far: " << in.body_read << " / " << in.body_size << std::endl;
-			log( oss.str() );
-		}
-	}
 
 	else {
 		if ( byte_read == 0 && in.body_read )
@@ -142,91 +120,112 @@ Transaction::_recvBodyPlain( msg_buffer_t& in, const process_t& procs, const cha
 		else
 			CGI::writeTo( procs, buf, byte_read );
 	}
+
+	if ( in.body_read ) {
+		osstream_t oss;
+		oss << "TCP\t: body read by " << byte_read << " so far: " << in.body_read << " / " << in.body_size << std::endl;
+		log( oss.str() );
+	}
+
 	return in.body_size == in.body_read;
 }
 
 bool
 Transaction::_recvBodyChunk( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
-	// In case of following read for chunk head
-	if ( in.incomplete ) {
-		std::clog << "recvBodyChunk - incomplete\n";
-		// Handle following read is fail, 
-		// if ( byte_read != in.next_read ) {
-		// 	in.next_read -= byte_read;
-		// }
-
-		if ( !procs.pid ) in.body.write( buf, byte_read - SIZE_CRLF );
-		else CGI::writeTo( procs, buf, byte_read - SIZE_CRLF );
-
-		in.incomplete	= FALSE;
-		in.next_read	= SIZE_BUFF;
-	}
+	// In case of following read after chunk head
+	if ( in.incomplete ) return _recvBodyChunkData( in, procs, buf, byte_read );
 
 	// In case of first body receiving right after receving message done
 	if ( !byte_read && in.body_read ) {
-		std::clog << "recvBodyChunk - right after receving message done\n";
 		char buf_temp[in.body_read];
 
 		in.body.read( buf_temp, in.body_read );
 		in.body.str( "" );
 
-		buf = buf_temp;
-
-		size_t		hex;
-		char		data;
-		sstream_t	chunk( buf );
-
-		while ( chunk.str().size() ) {
-			//  Get chunk head
-			chunk >> std::hex >> in.chunk_size >> std::ws;
-
-			// If chunk size is0, the message is end
-			if ( !in.chunk_size ) return TRUE;
-			if ( in.chunk_size > 0xf ) throw errstat_t( 400, err_msg[CHUNK_EXCEED_HEX] );
-
-			// Write body from chunk 
-			hex = in.chunk_size;
-			while ( hex && chunk.get( data ) ) {
-				if ( !procs.pid ) in.body.write( &data, 1 );
-				else CGI::writeTo( procs, &data, 1 );
-
-				hex--;
-			}
-
-			// If unread byte is left, set the next_read
-			// as rest of byte and read it following read 
-			if ( hex ) {
-				in.incomplete	= TRUE;
-				in.next_read	= hex + SIZE_CRLF;
-				return FALSE;
-			}
-
-			if ( chunk.peek() != CR ) throw errstat_t( 400, err_msg[CHUNK_EXCEED_HEX] );
-
-			// If writing body is done well, discard the CRLF and
-			// set the next_read with size of next chunk line head
-			chunk >> std::ws;
-		}
+		return _recvBodyChunkPredata( in, procs, buf_temp );
 	}
 
 	// In case of getting the chunk head
-	else {
-		std::clog << "recvBodyChunk - set chunk head\n";
+	else
+		return _recvBodyChunkHead( in, buf );
+}
 
-		sstream_t	chunk( buf );
+bool
+Transaction::_recvBodyChunkData( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
+	std::clog << "recvBodyChunk - incomplete\n";
+	// Handle following read is fail, 
+	// if ( byte_read != in.next_read ) {
+	// 	in.next_read -= byte_read;
+	// }
 
+	if ( !procs.pid ) in.body.write( buf, byte_read - SIZE_CRLF );
+	else CGI::writeTo( procs, buf, byte_read - SIZE_CRLF );
+
+	in.incomplete	= FALSE;
+	in.next_read	= SIZE_BUFF;
+
+	return FALSE;
+}
+
+bool
+Transaction::_recvBodyChunkHead( msg_buffer_t& in, const char* buf ) {
+	std::clog << "recvBodyChunk - get chunk head\n";
+
+	sstream_t	chunk( buf );
+
+	chunk >> std::hex >> in.chunk_size >> std::ws;
+	
+	if ( !in.chunk_size ) return TRUE;
+
+	in.next_read	= in.chunk_size;
+	in.incomplete	= TRUE;
+	
+	return FALSE;
+}
+
+bool
+Transaction::_recvBodyChunkPredata( msg_buffer_t& in, const process_t& procs, const char* buf ) {
+	size_t		hex;
+	char		data;
+	sstream_t	chunk( buf );
+
+	while ( chunk.str().size() ) {
+		//  Get chunk head
 		chunk >> std::hex >> in.chunk_size >> std::ws;
-		
-		if ( !in.chunk_size ) return TRUE;
 
-		in.next_read	= in.chunk_size;
-		in.incomplete	= TRUE;
+		// If chunk size is0, the message is end
+		if ( !in.chunk_size ) return TRUE;
+		if ( in.chunk_size > 0xf ) throw errstat_t( 400, err_msg[CHUNK_EXCEED_HEX] );
+
+		// Write body from chunk 
+		hex = in.chunk_size;
+		while ( hex && chunk.get( data ) ) {
+			if ( !procs.pid ) in.body.write( &data, 1 );
+			else CGI::writeTo( procs, &data, 1 );
+
+			hex--;
+		}
+
+		// If unread byte is left, set the next_read
+		// as rest of byte and read it following read 
+		if ( hex ) {
+			in.incomplete	= TRUE;
+			in.next_read	= hex + SIZE_CRLF;
+			
+			return FALSE;
+		}
+
+		if ( chunk.peek() != CR ) throw errstat_t( 400, err_msg[CHUNK_EXCEED_HEX] );
+
+		// If writing body is done well, discard the CRLF and
+		// set the next_read with size of next chunk line head
+		chunk >> std::ws;
 	}
 
 	return FALSE;
 }
 
-
+/* METHOD - build: build response message base with response object */
 void
 Transaction::build( const Response& rspn, msg_buffer_t& out ) {
 	_buildLine( rspn, out.msg );
