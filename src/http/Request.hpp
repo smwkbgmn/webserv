@@ -1,7 +1,10 @@
 #ifndef REQUEST_HPP
 # define REQUEST_HPP
 
-# include "Client.hpp"
+# include "structure.hpp"
+# include "utill.hpp"
+
+class Client;
 
 class Request {
 	public:
@@ -40,8 +43,6 @@ class Request {
 		str_t						_token( isstream_t&, char );
 		
 };
-
-# include "HTTP.hpp"
 
 #endif
 

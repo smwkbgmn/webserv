@@ -2,7 +2,6 @@
 #define SERVER_HPP
 
 #include "ASocket.hpp"
-#include "Client.hpp"
 #include "structure.hpp"
 
 #define MAX_EVENTS 10

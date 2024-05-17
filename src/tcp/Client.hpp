@@ -12,36 +12,35 @@
 
 #include <cstring>
 
-// #define BuffSize 1024
-// #define BuffSize 3000
 #define SIZE_BUFF 1024
-
 #define SIZE_CRLF 2
-#define SIZE_CHUNK_HEAD 5
+#define SIZE_CHUNK_HEAD 3
 
-class Server;
-class Request;
-class Response;
+#include "Transaction.hpp"
 
 class Client {
 private:
     Server&		srv;
     int			client_socket;
 
-	msg_buffer_t	in;
-	msg_buffer_t	out;
     // osstream_t		out;
 
-	Request*		rqst;
-	Response*		rspn;
+	Transaction*	action;
 
-    process_t		subprocs;
+	// Request*		rqst;
+	// Response*		rspn;
+
 
 	bool recvBodyChunk( const char*, const size_t& );
 	bool recvBodyPlain( const char*, const size_t& );
 	
 
 public:
+	msg_buffer_t	in;
+	msg_buffer_t	out;
+
+    process_t		subprocs;
+
     Client(Server& server);
     ~Client();
 

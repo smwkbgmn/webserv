@@ -1,3 +1,7 @@
+#include "HTTP.hpp"
+#include "Client.hpp"
+#include "Request.hpp"
+
 #include "Response.hpp"
 
 /* ACCESS */
@@ -5,8 +9,19 @@ const response_line_t&		Response::line( void ) const { return _line; }
 const response_header_t&	Response::header( void ) const { return _header; }
 const sstream_t&			Response::body( void ) const { return _body; }
 
-/* CONSTRUCT */
-Response::Response( const Request& rqst ) {
+/* INSTANTIATE */
+Response::Response( void ) {}
+
+Response::Response( const Client& client, const uint_t& errstat ) {
+	log( "HTTP\t: constructing response_errorcase" );
+
+	_errpage( errstat, client.server().config() );	
+}
+
+Response::~Response( void ) {}
+
+void
+Response::act( const Request& rqst ) {
 	log( "HTTP\t: constructing response" );
 
 	try {
@@ -69,8 +84,9 @@ Response::_doMethodValid( const Request& rqst ) {
 			break;
 
 		case POST:
-			// if ( lookup( rqst.header().list, IN_CONTENT_LEN ) == rqst.header().list.end() )
-			// 	throw errstat_t( 411, err_msg[POST_EMPTY_CONTENT_LEN] );
+			if ( lookup( rqst.header().list, IN_CONTENT_LEN ) == rqst.header().list.end() &&
+				rqst.header().transfer_encoding != TE_CHUNKED )
+				throw errstat_t( 411, err_msg[POST_EMPTY_CONTENT_LEN] );
 
 			if ( rqst.header().content_length > rqst.config().client_max_body )
 				throw errstat_t( 405, err_msg[POST_OVER_CONTENT_LEN] );
@@ -103,12 +119,6 @@ Response::_mime( const str_t& uri ) {
 		try { _header.content_type = HTTP::key.mime.at( ext ); }
 		catch ( exception_t &exc ) { _header.content_type = HTTP::http.type_unknown; }
 	}
-}
-
-Response::Response( const Client& client, const uint_t& errstat ) { 
-	log( "HTTP\t: constructing response_errorcase" );
-
-	_errpage( errstat, client.server().config() );
 }
 
 /* METHOD - index: proceed responsing with indexing */
@@ -211,8 +221,6 @@ Response::_errpageBuild( const uint_t& status ) {
 	errpageScript( _body, status, HTTP::key.status.at( status ) );
 	_header.content_length = _body.str().size();
 }
-
-Response::~Response( void ) {}
 
 /* STRUCT */
 response_line_s::response_line_s( void ) {

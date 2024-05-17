@@ -16,7 +16,7 @@ class CGI {
 
 		static void				init( void );
 
-		static void 			proceed( const Request&, process_t&, sstream_t& );
+		static void 			proceed( const Request&, process_t& );
 		static void				wait( process_t& );
 		static void				writeTo( const process_t&, const char*, const size_t& );
 		static void				readFrom( const process_t&, sstream_t& );
@@ -41,6 +41,7 @@ class CGI {
 		// static void				_buildHeader( const sstream_t&, sstream_t&, size_t& );
 		static void				_buildLine( msg_buffer_t& );
 		static void				_buildHeader( msg_buffer_t& );
+		static void				_buildChunk( msg_buffer_t& );
 
 		static bool				_redirect( const process_t& );
 		static stat_t			_execve( const process_t& );

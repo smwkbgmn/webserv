@@ -1,3 +1,6 @@
+# include "HTTP.hpp"
+# include "Client.hpp"
+
 #include "Request.hpp"
 
 /* ACCESS */

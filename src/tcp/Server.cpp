@@ -1,3 +1,4 @@
+#include "Client.hpp"
 #include "Server.hpp"
 #include "HTTP.hpp"
 

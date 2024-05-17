@@ -36,22 +36,11 @@ CGI::_assignEnvironList( void ) {
 
 /* METHOD - proceed: get outsourcing data */
 void
-CGI::proceed( const Request& rqst, process_t& procs, sstream_t& out_body ) {
+CGI::proceed( const Request& rqst, process_t& procs ) {
 	log( "CGI\t: proceed" );
 
-	if ( _detach( rqst, procs ) == SUCCESS ) {
-		// _write( procs, rqst );
-		// _wait( procs );
-
-		// sstream_t data;
-		// _build( data, out_body, _read( procs, data ) );
-
-		// if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
-		// 	throw errstat_t( 500, "the CGI fail to exit as SUCCESS" );
-	}
-	else throwSysErr( "_detach", 500 );
-
-	( void )out_body;
+	if ( _detach( rqst, procs ) != SUCCESS )
+		throwSysErr( "_detach", 500 );
 }
 
 stat_t
@@ -68,14 +57,6 @@ CGI::_detach( const Request& rqst, process_t& procs ) {
 }
 
 /* PARENT */
-// void
-// CGI::_write( const process_t& procs, const Request& rqst ) {
-// 	if ( rqst.line().method == POST &&
-// 		write( procs.fd[W], rqst.body().str().c_str(), rqst.header().content_length ) == ERROR ) 
-// 			throwSysErr( "write", 500 );
-// 	close( procs.fd[W] );
-// }
-
 void
 CGI::writeTo( const process_t& procs, const char* in_body, const size_t& size ) {
 	if ( write( procs.fd[W], in_body, size ) == ERROR )
@@ -83,15 +64,12 @@ CGI::writeTo( const process_t& procs, const char* in_body, const size_t& size ) 
 }
 
 void
-// CGI::_wait( process_t& procs ) {
 CGI::wait( process_t& procs ) {
 	// Should be replaced the NONE with WNOHANG after restruct the flow
 	if ( waitpid( procs.pid, &procs.stat, NONE ) == ERROR )
 		throwSysErr( "wait", 500 );
 }
 
-// size_t
-// CGI::_read( process_t& procs, sstream_t& data ) {
 void
 CGI::readFrom( const process_t& procs, sstream_t& out_body) {
 	c_buffer_t	buf;
@@ -106,15 +84,13 @@ CGI::readFrom( const process_t& procs, sstream_t& out_body) {
 }
 
 void
-// CGI::_build( sstream_t& data, sstream_t& out_body, size_t size ) {
 CGI::build( msg_buffer_t& out ) {
 	_buildLine( out );
-	if ( out.body.str().size() )
-		_buildHeader( out );
+	if ( out.body.str().size() ) _buildHeader( out );
+	if ( out.chunk ) _buildChunk( out );
 }
 
 void
-// CGI::_buildLine( sstream_t& data, const size_t& size ) {
 CGI::_buildLine( msg_buffer_t& out ) {
 	out.msg << 
 	HTTP::http.signature << '/' << HTTP::http.version.at( VERSION_11 ) << SP;
@@ -126,13 +102,12 @@ CGI::_buildLine( msg_buffer_t& out ) {
 }
 
 void
-// CGI::_buildHeader( const sstream_t& data, sstream_t& out_body, size_t& size ) {
 CGI::_buildHeader( msg_buffer_t& out ) {
 	size_t pos_header_end = out.body.str().find( MSG_END );
 
 	if ( found( pos_header_end ) ) {
-		out.msg << out.body.str().substr( 0, pos_header_end + 4 );
-		out.body.ignore( pos_header_end + 4 );
+		out.msg << out.body.str().substr( 0, pos_header_end + 2 );
+		out.body.str( out.body.str().substr( pos_header_end + 4 ) );
 	}
 
 	if ( !found( pos_header_end ) || ( found( pos_header_end ) &&
@@ -150,31 +125,34 @@ CGI::_buildHeader( msg_buffer_t& out ) {
 
 		out.chunk = TRUE;
 	}
-	
 	out.msg << CRLF;
-	
-	// if ( size ) {
-	// 	size_t	pos_header_end	= data.str().find( MSG_END );
+}
 
-	// 	if ( !found( data.str().find( HTTP::key.header_out.at( OUT_CONTENT_TYPE ) ) ) )
-	// 		out_body <<
-	// 		HTTP::key.header_out.at( OUT_CONTENT_TYPE ) << ':' << SP <<
-	// 		HTTP::key.mime.at( "txt" ) << CRLF;
+void
+CGI::_buildChunk( msg_buffer_t& out ) {
+	char		data[15];
+	size_t		size = out.body.str().size();
+	size_t		frac;
 
-	// 	if ( !found( data.str().find( HTTP::key.header_out.at( OUT_CONTENT_LEN ) ) ) ) {
-	// 		if ( found( pos_header_end ) )
-	// 			size -= pos_header_end - 4;
+	sstream_t	chunked;
 
-	// 		out_body <<
-	// 		HTTP::key.header_out.at( OUT_CONTENT_LEN ) << ':' << SP <<
-	// 		size << CRLF;
-	// 	}
+	out.body.seekg( 0 );
 
-	// 	if ( !found( pos_header_end ) )
-	// 		out_body << CRLF;
+	while ( size > 0 ) {
+		if ( size > 14 ) frac = 15;
+		else frac = size; 
+		
+		chunked << hexdigt[frac] << CRLF;
 
-	// 	out_body << data.str();
-	// }
+		out.body.read( data, frac );
+		chunked.write( data, frac );
+		chunked << CRLF;
+
+		size -= frac;
+	}
+	chunked << "0" << CRLF << CRLF;
+
+	out.body.str( chunked.str() );
 }
 
 /* CHILD */
