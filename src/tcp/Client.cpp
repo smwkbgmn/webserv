@@ -31,28 +31,54 @@ void Client::processClientRequest() {
     } else if (byte == 0) {
         throw err_t("Client receive ended");
     } else {
-		if ( Transaction::recvMsg( in, buf, byte )) {
-			if ( !action ) {
-				action = new Transaction( *this );
+		try {
+			if ( Transaction::recvMsg( in, buf, byte )) {
+				logging.fs << in.msg.str() << std::endl;
 
-				if ( subprocs.pid ) {
-					srv.add_events(subprocs.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 30000, get_client_socket_ptr());
-					srv.add_events(subprocs.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, get_client_socket_ptr());
+				if ( !action ) {
+					action = new Transaction( *this );
+
+					if ( subprocs.pid ) {
+						srv.add_events(subprocs.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 30000, get_client_socket_ptr());
+						srv.add_events(subprocs.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, get_client_socket_ptr());
+					}
+				}
+
+				if ( Transaction::recvBody( in, subprocs, buf, byte ) ) {
+					logging.fs << in.body.str() << std::endl;
+
+					if ( !subprocs.pid ) action->act();
+					else { close( subprocs.fd[W] ); return; }
+
+					in.reset();
+					// subprocs.reset();
+
+					srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 				}
 			}
+		}
 
-			if ( Transaction::recvBody( in, subprocs, buf, byte ) ) {
-				logging.fs << in.msg.str() << std::endl;
-				logging.fs << in.body.str() << std::endl;
 
-				if ( !subprocs.pid ) action->act();
-				else { close( subprocs.fd[W] ); return; }
+		catch ( errstat_t& err ) {
+			log( "HTTP\t: transaction: " + str_t( err.what() ) );
 
-				in.reset();
-				// subprocs.reset();
+			out.msg.str( "" );
+			out.body.str( "" );
 
-				srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
-			}
+			Transaction::build( Response( *this, err.code ), out );
+
+			in.reset();
+			subprocs.reset();
+			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+		}
+
+		catch ( err_t& err ) {
+			log( "HTTP\t: Request: " + str_t( err.what() ) );
+
+			Transaction::build( Response( *this, 400 ), out );
+
+			in.reset();
+			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 		}
 
         // if ( isMsgDone(buf, byte) && isBodyDone(buf, byte)) {
