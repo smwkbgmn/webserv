@@ -1,40 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chunked HTTP Request</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chunked POST Request</title>
 </head>
 <body>
-<h1>Chunked HTTP Request</h1>
-<button onclick="sendChunkedRequest()">Send Chunked Request</button>
-<div id="response"></div>
+    <input type="file" id="fileInput" />
+    <button id="uploadButton">Upload File</button>
 
-<script>
-function sendChunkedRequest() {
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/freeboard", true); // Change the URL to your server endpoint
-    xhr.setRequestHeader("Content-Type", "text/plain");
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', () => {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                alert('Please select a file.');
+                return;
+            }
 
-    // Define the chunks of data to send
-    var chunks = [
-        "5\r\nHello\r\n",
-        "7\r\n, world\r\n",
-        "0\r\n" // Final chunk
-    ];
+            const file = fileInput.files[0];
+            const url = 'http://localhost:8080/upload'; // Use the local server URL
+            const xhr = new XMLHttpRequest();
 
-    // Send each chunk
-    for (var i = 0; i < chunks.length; i++) {
-        xhr.send(chunks[i]);
-    }
+            xhr.open('POST', url, true);
+            xhr.setRequestHeader('Content-Type', 'application/octet-stream');
 
-    // Handle response
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState == 4 && xhr.status == 200) {
-            document.getElementById("response").innerHTML = xhr.responseText;
-        }
-    };
-}
-</script>
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const arrayBuffer = event.target.result;
+                const chunkSize = 1024; // Size of each chunk
+                let offset = 0;
+
+                function sendNextChunk() {
+                    if (offset < arrayBuffer.byteLength) {
+                        const chunk = arrayBuffer.slice(offset, offset + chunkSize);
+                        xhr.setRequestHeader('Transfer-Encoding', 'chunked');
+                        xhr.send(chunk);
+                        offset += chunkSize;
+                        setTimeout(sendNextChunk, 0); // Schedule the next chunk
+                    } else {
+                        xhr.setRequestHeader('Transfer-Encoding', 'chunked');
+                        xhr.send(); // Signal the end of the request
+                    }
+                }
+
+                sendNextChunk();
+            };
+            reader.readAsArrayBuffer(file);
+        });
+    </script>
 </body>
 </html>

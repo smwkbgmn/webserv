@@ -3,7 +3,7 @@
 import cgi
 
 def generate_error_page(status_code, explanation):
-    print("Content-Type: text/html\n")  # Required HTTP header
+    print("Content-Type: text/html\r\n\r\n")  # Required HTTP header
 
     # HTML body for the error page
     error_page = """

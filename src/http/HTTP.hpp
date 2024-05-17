@@ -9,6 +9,7 @@
 	
 # define CNT_METHOD 3
 # define CNT_VERSION 4
+# define CNT_ENCODING 2
 
 class Request;
 class Response;
@@ -20,32 +21,19 @@ const path_t	file_header_in	= dir_keys + "key_header_in.txt";
 const path_t	file_header_out	= dir_keys + "key_header_out.txt";
 const path_t	file_environ	= dir_keys + "key_environ.txt";
 
-const str_t str_method[] = {
-	"GET",
-	"POST",
-	"DELETE"
-};
-
-const str_t str_version[] = {
-	"0.9",
-	"1.0",
-	"1.1",
-	"2.0"
-};
-
-const str_t str_connection[] = {
-	"keep-alive"
-};
-
 class HTTP {
 	public:
 		static http_t	http;
 		static keys_t	key;
 
 		static void		init( void );
-		static void		transaction( const Client&, process_t&, osstream_t& );
+
+		
 		static size_t	setLocation( const str_t&, const vec_location_t& );
-	
+
+		// static void		transaction( const Client&, process_t&, osstream_t& );
+		// static void		build( const Response&, msg_buffer_t& );
+		
 		static void		GET( const path_t&, sstream_t&, size_t& );
 		static void		POST( const Request& );
 		static void		DELETE( const Request& );
@@ -58,15 +46,15 @@ class HTTP {
 		static void		_assignVec( vec_str_t &, const str_t[], size_t );
 
 		/* transaction */
-		static void		_build( const Response&, osstream_t& );
-		static void		_buildLine( const Response&, osstream_t& );
-		static void		_buildHeader( const Response&, osstream_t& );
-		static void		_buildHeaderName( uint_t, osstream_t& );
-		static void		_buildHeaderValue( const response_header_t&, uint_t, osstream_t& );
-		static void		_buildBody( const Response&, osstream_t& );
+		// static void		_build( const Response&, osstream_t& );
+		// static void		_buildLine( const Response&, sstream_t& );
+		// static void		_buildHeader( const Response&, sstream_t& );
+		// static void		_buildHeaderName( uint_t, sstream_t& );
+		// static void		_buildHeaderValue( const response_header_t&, uint_t, sstream_t& );
+		// static void		_buildBody( const Response&, sstream_t& );
 
 		/* method */
-		static bool		_invokeCGI( const Request&, process_t& );
+		// static bool		_invokeCGI( const Request&, process_t& );
 
 };
 

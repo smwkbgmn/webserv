@@ -5,6 +5,8 @@
 	- CGI 
 		Replace _wait NONE mode with WNOHANG
 		> move the _read and _build to Client implementation 
+		Correct Content_length when it found the CRLF
+
 		Define a directory or a file from where the file should be searched (for example, if url /kapouet is rooted to /tmp/www, url /kapouet/pouic/toto/pouet is /tmp/www/pouic/toto/pouet)
 		Execute CGI based on certain file extension (for example .php)
 		Make the route able to accept uploaded files and configure where they should be saved
@@ -39,6 +41,8 @@
 	resulting unavailable to find the "\r\n\r\n" while taking request
 	- Add program option for toggle of logging
 	- See if other connection headers should be handled 
+	- When send response, intead of copying the body at the building message, 
+	just build the msg and use body directly from the response object
 */
 
 int main( void ) {

@@ -30,6 +30,31 @@
 
 # define MSG_END	"\r\n\r\n"
 
+/* STRINGS - for assigning vector values (because of the version
+limitation, not available to use the vector argument initialize list) */
+const str_t str_method[] = {
+	"GET",
+	"POST",
+	"DELETE"
+};
+
+const str_t str_version[] = {
+	"0.9",
+	"1.0",
+	"1.1",
+	"2.0"
+};
+
+const str_t str_connection[] = {
+	"keep-alive",
+	"close"
+};
+
+const str_t str_transfer_enc[] = {
+	"identity",
+	"chunked"
+};
+
 /* ENUM */
 enum method_e {
 	GET,
@@ -48,13 +73,20 @@ enum version_e {
 };
 
 enum connection_e {
-	KEEP_ALIVE
+	KEEP_ALIVE,
+	CLOSE
+};
+
+enum transfer_enc_e {
+	TE_IDENTITY,
+	TE_CHUNKED,
+	TE_UNKNOWN
 };
 
 enum header_in_e {
 	IN_HOST,
 	IN_CONNECTION,
-	IN_CHUNK,
+	IN_TRANSFER_ENC,
 	IN_CONTENT_LEN,
 	IN_CONTENT_TYPE
 };
@@ -63,7 +95,7 @@ enum header_out_e {
 	OUT_SERVER,
 	OUT_DATE,
 	OUT_CONNECTION,
-	OUT_CHUNK,
+	OUT_TRANSFER_ENC,
 	OUT_CONTENT_LEN,
 	OUT_CONTENT_TYPE,
 	OUT_LOCATION,
@@ -102,6 +134,7 @@ typedef struct http_s {
 	vec_str_t			method;
 
 	type_t				type_unknown;
+	vec_str_t			encoding;
 }	http_t;
 
 struct config_s;
@@ -141,12 +174,17 @@ typedef struct msg_buffer_s {
 	void				reset( void );
 	
 	sstream_t			msg;
-	bool				msg_done;
 	ssize_t				msg_read;
+	bool				msg_done;
 
 	sstream_t			body;
-	ssize_t				body_size;
 	ssize_t				body_read;
+	ssize_t				body_size;
+
+	bool				chunk;
+	size_t				chunk_size;
+	bool				incomplete;
+	size_t				next_read;
 
 }	msg_buffer_t;
 
@@ -164,10 +202,10 @@ typedef struct request_header_s {
 
 	str_t 				host;
 	// date_t				date;
-	unsigned 			connection : 2;
-	unsigned 			chunked : 1;
+	connection_e 		connection; 
+	transfer_enc_e 		transfer_encoding;
 	size_t				content_length;
-	str_t				content_type;
+	type_t				content_type;
 
 	vec_uint_t			list;
 
@@ -176,7 +214,7 @@ typedef struct request_header_s {
 typedef struct response_line_s {
 	response_line_s( void );
 
-	version_e			version;
+	unsigned			version: 2;
 	uint_t				status;
 
 }	response_line_t;
@@ -186,11 +224,10 @@ typedef struct response_header_s {
 
 	str_t				server;
 	// date_t				date;
-	// date_t				last_modified;
-	unsigned			connection : 2;
-	unsigned			chunked : 1;
+	connection_e		connection;
+	transfer_enc_e		transfer_encoding;
 	size_t				content_length;
-	str_t				content_type;
+	type_t				content_type;
 	str_t				location;
 	vec_uint_t			allow;
 

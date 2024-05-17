@@ -15,7 +15,12 @@ class CGI {
 		static map_uint_str_t	environ_list;
 
 		static void				init( void );
-		static void 			proceed( const Request&, process_t&, osstream_t& );
+
+		static void 			proceed( const Request&, process_t& );
+		static void				wait( process_t& );
+		static void				writeTo( const process_t&, const char*, const size_t& );
+		static void				readFrom( const process_t&, sstream_t& );
+		static void				build( msg_buffer_t& );
 
 	private:
 		/* init */
@@ -27,13 +32,16 @@ class CGI {
 		static void				_buildEnviron( const Request&, process_t& );
 		static bool				_buildEnvironVar( const Request&, process_t&, uint_t idx );
 		
-		static void				_write( const process_t&, const Request& );
-		static void				_wait( process_t& );
-		static size_t			_read( process_t&, osstream_t& );
+		// static void				_write( const process_t&, const Request& );
+		// static void				_wait( process_t& );
+		// static size_t			_read( process_t&, sstream_t& );
 
-		static void				_build( osstream_t&, osstream_t&, size_t );
-		static void				_buildLine( osstream_t&, const size_t& );
-		static void				_buildHeader( const osstream_t&, osstream_t&, size_t& );
+		// static void				_build( sstream_t&, sstream_t&, size_t );
+		// static void				_buildLine( sstream_t&, const size_t& );
+		// static void				_buildHeader( const sstream_t&, sstream_t&, size_t& );
+		static void				_buildLine( msg_buffer_t& );
+		static void				_buildHeader( msg_buffer_t& );
+		static void				_buildChunk( msg_buffer_t& );
 
 		static bool				_redirect( const process_t& );
 		static stat_t			_execve( const process_t& );

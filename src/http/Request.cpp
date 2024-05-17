@@ -1,3 +1,6 @@
+# include "HTTP.hpp"
+# include "Client.hpp"
+
 #include "Request.hpp"
 
 /* ACCESS */
@@ -14,6 +17,10 @@ Request::Request( const Client& client ): _client( client ) {
 	log( "HTTP\t: constructing requeset" );
 
 	_parse( _client.buffer().msg );
+
+	if ( _header.transfer_encoding == TE_CHUNKED &&
+		distance( _header.list, IN_CONTENT_LEN ) != NOT_FOUND )
+		throw err_t( err_msg[TE_WITH_CONTENT_LEN] );
 	
 	if ( _line.method != UNKNOWN &&
 		lookup( location().allow, static_cast<uint_t>( _line.method ) ) == location().allow.end() ) 
@@ -25,18 +32,18 @@ Request::_parse( const sstream_t& msg ) {
 	size_t	begin	= 0;
 	size_t	end		= 0;
 
-	// CRLF could be replaced with only LF (see RFC)
+	// CRLF could be replaced with only LF
 	end = msg.str().find( CRLF, begin );
-	_parseLine( msg.str().substr( begin, end ) );
+	_parseLine( msg.str().substr( begin, end - begin ) );
 	begin = end + 2;
 
-	while ( ( end = msg.str().find( CRLF, begin ) ) != str_t::npos ) {
+	while ( found( end = msg.str().find( CRLF, begin ) ) ) {
 		if ( end == begin ) {
 			begin += 2;
 			break;
 		}
 		
-		_parseHeader( msg.str().substr( begin, end ) );
+		_parseHeader( msg.str().substr( begin, end - begin ) );
 		begin = end + 2;
 	}
 } 
@@ -69,8 +76,8 @@ Request::_assignURI( str_t token ) {
 	else
 		_line.uri = token.replace( 0, location().alias.length(), location().root );
 
-	size_t	pos_query = _line.uri.find( '?' );
-	if ( pos_query != str_t::npos ) {
+	size_t pos_query = _line.uri.find( '?' );
+	if ( found( pos_query ) ) {
 		_line.query = _line.uri.substr( pos_query + 1);
 		_line.uri.erase( pos_query );
 	}
@@ -81,7 +88,7 @@ Request::_assignVersion( str_t token ) {
 	isstream_t iss( token );
 
 	if ( _token( iss, '/' ) != HTTP::http.signature )
-		throw err_t( "_assignVersion: " + errMsg[INVALID_REQUEST_LINE] );
+		throw err_t( "_assignVersion: " + err_msg[INVALID_REQUEST_LINE] );
 	
 	vec_str_iter_t iter = lookup( HTTP::http.version, _token( iss, NONE ) );
 	if ( iter == HTTP::http.version.end() )
@@ -99,16 +106,24 @@ Request::_parseHeader( const str_t& field ) {
 	iss >> std::ws;
 
 	switch ( _add( _header.list, distance( HTTP::key.header_in, header ) ) ) {
-		case IN_HOST		: iss >> _header.host; break;
-		case IN_CONNECTION	: _header.connection = KEEP_ALIVE; break;
-		case IN_CHUNK		: break;
-		case IN_CONTENT_LEN	: iss >> _header.content_length; break;
-		case IN_CONTENT_TYPE: iss >> _header.content_type; break;
+		case IN_HOST			: iss >> _header.host; break;
+		case IN_CONNECTION		: _header.connection = KEEP_ALIVE; break;
+
+		case IN_TRANSFER_ENC	: {	 
+			ssize_t te = distance( HTTP::http.encoding, _token( iss, NONE ) );
+
+			if ( te != NOT_FOUND ) _header.transfer_encoding = static_cast<transfer_enc_e>( te );
+			else _header.transfer_encoding = TE_UNKNOWN;
+			break;
+		}
+
+		case IN_CONTENT_LEN		: iss >> _header.content_length; break;
+		case IN_CONTENT_TYPE	: iss >> _header.content_type; break;
 	}
 }
 
 ssize_t
-Request::_add( vec_uint_t& list, ssize_t id ) { if ( id != -1 ) list.push_back( id ); return id; }
+Request::_add( vec_uint_t& list, ssize_t id ) { if ( id != NOT_FOUND ) list.push_back( id ); return id; }
 
 str_t
 Request::_token( isstream_t& iss, char delim ) {
@@ -116,16 +131,22 @@ Request::_token( isstream_t& iss, char delim ) {
 
 	if ( ( delim && !std::getline( iss, token, delim ) ) ||
 		( !delim && !std::getline( iss, token ) ) )
-		throw err_t( "_token: " + errMsg[INVALID_REQUEST_LINE] );
+		throw err_t( "_token: " + err_msg[INVALID_REQUEST_LINE] );
 
 	return token;
 }
+
+// /* METHOD - unchunk: parse chunked request body */
+// void
+// Request::unchunk( osstream_t& body ) {
+	
+// }
 
 Request::~Request( void ) {};
 
 /* STRUCT */
 request_header_s::request_header_s( void ) {
-	connection		= KEEP_ALIVE;
-	chunked			= FALSE;
-	content_length	= 0;
+	connection			= KEEP_ALIVE;
+	transfer_encoding	= TE_IDENTITY;
+	content_length		= 0;
 }

@@ -27,32 +27,20 @@ CGI::_assignScriptBin( void ) {
 
 void
 CGI::_assignEnvironList( void ) {
-	File	fileEnv( file_environ, READ );
+	File	file_env( file_environ, READ );
 	str_t	key;
 	
-	for ( uint_t keyidx = 0; std::getline( fileEnv.fs, key ); ++keyidx )
+	for ( uint_t keyidx = 0; std::getline( file_env.fs, key ); ++keyidx )
 		environ_list.insert( std::make_pair( keyidx, key ) );
 }
 
 /* METHOD - proceed: get outsourcing data */
 void
-CGI::proceed( const Request& rqst, process_t& procs, osstream_t& oss ) {
+CGI::proceed( const Request& rqst, process_t& procs ) {
 	log( "CGI\t: proceed" );
 
-	if ( rqst.line().method == POST && rqst.header().content_length > rqst.config().client_max_body )
-		throw errstat_t( 405, "the requested body size exceeds configured size of limitation" );
-
-	if ( _detach( rqst, procs ) == SUCCESS ) {
-		_write( procs, rqst );
-		_wait( procs );
-
-		osstream_t data;
-		_build( data, oss, _read( procs, data ) );
-
-		if ( WEXITSTATUS( procs.stat ) != EXIT_SUCCESS )
-			throw errstat_t( 500, "the CGI fail to exit as SUCCESS" );
-	}
-	else throwSysErr( "_detach", 500 );
+	if ( _detach( rqst, procs ) != SUCCESS )
+		throwSysErr( "_detach", 500 );
 }
 
 stat_t
@@ -70,75 +58,101 @@ CGI::_detach( const Request& rqst, process_t& procs ) {
 
 /* PARENT */
 void
-CGI::_write( const process_t& procs, const Request& rqst ) {
-	if ( rqst.line().method == POST &&
-		write( procs.fd[W], rqst.body().str().c_str(), rqst.header().content_length ) == ERROR ) 
-			throwSysErr( "write", 500 );
-	close( procs.fd[W] );
+CGI::writeTo( const process_t& procs, const char* in_body, const size_t& size ) {
+	if ( write( procs.fd[W], in_body, size ) == ERROR )
+		throwSysErr( "write", 500 );
 }
 
 void
-CGI::_wait( process_t& procs ) {
+CGI::wait( process_t& procs ) {
 	// Should be replaced the NONE with WNOHANG after restruct the flow
 	if ( waitpid( procs.pid, &procs.stat, NONE ) == ERROR )
 		throwSysErr( "wait", 500 );
 }
 
-size_t
-CGI::_read( process_t& procs, osstream_t& data ) {
+void
+CGI::readFrom( const process_t& procs, sstream_t& out_body) {
 	c_buffer_t	buf;
 	
 	while ( ( buf.read = read( procs.fd[R], buf.ptr, SIZE_BUF ) ) > 0 ) {
-		data.write( buf.ptr, buf.read );
+		out_body.write( buf.ptr, buf.read );
 		buf.total += buf.read;
 	}
 	if ( buf.read == ERROR ) throwSysErr( "read", 500 );
 	
 	close( procs.fd[R] );
-	return buf.total;
 }
 
 void
-CGI::_build( osstream_t& data, osstream_t& oss, size_t size ) {
-	_buildLine( oss, size );
-	_buildHeader( data, oss, size );
+CGI::build( msg_buffer_t& out ) {
+	_buildLine( out );
+	if ( out.body.str().size() ) _buildHeader( out );
+	if ( out.chunk ) _buildChunk( out );
 }
 
 void
-CGI::_buildLine( osstream_t& data, const size_t& size ) {
-	data << 
+CGI::_buildLine( msg_buffer_t& out ) {
+	out.msg << 
 	HTTP::http.signature << '/' << HTTP::http.version.at( VERSION_11 ) << SP;
 
-	if ( !size ) data << "204" << SP << HTTP::key.status.at( 204 ) << CRLF;
-	else data << "200" << SP << HTTP::key.status.at( 200 );
+	if ( !out.body.str().size() ) out.msg << "204" << SP << HTTP::key.status.at( 204 ) << CRLF;
+	else out.msg << "200" << SP << HTTP::key.status.at( 200 );
 	
-	data << CRLF;
+	out.msg << CRLF;
 }
 
 void
-CGI::_buildHeader( const osstream_t& data, osstream_t& oss, size_t& size ) {
-	if ( size ) {
-		size_t	pos_header_end	= data.str().find( MSG_END );
+CGI::_buildHeader( msg_buffer_t& out ) {
+	size_t pos_header_end = out.body.str().find( MSG_END );
 
-		if ( data.str().find( HTTP::key.header_out.at( OUT_CONTENT_TYPE ) ) == str_t::npos )
-			oss <<
-			HTTP::key.header_out.at( OUT_CONTENT_TYPE ) << ':' << SP <<
-			HTTP::key.mime.at( "txt" ) << CRLF;
-
-		if ( data.str().find( HTTP::key.header_out.at( OUT_CONTENT_LEN ) ) == str_t::npos ) {
-			if ( pos_header_end != str_t::npos )
-				size -= pos_header_end - 4;
-
-			oss <<
-			HTTP::key.header_out.at( OUT_CONTENT_LEN ) << ':' << SP <<
-			size << CRLF;
-		}
-
-		if ( pos_header_end == str_t::npos )
-			oss << CRLF;
-
-		oss << data.str();
+	if ( found( pos_header_end ) ) {
+		out.msg << out.body.str().substr( 0, pos_header_end + 2 );
+		out.body.str( out.body.str().substr( pos_header_end + 4 ) );
 	}
+
+	if ( !found( pos_header_end ) || ( found( pos_header_end ) &&
+		!found( out.msg.str().find( HTTP::key.header_out.at( OUT_CONTENT_TYPE ) ) ) ) ) {
+		out.msg <<
+		HTTP::key.header_out.at( OUT_CONTENT_TYPE ) << ':' << SP <<
+		HTTP::key.mime.at( "txt" ) << CRLF;
+	}
+		 
+	if ( !found( pos_header_end ) || ( found( pos_header_end ) &&
+		!found( out.msg.str().find( HTTP::key.header_out.at( OUT_CONTENT_LEN ) ) ) ) ) {
+		out.msg << 
+		HTTP::key.header_out.at( OUT_TRANSFER_ENC ) << ':' << SP <<
+		HTTP::http.encoding.at( TE_CHUNKED ) << CRLF;
+
+		out.chunk = TRUE;
+	}
+	out.msg << CRLF;
+}
+
+void
+CGI::_buildChunk( msg_buffer_t& out ) {
+	char		data[15];
+	size_t		size = out.body.str().size();
+	size_t		frac;
+
+	sstream_t	chunked;
+
+	out.body.seekg( 0 );
+
+	while ( size > 0 ) {
+		if ( size > 14 ) frac = 15;
+		else frac = size; 
+		
+		chunked << hexdigt[frac] << CRLF;
+
+		out.body.read( data, frac );
+		chunked.write( data, frac );
+		chunked << CRLF;
+
+		size -= frac;
+	}
+	chunked << "0" << CRLF << CRLF;
+
+	out.body.str( chunked.str() );
 }
 
 /* CHILD */
@@ -162,8 +176,15 @@ CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
 			case GATEWAY_INTERFACE	: break;
 			case REQUEST_METHOD		: oss << str_method[rqst.line().method]; break;
 			case SCRIPT_NAME		: oss << rqst.line().uri.substr( rqst.line().uri.rfind( '/' ) + 1 ); break;
-			case CONTENT_LENGTH		: if ( rqst.line().method == POST ) oss << rqst.header().content_length; break;
-			case CONTENT_TYPE		: if ( rqst.line().method == POST ) oss << rqst.header().content_type; break;
+
+			case CONTENT_LENGTH		:
+				if ( rqst.line().method == POST && rqst.header().transfer_encoding != TE_CHUNKED )
+					oss << rqst.header().content_length; break;
+
+			case CONTENT_TYPE		:
+				if ( rqst.line().method == POST )
+					oss << rqst.header().content_type; break;
+
 			case PATH_INFO			: oss << rqst.line().uri.substr( rqst.location().root.length() + 1 ); break;
 			case PATH_TRANSLATED	: oss << rqst.line().uri; break;
 			case QUERY_STRING		: oss << rqst.line().query; break;

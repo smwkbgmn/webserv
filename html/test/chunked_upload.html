@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chunked POST Request</title>
+</head>
+<body>
+    <input type="file" id="fileInput" />
+    <button id="uploadButton">Upload File</button>
+
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', async () => {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                alert('Please select a file.');
+                return;
+            }
+            const file = fileInput.files[0];
+
+            const chunkedStream = new ReadableStream({
+                start(controller) {
+                    const reader = file.stream().getReader();
+
+                    function push() {
+                        reader.read().then(({ done, value }) => {
+                            if (done) {
+                                controller.close();
+                                return;
+                            }
+                            controller.enqueue(value);
+                            push();
+                        });
+                    }
+
+                    push();
+                }
+            });
+
+            const url = 'https://example.com/upload'; // Replace with your server URL
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/octet-stream',
+                    'Transfer-Encoding': 'chunked'
+                },
+                body: chunkedStream,
+                duplex: 'half' // Ensure duplex option is set for streaming
+            });
+
+            if (response.ok) {
+                console.log('File uploaded successfully.');
+            } else {
+                console.error('File upload failed.');
+            }
+        });
+    </script>
+</body>
+</html>
