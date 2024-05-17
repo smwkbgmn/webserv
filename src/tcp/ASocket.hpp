@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <vector>
+#include <signal.h>
 
 #define LOOP 1
 
