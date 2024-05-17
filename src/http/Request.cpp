@@ -136,12 +136,6 @@ Request::_token( isstream_t& iss, char delim ) {
 	return token;
 }
 
-// /* METHOD - unchunk: parse chunked request body */
-// void
-// Request::unchunk( osstream_t& body ) {
-	
-// }
-
 Request::~Request( void ) {};
 
 /* STRUCT */

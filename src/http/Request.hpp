@@ -21,8 +21,6 @@ class Request {
 		const request_header_t&		header( void ) const;
 		const sstream_t&			body( void ) const;
 
-		// static void					unchunk( sstream_t& );
-
 	private:
 		const Client&				_client; 
 		size_t						_location;
