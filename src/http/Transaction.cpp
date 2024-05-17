@@ -71,11 +71,12 @@ Transaction::_invokeCGI( const Request& rqst, process_t& procs ) {
 /*	
 	METHOD -
 	recvMsg: store request line and header field at stream buffer
-	and determine if the received message is done
+	then determine if the received message is done
 
-	recvBody: store contetnt at steram buffer and
+	recvBody: store contetnts at steram buffer and
 	determine if the receved body contents is done
 */
+
 bool
 Transaction::recvMsg( msg_buffer_t& in, const char* buf, ssize_t& byte_read ) {
 	if ( !in.msg_done ) {
@@ -102,7 +103,7 @@ Transaction::recvMsg( msg_buffer_t& in, const char* buf, ssize_t& byte_read ) {
 
 bool
 Transaction::recvBody( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
-	// keep FALSE untill meet the content-length or tail of chunk (0CRLFCRLF)
+	// Keep FALSE untill meet the content-length or tail of chunk (0CRLFCRLF)
 	if ( !in.chunk ) return _recvBodyPlain( in, procs, buf, byte_read );
 	else return _recvBodyChunk( in, procs, buf, byte_read );
 }
@@ -152,12 +153,6 @@ Transaction::_recvBodyChunk( msg_buffer_t& in, const process_t& procs, const cha
 
 bool
 Transaction::_recvBodyChunkData( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
-	std::clog << "recvBodyChunk - incomplete\n";
-	// Handle following read is fail, 
-	// if ( byte_read != in.next_read ) {
-	// 	in.next_read -= byte_read;
-	// }
-
 	if ( !procs.pid ) in.body.write( buf, byte_read - SIZE_CRLF );
 	else CGI::writeTo( procs, buf, byte_read - SIZE_CRLF );
 
@@ -169,8 +164,6 @@ Transaction::_recvBodyChunkData( msg_buffer_t& in, const process_t& procs, const
 
 bool
 Transaction::_recvBodyChunkHead( msg_buffer_t& in, const char* buf ) {
-	std::clog << "recvBodyChunk - get chunk head\n";
-
 	sstream_t	chunk( buf );
 
 	chunk >> std::hex >> in.chunk_size >> std::ws;

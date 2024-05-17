@@ -32,16 +32,12 @@ Request::_parse( const sstream_t& msg ) {
 	size_t	begin	= 0;
 	size_t	end		= 0;
 
-	// CRLF could be replaced with only LF
 	end = msg.str().find( CRLF, begin );
 	_parseLine( msg.str().substr( begin, end - begin ) );
 	begin = end + 2;
 
 	while ( found( end = msg.str().find( CRLF, begin ) ) ) {
-		if ( end == begin ) {
-			begin += 2;
-			break;
-		}
+		if ( end == begin ) break;
 		
 		_parseHeader( msg.str().substr( begin, end - begin ) );
 		begin = end + 2;
@@ -99,8 +95,8 @@ Request::_assignVersion( str_t token ) {
 
 void
 Request::_parseHeader( const str_t& field ) {
-	isstream_t		iss( field );
-	str_t			header;
+	isstream_t	iss( field );
+	str_t		header;
 
 	header = _token( iss, ':' );
 	iss >> std::ws;

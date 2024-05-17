@@ -47,11 +47,13 @@ void Client::processClientRequest() {
 				if ( Transaction::recvBody( in, subprocs, buf, byte ) ) {
 					logging.fs << in.body.str() << std::endl;
 
-					if ( !subprocs.pid ) action->act();
-					else { close( subprocs.fd[W] ); return; }
+					if ( !subprocs.pid ) {
+						action->act();
 
-					in.reset();
-					srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+						in.reset();
+						srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+					}
+					else close( subprocs.fd[W] );
 				}
 			}
 		}

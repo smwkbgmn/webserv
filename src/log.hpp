@@ -2,6 +2,7 @@
 # define LOG_HPP
 
 # include <ctime>
+# include <filesystem>
 
 # include "structure.hpp"
 
