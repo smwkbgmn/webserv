@@ -1,17 +1,22 @@
-#include <ctime>
-
 #include "log.hpp"
 
 const std::time_t	begin	= std::time( NULL );
 File				logging( "log/" + logFname(), WRITE );
 
-std::string logFname( void ) {
+std::string
+logFname( void ) {
+	fstat_t	info;
+
+	if ( stat( "log", &info ) == ERROR )
+		mkdir( "log", 0755 );
+		
 	std::string	fname = strTime() + ".log";
 
 	return fname;
 }
 
-std::string strTime( void ) {
+std::string
+strTime( void ) {
 	std::time_t	now = std::time( NULL );
 
 	char		buf[80];
@@ -20,7 +25,8 @@ std::string strTime( void ) {
 	return std::string( buf );
 }
 
-void timestamp( void ) {
+void
+timestamp( void ) {
 	std::time_t	now			= std::time( NULL );
 	std::time_t	elapse		= now - begin;
 	std::tm*	timeinfo	= std::localtime( &elapse );
@@ -31,19 +37,8 @@ void timestamp( void ) {
 	std::clog << buf << " ";
 }
 
-void log( const str_t& msg ) {
+void
+log( const str_t& msg ) {
 	timestamp();
 	std::clog << msg << std::endl;
-}
-
-
-
-//////////////// DEBUGGING ///////////////////
-
-void
-printVec( vec_str_t& target, const str_t title ) {
-	 std::clog << title << std::endl;
-
-	for ( vec_str_iter_t iter = target.begin(); iter != target.end(); ++iter )
-		std::clog << *iter << std::endl;
 }
