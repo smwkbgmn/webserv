@@ -63,6 +63,13 @@ Request::_assignMethod( str_t token ) {
 		_line.method = static_cast<method_e>( std::distance( HTTP::http.method.begin(), iter ) );
 }
 
+/*
+	Should be replaced differently along which alias is applied
+	1. dir: append root at begin of URI
+	2. extension: same as dir, but apply the extension config instead of dir
+	3. file: same as dir, but apply the file config instead of dir
+*/
+
 void
 Request::_assignURI( str_t token ) { 
 	_location = HTTP::setLocation( token, _client.server().config().locations );

@@ -67,6 +67,17 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 }
 
 /* METHOD - getLocationConf: get index for location_t matching with request URI */
+
+/*
+	Enforce server root config > location without root block follows this
+	if server config has no root block, set default root as html
+	
+	Cases of use of location config:
+	1. dir: starting with the slash '/'
+	2. extension: starting with the dot '.' ( ^~ \ )
+	3. file: other else, means without slash or dot neither ( = / )
+*/
+
 size_t
 HTTP::setLocation( const str_t& uri, const vec_location_t& locations ) {
 	if ( locations.size() > 1 ) {

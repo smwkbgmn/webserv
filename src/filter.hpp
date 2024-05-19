@@ -118,7 +118,7 @@ enum cgi_env_e {
 	QUERY_STRING
 };
 
-/* STRUCT - Keys, Config (Server, Location), Process */
+/* STRUCT - Key, Http: core values for implementing HTTP */
 typedef struct {
 	vec_str_t			header_in;
 	vec_str_t			header_out;
@@ -137,6 +137,7 @@ typedef struct http_s {
 	vec_str_t			encoding;
 }	http_t;
 
+/* STRUCT - Configs (Server, Location) */
 struct config_s;
 
 typedef struct location_s {
@@ -168,6 +169,7 @@ typedef struct config_s {
 	vec_location_t		locations;
 }	config_t;
 
+/* STRUCT - Buffer for messages (composed with two parts of msg and body part) */
 typedef struct msg_buffer_s {
 	msg_buffer_s( void );
 
@@ -188,7 +190,7 @@ typedef struct msg_buffer_s {
 
 }	msg_buffer_t;
 
-/* STRUCT - Request & Response */
+/* STRUCT - Request, Response */
 typedef struct {
 	version_e			version;
 	method_e			method;

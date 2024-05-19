@@ -6,21 +6,23 @@
 		Define a directory or a file from where the file should be searched
 		(for example, if url /kapouet is rooted to /tmp/www,
 		url /kapouet/pouic/toto/pouet is /tmp/www/pouic/toto/pouet)
+
 		Execute CGI based on certain file extension (for example .php)
+
 		Make the route able to accept uploaded files and configure where they should be saved
-		ust remember that, for chunked request, your server needs to unchunk it,
-		the CGI will expect EOF as end of the body
+
+		Just remember that, for chunked request, your server needs to unchunk it, the CGI will expect EOF as end of the body
 		Same things for the output of the CGI.
-		If no content_length is returned from the CGI,
-		EOF will mark the end of the returned data
+		If no content_length is returned from the CGI, EOF will mark the end of the returned data
+
+	- Chunked request
+	- Config - server_name & location
 
 	- Check NGINX how the config rule be applied to following dir or file
 	- Add some checkign for invalid request at Request
-	- Config server_name and host header
-    - Handle chunked request/response
 	- Rewrite redirection
 	- Implement cookies
-		> RFC 6265
+	> RFC 6265
 
 	Considertion
 	- Would it fit well making header as map of enum header key and header value?
