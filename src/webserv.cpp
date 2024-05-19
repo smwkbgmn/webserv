@@ -18,7 +18,6 @@
 	- Chunked request
 	- Config - server_name & location
 
-	- Check NGINX how the config rule be applied to following dir or file
 	- Add some checkign for invalid request at Request
 	- Rewrite redirection
 	- Implement cookies
@@ -34,6 +33,7 @@
 	- See if other connection headers should be handled 
 	- When send response, intead of copying the body at the building message, 
 	just build the msg and use body directly from the response object
+	- Could be message buffer in the Trasaction object?
 */
 
 int main( void ) {

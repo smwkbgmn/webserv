@@ -23,6 +23,7 @@ class Request {
 
 	private:
 		const Client&				_client; 
+		size_t						_config;
 		size_t						_location;
 
 		request_line_t				_line;
@@ -37,6 +38,8 @@ class Request {
 
 		void						_parseHeader( const str_t& );
 		ssize_t						_add( vec_uint_t&, ssize_t );
+
+		void						_redirectURI( void );
 
 		str_t						_token( isstream_t&, char );
 		

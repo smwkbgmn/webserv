@@ -28,14 +28,11 @@ private:
     bool        Cgi_check;
     bool        Cgi_exit;
 
-	Transaction*	action;
-
-    
-
 public:
 	msg_buffer_t	in;
     msg_buffer_t	out;
 
+	Transaction*	action;
     process_t		subprocs;
 
     Client(Server& server);

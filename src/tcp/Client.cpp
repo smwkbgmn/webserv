@@ -64,7 +64,7 @@ void Client::processClientRequest() {
 			in.reset();
 			out.reset();
 
-			Transaction::build( Response( *this, err.code ), out );
+			Transaction::buildError( err.code, *this );
 			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 		}
 
@@ -73,7 +73,7 @@ void Client::processClientRequest() {
 
 			in.reset();
 
-			Transaction::build( Response( *this, 400 ), out );
+			Transaction::buildError( 400, *this );
 			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 		}
     }

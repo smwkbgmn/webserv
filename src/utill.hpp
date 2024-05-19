@@ -19,6 +19,14 @@ distance( Container& obj, Target token ) {
 	else return -1;
 }
 
+template<typename Container, typename Target> ssize_t
+distance( const Container& obj, const Target token ) {
+	typename Container::const_iterator	iter = lookup( obj, token );
+
+	if ( iter != obj.end() ) return std::distance( obj.begin(), iter );
+	else return -1;
+}
+
 /* UTILL */
 bool		found( const size_t& );
 

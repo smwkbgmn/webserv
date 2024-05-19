@@ -14,6 +14,8 @@
 class Request;
 class Response;
 
+const str_t		software		= "webserv/1.0";
+
 const path_t	dir_keys		= "src/http/key/";
 const path_t	file_status		= dir_keys + "key_status.txt";
 const path_t	file_mime		= dir_keys + "key_mime.txt";
@@ -27,7 +29,9 @@ class HTTP {
 		static keys_t	key;
 
 		static void		init( void );
-		static size_t	setLocation( const str_t&, const vec_location_t& );
+		static size_t	setConfig( const str_t&, const vec_config_t& );
+		static bool		setConfigMatchName( const str_t&, const vec_str_t& );
+		static size_t	setLocation( const path_t&, const vec_location_t& );
 
 		static void		GET( const path_t&, sstream_t&, size_t& );
 		static void		POST( const Request& );

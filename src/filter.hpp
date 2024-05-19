@@ -157,7 +157,7 @@ typedef std::vector<location_t>	vec_location_t;
 typedef struct config_s {
 	config_s( void );
 
-	str_t				name;
+	vec_str_t			names;
 	port_t				listen;
 	path_t				root;
 
@@ -168,6 +168,8 @@ typedef struct config_s {
 
 	vec_location_t		locations;
 }	config_t;
+
+typedef std::vector<config_t> vec_config_t;
 
 /* STRUCT - Buffer for messages (composed with two parts of msg and body part) */
 typedef struct msg_buffer_s {

@@ -68,6 +68,26 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 
 /* METHOD - getLocationConf: get index for location_t matching with request URI */
 
+size_t
+HTTP::setConfig( const str_t& host, const vec_config_t& configs ) {
+	if ( configs.size() > 1 ) {
+		vec_config_t::const_iterator	iter;
+		size_t							idx;
+
+		idx = 1;
+		for ( iter = configs.begin() + 1; iter != configs.end(); ++iter ) {
+			if ( setConfigMatchName( host, iter->names ) ) return idx;
+			++idx;
+		}
+	}
+	return 0;
+}
+
+bool
+HTTP::setConfigMatchName( const str_t& host, const vec_str_t& names) {
+	return distance( names, host ) != NOT_FOUND;
+}
+
 /*
 	Enforce server root config > location without root block follows this
 	if server config has no root block, set default root as html
@@ -79,15 +99,28 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 */
 
 size_t
-HTTP::setLocation( const str_t& uri, const vec_location_t& locations ) {
+HTTP::setLocation( const path_t& uri, const vec_location_t& locations ) {
 	if ( locations.size() > 1 ) {
-		vec_location_t::const_iterator	iter	= locations.begin() + 1;
-		size_t							idx		= 1;
+		size_t							dot		= uri.find( '.' );
 
-		while ( iter != locations.end() ) {
-			if ( uri.find( iter->alias ) == 0 )
-				return idx;
-			++iter;
+		vec_location_t::const_iterator	iter;
+		size_t							idx;
+		
+		// Search for extension config 
+		if ( found( dot ) ) {
+			str_t ext = uri.substr( dot );
+
+			idx = 1;
+			for ( iter = locations.begin() + 1; iter != locations.end(); ++iter ) {
+				if ( ext == iter->alias ) return idx;
+				++idx;
+			}
+		}
+
+		// Search for location config
+		idx = 1;
+		for ( iter = locations.begin() + 1; iter != locations.end(); ++iter ) {
+			if ( uri.find( iter->alias ) == 0 ) return idx;
 			++idx;
 		}
 	}
@@ -96,7 +129,11 @@ HTTP::setLocation( const str_t& uri, const vec_location_t& locations ) {
 
 /* STURCT */
 config_s::config_s( void ) {
-	name			= "webserv";
+	// if no server_names are given, set the default name while conf parsing
+	
+	// name			= "webserv";
+	names.push_back( "webserv.com" );
+
 	listen			= 8080; // mandatory
 	
 	root			= "html"; // mandatory
@@ -115,6 +152,9 @@ config_s::config_s( void ) {
 	location_s cgi_bin( *this );
 
 	cgi_bin.alias = "/bin";
+
+	// when parsing config, if the root for location has no block,
+	// inherit the server config root
 	cgi_bin.root += "/cgi-bin";
 
 	cgi_bin.allow.push_back( GET );

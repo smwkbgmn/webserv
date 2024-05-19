@@ -16,6 +16,9 @@
 	field-line = field-name ":" OWS field-value OWS
 */
 
+/* ACCESS */
+const config_t&	Transaction::config( void ) { return _rqst.config(); }
+
 /* INTANTIATE */
 Transaction::Transaction( Client& client ): _cl( client ), _rqst( client ) {
 	log( "HTTP\t: constructing Transaction" );
@@ -71,10 +74,10 @@ Transaction::_invokeCGI( const Request& rqst, process_t& procs ) {
 /*	
 	METHOD -
 	recvMsg: store request line and header field at stream buffer
-	then determine if the received message is done
+	then determine if the receiving message is done
 
 	recvBody: store contetnts at steram buffer and
-	determine if the receved body contents is done
+	determine if the receving body contents is done
 */
 
 bool
@@ -280,4 +283,10 @@ Transaction::_buildHeaderValue( const response_header_t& header, uint_t id, sstr
 void
 Transaction::_buildBody( const Response& rspn, msg_buffer_t& out ) {
 	out.body << rspn.body().rdbuf();
+}
+
+void
+Transaction::buildError( const uint_t& status, Client& cl ) {
+	if ( cl.action ) build( Response( status, cl.action->config() ), cl.out );
+	else build( Response( status, cl.server().configDefault() ), cl.out );
 }

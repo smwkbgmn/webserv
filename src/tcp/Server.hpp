@@ -22,7 +22,8 @@ private:
     char client_event[8];
     char server_event[8];
 
-	config_t	conf;
+	// config_t	conf;
+	vec_config_t confs;
     
 public:
     Server();
@@ -50,7 +51,8 @@ public:
     char* getServerEvent() { return server_event; }
 
     // const vec_config_t& config( void ) const { return conf; }
-	const config_t&	config( void ) const { return conf; }
+	const vec_config_t&	config( void ) const { return confs; }
+	const config_t& configDefault( void ) const { return confs.at( 0 ); }
 };
 
 #endif

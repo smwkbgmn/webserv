@@ -11,13 +11,10 @@ const sstream_t&			Response::body( void ) const { return _body; }
 
 /* INSTANTIATE */
 Response::Response( void ) {}
-
-Response::Response( const Client& client, const uint_t& errstat ) {
-	log( "HTTP\t: constructing response_errorcase" );
-
-	_errpage( errstat, client.server().config() );	
+Response::Response( const uint_t& status, const config_t& conf ) {
+	_errpage( status, conf );
+	_addServerInfo( CLOSE );
 }
-
 Response::~Response( void ) {}
 
 void
@@ -29,7 +26,7 @@ Response::act( const Request& rqst ) {
 		_doMethod( rqst );
 	}
 	catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
-	_addServerInfo( rqst );
+	_addServerInfo( KEEP_ALIVE );
 }
 
 void
@@ -79,7 +76,7 @@ Response::_doMethodValid( const Request& rqst ) {
 	switch ( rqst.line().method ) {
 		case GET:
 			if ( rqst.header().content_length || !rqst.header().content_type.empty() ||
-				rqst.body().str().size() )
+				!rqst.body().str().empty() )
 					throw errstat_t( 400, err_msg[GET_WITH_BODY] );
 			break;
 
@@ -101,9 +98,9 @@ Response::_doMethodValid( const Request& rqst ) {
 }
 
 void
-Response::_addServerInfo( const Request& rqst ) {	
-	_header.server		= rqst.config().name;
-	_header.connection	= KEEP_ALIVE;
+Response::_addServerInfo( const connection_e& connection ) {	
+	_header.server		= software;
+	_header.connection	= connection;
 
 	_header.list.push_back( OUT_SERVER );
 	_header.list.push_back( OUT_CONNECTION );
