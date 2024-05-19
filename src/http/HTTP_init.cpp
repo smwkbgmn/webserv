@@ -12,6 +12,7 @@ HTTP::init( void ) {
 	_assignVec( http.version, str_version, CNT_VERSION );
 	_assignVec( http.method, str_method, CNT_METHOD );
 	_assignVec( http.encoding, str_transfer_enc, CNT_ENCODING );
+	_assignVec( http.connection, str_connection, CNT_CONNECTION );
 
 	_assignHeader();
 	_assignStatus();

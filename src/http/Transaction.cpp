@@ -42,6 +42,7 @@ Transaction::_validRequest( void ) {
 
 	if ( !getInfo( _rqst.line().uri, _rqst.info ) ) {
 		if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
+		if ( errno == 20 ) throw errstat_t( 404, err_msg[SOURCE_NOT_DIR] );
 		else throw errstat_t( 500 );
 	}
 }
@@ -95,6 +96,9 @@ Transaction::recvMsg( msg_buffer_t& in, const char* buf, ssize_t& byte_read ) {
 			size_t body_begin	= pos_header_end - in.msg_read + 4;
 			in.body_read		= byte_read - body_begin;
 
+			std::clog << "pos_header_end: " << pos_header_end << "\n";
+			std::clog << "body_begin: " << body_begin << "\n";
+			
 			if ( in.body_read )
 				in.body.write( &buf[body_begin], in.body_read );
 

@@ -73,8 +73,9 @@ enum version_e {
 };
 
 enum connection_e {
-	KEEP_ALIVE,
-	CLOSE
+	CNCT_KEEP_ALIVE,
+	CNCT_CLOSE,
+	CNCT_UNKNOWN
 };
 
 enum transfer_enc_e {
@@ -135,6 +136,7 @@ typedef struct http_s {
 
 	type_t				type_unknown;
 	vec_str_t			encoding;
+	vec_str_t			connection;
 }	http_t;
 
 /* STRUCT - Configs (Server, Location) */

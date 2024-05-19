@@ -10,6 +10,7 @@
 # define CNT_METHOD 3
 # define CNT_VERSION 4
 # define CNT_ENCODING 2
+# define CNT_CONNECTION 2
 
 class Request;
 class Response;
