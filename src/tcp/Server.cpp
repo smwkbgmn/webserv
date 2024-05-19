@@ -1,14 +1,12 @@
 #include "Server.hpp"
 #include "HTTP.hpp"
 
-Server::Server() : ASocket(), EventList(8), client_event("client"), server_event("serv") {
+Server::Server( const vec_config_t& configs) : ASocket(), EventList(8), client_event("client"), server_event("serv"), confs( configs ) {
     kq = kqueue();
     if (kq == -1)
         throw err_t("Failed to create kqueue");
     timeout.tv_sec = 120;
     timeout.tv_nsec = 0;
-
-    confs.push_back( config_t() );
 }
 
 Server::~Server() {

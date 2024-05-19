@@ -71,13 +71,13 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 
 size_t
 HTTP::setConfig( const str_t& host, const vec_config_t& configs ) {
-	if ( configs.size() > 1 ) {
+	if ( configs.size() > 1 && !host.empty() ) {
 		vec_config_t::const_iterator	iter;
 		size_t							idx;
 
 		idx = 1;
 		for ( iter = configs.begin() + 1; iter != configs.end(); ++iter ) {
-			if ( setConfigMatchName( host, iter->names ) ) return idx;
+			if ( _setConfigMatchName( host, iter->names, iter->listen ) ) return idx;
 			++idx;
 		}
 	}
@@ -85,13 +85,25 @@ HTTP::setConfig( const str_t& host, const vec_config_t& configs ) {
 }
 
 bool
-HTTP::setConfigMatchName( const str_t& host, const vec_str_t& names) {
-	return distance( names, host ) != NOT_FOUND;
+HTTP::_setConfigMatchName( const str_t& host, const vec_str_t& names, const uint_t& listen ) {
+	isstream_t	iss( host );
+
+	str_t		name;
+	uint_t		port;
+
+	try {
+		name = token( iss, ':' );
+		iss >> std::ws >> port;
+
+		return distance( names, name ) != NOT_FOUND &&
+			port == listen;
+	}
+	catch ( err_t& err ) { return distance( names, host ) != NOT_FOUND; }
 }
 
 /*
 	Enforce server root config > location without root block follows this
-	if server config has no root block, set default root as html
+	if the server config has no root block, set default root as html
 	
 	Cases of use of location config:
 	1. dir: starting with the slash '/'
@@ -113,7 +125,7 @@ HTTP::setLocation( const path_t& uri, const vec_location_t& locations ) {
 
 			idx = 1;
 			for ( iter = locations.begin() + 1; iter != locations.end(); ++iter ) {
-				if ( ext == iter->alias ) return idx;
+				if ( ext == iter->path ) return idx;
 				++idx;
 			}
 		}
@@ -121,7 +133,7 @@ HTTP::setLocation( const path_t& uri, const vec_location_t& locations ) {
 		// Search for location config
 		idx = 1;
 		for ( iter = locations.begin() + 1; iter != locations.end(); ++iter ) {
-			if ( uri.find( iter->alias ) == 0 ) return idx;
+			if ( uri.find( iter->path ) == 0 ) return idx;
 			++idx;
 		}
 	}
@@ -131,16 +143,12 @@ HTTP::setLocation( const path_t& uri, const vec_location_t& locations ) {
 /* STURCT */
 config_s::config_s( void ) {
 	// if no server_names are given, set the default name while conf parsing
-	
-	// name			= "webserv";
 	names.push_back( "webserv.com" );
 
 	listen			= 8080; // mandatory
-	
 	root			= "html"; // mandatory
 
 	client_max_body	= 10240; // 10M
-	// client_max_body	= 10;
 
 	/*
 		The root configuration (i.e. location for "/") could be set or not and
@@ -152,11 +160,12 @@ config_s::config_s( void ) {
 	// add location for cgi-bin 
 	location_s cgi_bin( *this );
 
-	cgi_bin.alias = "/bin";
+	cgi_bin.path = "/cgi-bin";
 
 	// when parsing config, if the root for location has no block,
 	// inherit the server config root
-	cgi_bin.root += "/cgi-bin";
+	cgi_bin.root = "html";
+	cgi_bin.cgi	= TRUE;
 
 	cgi_bin.allow.push_back( GET );
 	cgi_bin.allow.push_back( POST );
@@ -170,7 +179,7 @@ config_s::config_s( void ) {
 }
 
 location_s::location_s( const config_s& serverconf ) {
-	alias			= "/"; // mandatory
+	path			= "/"; // mandatory
 	root			= serverconf.root; // mandatory
 
 	// allow > may should be removed later ( since using the conf file )

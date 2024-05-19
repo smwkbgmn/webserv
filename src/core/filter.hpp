@@ -116,7 +116,8 @@ enum cgi_env_e {
 	CONTENT_TYPE,
 	PATH_INFO,
 	PATH_TRANSLATED,
-	QUERY_STRING
+	QUERY_STRING,
+	UPLOAD_DIR
 };
 
 /* STRUCT - Key, Http: core values for implementing HTTP */
@@ -145,10 +146,15 @@ struct config_s;
 typedef struct location_s {
 	location_s( const config_s& );
 
-	str_t				alias;
+	str_t				path;
 	path_t				root;
+	path_t				rewrite;
 
 	vec_uint_t			allow;
+	
+	bool				cgi;
+	bool				upload;
+	path_t				upload_path;
 
 	vec_name_t			index;
 	bool 				index_auto;

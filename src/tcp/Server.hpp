@@ -23,10 +23,10 @@ private:
     char server_event[8];
 
 	// config_t	conf;
-	vec_config_t confs;
+	const vec_config_t& confs;
     
 public:
-    Server();
+    Server( const vec_config_t& );
     ~Server();
     void add_events(uintptr_t, int16_t, uint16_t, uint32_t, intptr_t, void *);
     

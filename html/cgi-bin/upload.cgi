@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perlllll -w
 use CGI;
 
 $upload_dir = "html/upload";

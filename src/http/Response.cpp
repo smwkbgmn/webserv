@@ -17,18 +17,19 @@ Response::Response( const uint_t& status, const config_t& conf ) {
 }
 Response::~Response( void ) {}
 
+/* METHOD - act: do request method after valid the request message */
 void
 Response::act( const Request& rqst ) {
 	log( "HTTP\t: constructing response" );
 
-	try {
+	if ( rqst.location().rewrite.empty() ) {
 		_doMethodValid( rqst );
 		_doMethod( rqst );
-	}
-	catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
 
-	if ( rqst.header().connection == CNCT_KEEP_ALIVE ) _addServerInfo( CNCT_KEEP_ALIVE );
-	else _addServerInfo( CNCT_CLOSE );
+		if ( rqst.header().connection == CNCT_KEEP_ALIVE ) _addServerInfo( CNCT_KEEP_ALIVE );
+		else _addServerInfo( CNCT_CLOSE );
+	}
+	else _redirect( rqst.location().rewrite, 301 );
 }
 
 void
@@ -48,13 +49,11 @@ Response::_doMethod( const Request& rqst ) {
 
 		case POST:
 			HTTP::POST( rqst );
-
 			_line.status = 204;
 			break;
 
 		case DELETE:
 			HTTP::DELETE( rqst );
-
 			_line.status = 204;
 			break;
 
@@ -62,7 +61,7 @@ Response::_doMethod( const Request& rqst ) {
 			_errpage( 405, rqst.config() );
 			break;
 		
-		case UNKNOWN:
+		case UNKNOWN: {
 			vec_uint_t::const_iterator iter = rqst.location().allow.begin();
 			while ( iter != rqst.location().allow.end() )
 				_header.allow.push_back( *iter );
@@ -70,6 +69,7 @@ Response::_doMethod( const Request& rqst ) {
 
 			_errpage( 501, rqst.config() );
 			break;
+		}
 	}
 }
 
@@ -167,8 +167,8 @@ path_t
 Response::_indexURIConceal( const Request& rqst, const path_t& index  ) {
 	path_t	concealed;
 
-	if ( rqst.location().alias.length() > 1 )
-		concealed += rqst.location().alias;
+	if ( rqst.location().path.length() > 1 )
+		concealed += rqst.location().path;
 	concealed += rqst.line().uri.substr( rqst.location().root.length() );
 
 	if ( !index.empty() )

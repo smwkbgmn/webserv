@@ -1,6 +1,17 @@
 #include "utill.hpp"
 
 /* UTILL */
+str_t
+token( isstream_t& iss, const char& delim ) {
+	str_t string;
+
+	if ( ( delim && !std::getline( iss, string, delim ) ) ||
+		( !delim && !std::getline( iss, string ) ) )
+		throw err_t( "_token: " + err_msg[TOKEN_FAIL_GETLINE] );
+
+	return string;
+}
+
 bool found( const size_t& pos ) { return pos != str_t::npos; }
 
 /* FILE INFO */

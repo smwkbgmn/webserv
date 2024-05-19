@@ -31,7 +31,6 @@ class HTTP {
 
 		static void		init( void );
 		static size_t	setConfig( const str_t&, const vec_config_t& );
-		static bool		setConfigMatchName( const str_t&, const vec_str_t& );
 		static size_t	setLocation( const path_t&, const vec_location_t& );
 
 		static void		GET( const path_t&, sstream_t&, size_t& );
@@ -44,6 +43,8 @@ class HTTP {
 		static void		_assignStatus( void );
 		static void		_assignMime( void );
 		static void		_assignVec( vec_str_t &, const str_t[], size_t );
+
+		static bool		_setConfigMatchName( const str_t&, const vec_str_t&, const uint_t& );
 };
 
 # include "CGI.hpp"

@@ -69,7 +69,7 @@ Request::_assignMethod( str_t token ) {
 }
 
 /*
-	Should be replaced differently along which alias is applied
+	Should be replaced differently along which location is applied
 	1. dir: append root at begin of URI
 	2. extension: same as dir, but apply the extension config instead of dir
 	3. file: same as dir, but apply the file config instead of dir
@@ -141,12 +141,12 @@ ssize_t
 Request::_add( vec_uint_t& list, ssize_t id ) { if ( id != NOT_FOUND ) list.push_back( id ); return id; }
 
 str_t
-Request::_token( isstream_t& iss, char delim ) {
+Request::_token( isstream_t& iss, const char& delim ) {
 	str_t token;
 
 	if ( ( delim && !std::getline( iss, token, delim ) ) ||
 		( !delim && !std::getline( iss, token ) ) )
-		throw err_t( "_token: " + err_msg[INVALID_REQUEST_LINE] );
+		throw err_t( "_token: " + err_msg[INVALID_REQUEST_FIELD] );
 
 	return token;
 }
@@ -156,7 +156,7 @@ Request::_redirectURI( void ) {
 	// std::clog << "old uri: " << _line.uri << std::endl;
 
 	// With root
-	if ( *location().alias.begin() == '/' )
+	if ( *location().path.begin() == '/' )
 		_line.uri = _line.uri.replace( 0, 0, location().root );
 
 	// With extension

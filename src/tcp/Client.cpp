@@ -17,7 +17,7 @@ bool Client::getCgiExit()  { return Cgi_exit; }
 msg_buffer_t& Client::get_in() { return in; }
 
 void Client::setSocket(const int& socket) { client_socket = socket; }
-void Client::setServer(const Server& serv) { srv = serv; }
+// void Client::setServer(const Server& serv) { srv = serv; }
 void Client::setCgiCheck(bool value) { Cgi_check = value; }
 void Client::setCgiExit(bool value) { Cgi_exit = value; }
 

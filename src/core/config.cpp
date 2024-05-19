@@ -1,59 +1,10 @@
-#include <cstdlib>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <map>
-#include <stdexcept>
-#include <algorithm>
-#include <climits>
-#include <cctype>
+#include "config.hpp"
 
-// #include "../structure.hpp"
-#define on true
-#define off false
-
-typedef std::string str_t;
-typedef std::string path_t;
-typedef unsigned int uint_t;
-typedef std::vector<uint_t> vec_uint_t;
-typedef std::string name_t;
-typedef std::vector<name_t> vec_name_t;
-
-enum method_e {
-    GET,
-    POST,
-    DELETE
-};
-
-struct config_s;
-
-typedef struct location_s {
-    str_t alias;
-    path_t root;
-    vec_uint_t allow;
-    vec_name_t index;
-    bool index_auto;
-
-    location_s(const config_s&) : index_auto(false) {}
-} location_t;
-
-typedef std::vector<location_t> vec_location_t;
-
-typedef int port_t;
-
-typedef struct config_s {
-    str_t name;
-    port_t listen;
-    path_t root;
-    name_t file_40x;
-    name_t file_50x;
-    size_t client_max_body;
-    vec_location_t locations;
-
-    config_s() : listen(0), client_max_body(0) {}
-} config_t;
+std::string toLower(const std::string& str) {
+    std::string lowerStr = str;
+    std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), ::tolower);
+    return lowerStr;
+}
 
 unsigned int parseSize(const std::string& sizeStr) {
     unsigned long long size = 0;
@@ -67,11 +18,11 @@ unsigned int parseSize(const std::string& sizeStr) {
 
     if (i != sizeStr.size()) {
         std::string suffix = sizeStr.substr(i);
-        if (suffix == "K") {
+        if (suffix == "K" || suffix == "k") {
             multiplier = 1024;
-        } else if (suffix == "M") {
+        } else if (suffix == "M" || suffix == "m") {
             multiplier = 1024 * 1024;
-        } else if (suffix == "G") {
+        } else if (suffix == "G" || suffix == "g") {
             multiplier = 1024 * 1024 * 1024;
         }
     }
@@ -83,18 +34,7 @@ unsigned int parseSize(const std::string& sizeStr) {
     return static_cast<size_t>(result);
 }
 
-std::string toLower(const std::string& str) {
-    std::string lowerStr = str;
-    for (size_t i = 0; i < lowerStr.size(); ++i) {
-        lowerStr[i] = static_cast<char>(std::tolower(lowerStr[i]));
-    }
-    return lowerStr;
-}
-
 void handleListen(std::istringstream& iss, config_t& currentConfig) {
-    if (currentConfig.listen != 0) {
-        throw std::runtime_error("Error: Duplicate listen");
-    }
     int port;
     if (!(iss >> port) || iss.peek() != EOF) {
         throw std::runtime_error("Error: Invalid listen format");
@@ -103,14 +43,18 @@ void handleListen(std::istringstream& iss, config_t& currentConfig) {
 }
 
 void handleServerName(std::istringstream& iss, config_t& currentConfig) {
-    if (!currentConfig.name.empty() || !(iss >> currentConfig.name) || iss.peek() != EOF) {
+    std::string serverName;
+    while (iss >> serverName) {
+        currentConfig.names.push_back(serverName);
+    }
+    if (iss.fail() && !iss.eof()) {
         throw std::runtime_error("Error: Invalid server_name format");
     }
 }
 
 void handleClientBodySize(std::istringstream& iss, config_t& currentConfig) {
     std::string clientbody;
-    if (!(iss >> clientbody) || iss.peek() != EOF || currentConfig.client_max_body != 0) {
+    if (!(iss >> clientbody) || iss.peek() != EOF) {
         throw std::runtime_error("Error: Invalid Client_body_size format");
     }
     currentConfig.client_max_body = parseSize(clientbody);
@@ -132,7 +76,8 @@ void handleRoot(std::istringstream& iss, location_t& currentLocation) {
     std::string rootValue;
     iss >> rootValue;
     iss >> std::ws;
-    if (iss.peek() != EOF || !currentLocation.root.empty()) {
+
+    if (iss.peek() != EOF) {
         throw std::runtime_error("Error in root directive");
     }
     if (!rootValue.empty() && rootValue[rootValue.size() - 1] == '/') {
@@ -147,6 +92,8 @@ void handleAllowedMethod(std::istringstream& iss, location_t& currentLocation) {
     validMethods["get"] = GET;
     validMethods["post"] = POST;
     validMethods["delete"] = DELETE;
+    validMethods["not_allowed"] = NOT_ALLOWED;
+    validMethods["unknown"] = UNKNOWN;
 
     while (iss >> method) {
         std::string lowerMethod = toLower(method);
@@ -154,7 +101,7 @@ void handleAllowedMethod(std::istringstream& iss, location_t& currentLocation) {
         if (it == validMethods.end()) {
             throw std::runtime_error("Invalid method: " + method + ". Only GET, POST, DELETE are allowed.");
         }
-        currentLocation.allow.push_back(it->second);
+        currentLocation.allow.push_back(static_cast<uint_t>(it->second));
     }
 }
 
@@ -171,21 +118,46 @@ void handleIndex(std::istringstream& iss, location_t& currentLocation) {
     }
 }
 
-void handleServerRoot(std::istringstream& iss, config_t& currentConfig) {
-    std::string rootValue;
-    iss >> rootValue;
-    iss >> std::ws;
-    if (iss.peek() != EOF || !currentConfig.root.empty()) {
-        throw std::runtime_error("Error in root directive");
+void handleRewrite(std::istringstream& iss, location_t& currentLocation) {
+    if (!(iss >> currentLocation.rewrite) || iss.peek() != EOF) {
+        throw std::runtime_error("Error: Invalid rewrite format");
     }
-    if (!rootValue.empty() && rootValue[rootValue.size() - 1] == '/') {
-        throw std::runtime_error("Error: Can't finish with '/'");
+}
+
+void handleCGI(std::istringstream& iss, location_t& currentLocation) {
+    std::string value;
+    iss >> value;
+    if (value == "on") {
+        currentLocation.cgi = true;
+    } else if (value == "off") {
+        currentLocation.cgi = false;
+    } else {
+        throw std::runtime_error("Invalid value for CGI: " + value);
     }
-    currentConfig.root = rootValue;
+}
+
+void handleUpload(std::istringstream& iss, location_t& currentLocation) {
+    std::string value;
+    iss >> value;
+    if (value == "on") {
+        currentLocation.upload = true;
+    } else if (value == "off") {
+        currentLocation.upload = false;
+    } else {
+        throw std::runtime_error("Invalid value for Upload: " + value);
+    }
+}
+
+void handleUploadPath(std::istringstream& iss, location_t& currentLocation) {
+    if (!(iss >> currentLocation.upload_path) || iss.peek() != EOF) {
+        throw std::runtime_error("Error: Invalid upload_path format");
+    }
 }
 
 bool validateLocationPath(const std::string& path) {
-    return !path.empty() && path[0] == '/' && path[path.size() - 1] != '/';
+    if (path.empty()) return false;
+    if (path[0] == '/' || path[0] == '.') return true;
+    return false;
 }
 
 std::string trim(const std::string& str) {
@@ -213,7 +185,7 @@ void parseConfig(std::vector<config_t>& serv, const std::string& filename) {
 
     while (std::getline(configFile, line)) {
         line = trim(line);
-        
+
         if (line.substr(0, 6) == "server" && line.find("{") != std::string::npos) {
             std::string rest = line.substr(6);
             rest = trim(rest);
@@ -237,7 +209,7 @@ void parseConfig(std::vector<config_t>& serv, const std::string& filename) {
             }
             inLocation = true;
             currentLocation = location_t(currentConfig);
-            currentLocation.alias = locationPath;
+            currentLocation.path = locationPath;
             continue;
         }
 
@@ -265,6 +237,14 @@ void parseConfig(std::vector<config_t>& serv, const std::string& filename) {
                 handleAutoindex(iss, currentLocation);
             } else if (key == "index") {
                 handleIndex(iss, currentLocation);
+            } else if (key == "rewrite") {
+                handleRewrite(iss, currentLocation);
+            } else if (key == "cgi") {
+                handleCGI(iss, currentLocation);
+            } else if (key == "upload") {
+                handleUpload(iss, currentLocation);
+            } else if (key == "upload_path") {
+                handleUploadPath(iss, currentLocation);
             } else {
                 throw std::runtime_error("Unknown directive in location block: " + key);
             }
@@ -273,67 +253,15 @@ void parseConfig(std::vector<config_t>& serv, const std::string& filename) {
                 handleListen(iss, currentConfig);
             } else if (key == "server_name") {
                 handleServerName(iss, currentConfig);
-            } else if (key == "Client_body_size") {
+            } else if (key == "client_max_body") {
                 handleClientBodySize(iss, currentConfig);
             } else if (key == "file40x") {
                 handleFile40x(iss, currentConfig);
             } else if (key == "file50x") {
                 handleFile50x(iss, currentConfig);
-            } else if (key == "root") {
-                handleServerRoot(iss, currentConfig);
             } else {
                 throw std::runtime_error("Unknown directive in server block: " + key);
             }
         }
     }
 }
-
-
-
-// void print(const std::vector<config_t>& serv) {
-//     for (size_t i = 0; i < serv.size(); ++i) {
-//         const config_t& config = serv[i];
-//         std::cout << "Server listen: " << config.listen << "\n"
-//                   << "Server name: " << config.name << "\n"
-//                   << "Client body size: " << config.client_max_body << "\n"
-//                   << "File 40x: " << config.file_40x << "\n"
-//                   << "File 50x: " << config.file_50x << "\n";
-
-//         for (size_t j = 0; j < config.locations.size(); ++j) {
-//             const location_t& loc = config.locations[j];
-//             std::cout << "Location URL: " << loc.alias << "\n"
-//                       << "Location root: " << loc.root << "\n"
-//                       << "Autoindex: " << (loc.index_auto ? "on" : "off") << "\n"
-//                       << "Allowed methods: ";
-
-//             for (size_t k = 0; k < loc.allow.size(); ++k) {
-//                 switch (loc.allow[k]) {
-//                     case GET: std::cout << "GET "; break;
-//                     case POST: std::cout << "POST "; break;
-//                     case DELETE: std::cout << "DELETE "; break;
-//                     default: break;
-//                 }
-//             }
-
-//             std::cout << "\nIndex files: ";
-//             for (size_t k = 0; k < loc.index.size(); ++k) {
-//                 std::cout << loc.index[k] << " ";
-//             }
-//             std::cout << "\n--------------------------------\n";
-//         }  
-//         std::cout << i << "--server------------------finished" << std::endl;
-//     }
-// }
-
-
-
-// int main() {
-//     std::vector<config_t> myServer;
-//     try {
-//         parseConfig(myServer, "default1.config");
-//         print(myServer);  // 필요한 경우 출력 함수를 추가하여 결과를 출력할 수 있습니다.
-//     } catch (const std::exception& e) {
-//         std::cerr << "Error parsing configuration file: " << e.what() << std::endl;
-//     }
-//     return 0;
-// }

@@ -24,7 +24,8 @@ Transaction::Transaction( Client& client ): _cl( client ), _rqst( client ) {
 	log( "HTTP\t: constructing Transaction" );
 
 	_validRequest();
-	if ( _rqst.line().method == POST ) _setBodyEnd();
+	
+	_setBodyEnd();
 	if ( _invokeCGI( _rqst, _cl.subprocs ) ) CGI::proceed( _rqst, _cl.subprocs );
 }
 
@@ -54,20 +55,20 @@ Transaction::_setBodyEnd( void ) {
 }
 
 bool
-Transaction::_invokeCGI( const Request& rqst, process_t& procs ) {	
-	size_t	dot = rqst.line().uri.rfind( "." );
+Transaction::_invokeCGI( const Request& rqst, process_t& procs ) {
+	if ( !rqst.location().cgi || isDir( rqst.info ) ) return FALSE;
+
+	size_t	dot = rqst.line().uri.rfind( '.' );
 	str_t	ext;
 
-	if ( isDir( rqst.info ) )
-		return FALSE;
+	if ( found( dot ) ) ext = rqst.line().uri.substr( dot + 1 );
+	if ( ext.empty() ) return FALSE;
 
-	if ( found( dot ) )
-		ext = rqst.line().uri.substr( dot );
-
-	if ( !ext.empty() && ext != ".cgi" && ext != ".exe" ) {
+	if ( ext != "cgi" && ext != "exe" ) {
 		try { procs.argv.push_back( CGI::script_bin.at( ext ) );  }
 		catch( exception_t& exc ) { return FALSE; }
 	}
+
 	procs.argv.push_back( rqst.line().uri );
 	return TRUE;
 }

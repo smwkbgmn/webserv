@@ -20,9 +20,9 @@ CGI::init( void ) {
 
 void
 CGI::_assignScriptBin( void ) {
-	script_bin.insert( std::make_pair<str_t, path_t>( ".php", "/usr/bin/php" ) );
-	script_bin.insert( std::make_pair<str_t, path_t>( ".pl", "/usr/bin/perl" ) );
-	script_bin.insert( std::make_pair<str_t, path_t>( ".py", "/usr/bin/python" ) );
+	script_bin.insert( std::make_pair<str_t, path_t>( "php", "/usr/bin/php" ) );
+	script_bin.insert( std::make_pair<str_t, path_t>( "pl", "/usr/bin/perl" ) );
+	script_bin.insert( std::make_pair<str_t, path_t>( "py", "/usr/bin/python" ) );
 }
 
 void
@@ -38,6 +38,9 @@ CGI::_assignEnvironList( void ) {
 void
 CGI::proceed( const Request& rqst, process_t& procs ) {
 	log( "CGI\t: proceed" );
+
+	if ( rqst.line().method != GET && rqst.line().method != POST )
+		throw errstat_t( 403, err_msg[CGI_WITH_NOT_ALLOWED] );
 
 	if ( _detach( rqst, procs ) != SUCCESS )
 		throwSysErr( "_detach", 500 );
@@ -105,18 +108,45 @@ void
 CGI::_buildHeader( msg_buffer_t& out ) {
 	size_t pos_header_end = out.body.str().find( MSG_END );
 
+	_buildHeaderServer( out );
+
+	// Add headers from the CGI contents and adjust out.body buffer 
 	if ( found( pos_header_end ) ) {
 		out.msg << out.body.str().substr( 0, pos_header_end + 2 );
 		out.body.str( out.body.str().substr( pos_header_end + 4 ) );
 	}
 
+	_buildHeaderType( out, pos_header_end );
+	_buildHeaderLen( out, pos_header_end );
+	
+	out.msg << CRLF;
+}
+
+void
+CGI::_buildHeaderServer( msg_buffer_t& out ) {
+	// Add server info
+	out.msg << 
+	HTTP::key.header_out.at( OUT_SERVER ) << ':' << SP <<
+	software << CRLF;
+
+	// Add connection 
+	out.msg << 
+	HTTP::key.header_out.at( OUT_CONNECTION ) << ':' << SP <<
+	HTTP::http.connection.at( CNCT_KEEP_ALIVE ) << CRLF;
+}
+
+void
+CGI::_buildHeaderType( msg_buffer_t& out, const size_t& pos_header_end ) {
 	if ( !found( pos_header_end ) || ( found( pos_header_end ) &&
 		!found( out.msg.str().find( HTTP::key.header_out.at( OUT_CONTENT_TYPE ) ) ) ) ) {
 		out.msg <<
 		HTTP::key.header_out.at( OUT_CONTENT_TYPE ) << ':' << SP <<
 		HTTP::key.mime.at( "txt" ) << CRLF;
 	}
-		 
+}
+
+void
+CGI::_buildHeaderLen( msg_buffer_t& out, const size_t& pos_header_end ) {
 	if ( !found( pos_header_end ) || ( found( pos_header_end ) &&
 		!found( out.msg.str().find( HTTP::key.header_out.at( OUT_CONTENT_LEN ) ) ) ) ) {
 		out.msg << 
@@ -125,7 +155,6 @@ CGI::_buildHeader( msg_buffer_t& out ) {
 
 		out.chunk = TRUE;
 	}
-	out.msg << CRLF;
 }
 
 void
@@ -172,7 +201,7 @@ CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
 			case SERVER_PORT		: oss << rqst.config().listen; break;
 			case SERVER_PROTOCOL	: oss << HTTP::http.signature << '/' << HTTP::http.version.at( VERSION_11 ); break;
 			case REMOTE_ADDR		: break;
-			case REMOTE_HOST		: break;
+			case REMOTE_HOST		: oss << rqst.header().host; break;
 			case GATEWAY_INTERFACE	: break;
 			case REQUEST_METHOD		: oss << str_method[rqst.line().method]; break;
 			case SCRIPT_NAME		: oss << rqst.line().uri.substr( rqst.line().uri.rfind( '/' ) + 1 ); break;
@@ -188,6 +217,7 @@ CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
 			case PATH_INFO			: oss << rqst.line().uri.substr( rqst.location().root.length() + 1 ); break;
 			case PATH_TRANSLATED	: oss << rqst.line().uri; break;
 			case QUERY_STRING		: oss << rqst.line().query; break;
+			case UPLOAD_DIR			: oss << rqst.location().upload_path; break;
 		}
 		procs.env.push_back( oss.str() );
 		return TRUE;
@@ -230,3 +260,6 @@ c_buffer_s::c_buffer_s( void ) {
 	total	= 0;
 	read	= 0;
 }
+
+
+// could you modify this  cgi script as possble to accept where the upload file be stored with the path
