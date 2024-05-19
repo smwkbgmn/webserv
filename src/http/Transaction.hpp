@@ -10,10 +10,13 @@ class Transaction {
 	public:
 		Transaction( Client& );
 
+		const config_t&	config( void );
+
 		static bool		recvMsg( msg_buffer_t&, const char*, ssize_t& );
 		static bool		recvBody( msg_buffer_t&, const process_t&, const char*, const ssize_t& );
 
 		static void		build( const Response&, msg_buffer_t& );
+		static void		buildError( const uint_t&, Client& );
 
 		void			act( void );
 

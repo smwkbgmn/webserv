@@ -168,7 +168,7 @@ CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
 		oss << environ_list.at( idx ) << '=';
 
 		switch ( idx ) {
-			case SERVER_NAME		: oss << rqst.config().name; break;
+			case SERVER_NAME		: oss << rqst.header().host; break;
 			case SERVER_PORT		: oss << rqst.config().listen; break;
 			case SERVER_PROTOCOL	: oss << HTTP::http.signature << '/' << HTTP::http.version.at( VERSION_11 ); break;
 			case REMOTE_ADDR		: break;

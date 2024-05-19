@@ -6,8 +6,8 @@ bool found( const size_t& pos ) { return pos != str_t::npos; }
 /* FILE INFO */
 bool
 getInfo( const str_t& target, fstat_t& info ) {
-	if ( *target.rbegin() == '/' )
-		return stat( target.substr( 0, target.length() - 1 ).c_str(), &info ) != ERROR;
+	// if ( *target.rbegin() == '/' )
+	// 	return stat( target.substr( 0, target.length() - 1 ).c_str(), &info ) != ERROR;
 		
 	return stat( target.c_str(), &info ) != ERROR;
 }

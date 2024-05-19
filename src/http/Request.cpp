@@ -5,7 +5,7 @@
 
 /* ACCESS */
 const Client&			Request::client( void ) const { return _client; }
-const config_t&			Request::config( void ) const { return client().server().config(); }
+const config_t&			Request::config( void ) const { return client().server().config().at( _config ); }
 const location_t&		Request::location( void ) const { return config().locations.at( _location ); }
 
 const request_line_t&	Request::line( void ) const { return _line; }
@@ -13,7 +13,7 @@ const request_header_t&	Request::header( void ) const { return _header; }
 const sstream_t&		Request::body( void ) const { return _client.buffer().body; }
 
 /* CONSTRUCT */
-Request::Request( const Client& client ): _client( client ) {
+Request::Request( const Client& client ): _client( client ), _config( 0 ), _location( 0 ) {
 	log( "HTTP\t: constructing requeset" );
 
 	_parse( _client.buffer().msg );
@@ -25,6 +25,11 @@ Request::Request( const Client& client ): _client( client ) {
 	if ( _line.method != UNKNOWN &&
 		lookup( location().allow, static_cast<uint_t>( _line.method ) ) == location().allow.end() ) 
 		_line.method = NOT_ALLOWED;
+
+	_config		= HTTP::setConfig( _header.host, _client.server().config() );
+	_location	= HTTP::setLocation( _line.uri, config().locations );
+
+	_redirectURI();
 }
 
 void
@@ -63,14 +68,21 @@ Request::_assignMethod( str_t token ) {
 		_line.method = static_cast<method_e>( std::distance( HTTP::http.method.begin(), iter ) );
 }
 
+/*
+	Should be replaced differently along which alias is applied
+	1. dir: append root at begin of URI
+	2. extension: same as dir, but apply the extension config instead of dir
+	3. file: same as dir, but apply the file config instead of dir
+*/
+
 void
 Request::_assignURI( str_t token ) { 
-	_location = HTTP::setLocation( token, _client.server().config().locations );
+	// _location = HTTP::setLocation( token, _client.server().config().locations );
 
-	if ( location().alias.length() == 1 )
-		_line.uri = token.replace( 0, 0, location().root );
-	else
-		_line.uri = token.replace( 0, location().alias.length(), location().root );
+	// In config parsing, the location value should be conformed that only starting 
+	// with slash or dot be allowed  
+
+	_line.uri = token;
 
 	size_t pos_query = _line.uri.find( '?' );
 	if ( found( pos_query ) ) {
@@ -130,6 +142,27 @@ Request::_token( isstream_t& iss, char delim ) {
 		throw err_t( "_token: " + err_msg[INVALID_REQUEST_LINE] );
 
 	return token;
+}
+
+void
+Request::_redirectURI( void ) {
+	std::clog << "old uri: " << _line.uri << std::endl;
+
+	// With root
+	if ( *location().alias.begin() == '/' )
+		_line.uri = _line.uri.replace( 0, 0, location().root );
+
+	// With extension
+	else 
+		_line.uri = location().root +  _line.uri.substr( _line.uri.rfind( '/' ) );
+
+	std::clog << "new uri: " << _line.uri << std::endl;
+
+	// With alias 
+	// if ( location().alias.length() == 1 )
+	// 	_line.uri = token.replace( 0, 0, location().root );
+	// else
+	// 	_line.uri = token.replace( 0, location().alias.length(), location().root );
 }
 
 Request::~Request( void ) {};

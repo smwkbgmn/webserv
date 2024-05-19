@@ -14,6 +14,8 @@
 class Request;
 class Response;
 
+const str_t		software		= "webserv/1.0";
+
 const path_t	dir_keys		= "src/http/key/";
 const path_t	file_status		= dir_keys + "key_status.txt";
 const path_t	file_mime		= dir_keys + "key_mime.txt";
@@ -27,13 +29,10 @@ class HTTP {
 		static keys_t	key;
 
 		static void		init( void );
+		static size_t	setConfig( const str_t&, const vec_config_t& );
+		static bool		setConfigMatchName( const str_t&, const vec_str_t& );
+		static size_t	setLocation( const path_t&, const vec_location_t& );
 
-		
-		static size_t	setLocation( const str_t&, const vec_location_t& );
-
-		// static void		transaction( const Client&, process_t&, osstream_t& );
-		// static void		build( const Response&, msg_buffer_t& );
-		
 		static void		GET( const path_t&, sstream_t&, size_t& );
 		static void		POST( const Request& );
 		static void		DELETE( const Request& );
@@ -44,18 +43,6 @@ class HTTP {
 		static void		_assignStatus( void );
 		static void		_assignMime( void );
 		static void		_assignVec( vec_str_t &, const str_t[], size_t );
-
-		/* transaction */
-		// static void		_build( const Response&, osstream_t& );
-		// static void		_buildLine( const Response&, sstream_t& );
-		// static void		_buildHeader( const Response&, sstream_t& );
-		// static void		_buildHeaderName( uint_t, sstream_t& );
-		// static void		_buildHeaderValue( const response_header_t&, uint_t, sstream_t& );
-		// static void		_buildBody( const Response&, sstream_t& );
-
-		/* method */
-		// static bool		_invokeCGI( const Request&, process_t& );
-
 };
 
 # include "CGI.hpp"
@@ -195,3 +182,97 @@ client wishes to process if the field semantics are such that the dropped
 value(s) can be safely ignored without changing the message framing or response
 semantics.
 */
+
+/*
+Syntax:	location [ = | ~ | ~* | ^~ ] uri { ... }
+location @name { ... }
+Default:	—
+Context:	server, location
+Sets configuration depending on a request URI.
+
+The matching is performed against a normalized URI, after decoding the text
+encoded in the “%XX” form, resolving references to relative path components
+“.” and “..”, and possible compression of two or more adjacent slashes into a
+single slash.
+
+A location can either be defined by a prefix string, or by a regular expression.
+Regular expressions are specified with the preceding “~*” modifier
+(for case-insensitive matching), or the “~” modifier (for case-sensitive matching).
+To find location matching a given request, nginx first checks locations defined
+using the prefix strings (prefix locations). Among them, the location with the
+longest matching prefix is selected and remembered. Then regular expressions are
+checked, in the order of their appearance in the configuration file. The search
+of regular expressions terminates on the first match, and the corresponding
+configuration is used. If no match with a regular expression is found then the
+configuration of the prefix location remembered earlier is used.
+
+location blocks can be nested, with some exceptions mentioned below.
+
+For case-insensitive operating systems such as macOS and Cygwin, matching with
+prefix strings ignores a case (0.7.7). However, comparison is limited
+to one-byte locales.
+
+Regular expressions can contain captures (0.7.40) that can later be used
+in other directives.
+
+If the longest matching prefix location has the “^~” modifier then regular
+expressions are not checked.
+
+Also, using the “=” modifier it is possible to define an exact match of
+URI and location. If an exact match is found, the search terminates.
+For example, if a “/” request happens frequently, defining
+“location = /” will speed up the processing of these requests, as search
+terminates right after the first comparison. Such a location cannot obviously
+contain nested locations.
+
+In versions from 0.7.1 to 0.8.41, if a request matched the prefix location
+without the “=” and “^~” modifiers, the search also terminated and regular
+expressions were not checked.
+Let’s illustrate the above by an example:
+
+location = / {
+    [ configuration A ]
+}
+
+location / {
+    [ configuration B ]
+}
+
+location /documents/ {
+    [ configuration C ]
+}
+
+location ^~ /images/ {
+    [ configuration D ]
+}
+
+location ~* \.(gif|jpg|jpeg)$ {
+    [ configuration E ]
+}
+The “/” request will match configuration A, the “/index.html” request will
+match configuration B, the “/documents/document.html” request will match
+configuration C, the “/images/1.gif” request will match configuration D,
+and the “/documents/1.jpg” request will match configuration E.
+
+The “@” prefix defines a named location. Such a location is not used for a
+regular request processing, but instead used for request redirection.
+They cannot be nested, and cannot contain nested locations.
+
+If a location is defined by a prefix string that ends with the slash
+character, and requests are processed by one of proxy_pass, fastcgi_pass,
+uwsgi_pass, scgi_pass, memcached_pass, or grpc_pass, then the special
+processing is performed. In response to a request with URI equal to this
+string, but without the trailing slash, a permanent redirect with the code
+301 will be returned to the requested URI with the slash appended. If this
+is not desired, an exact match of the URI and location could be defined
+like this:
+
+location /user/ {
+    proxy_pass http://user.example.com;
+}
+
+location = /user {
+    proxy_pass http://login.example.com;
+}
+*/
+

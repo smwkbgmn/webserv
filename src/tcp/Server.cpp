@@ -8,7 +8,7 @@ Server::Server() : ASocket(), EventList(8), client_event("client"), server_event
     timeout.tv_sec = 120;
     timeout.tv_nsec = 0;
 
-    // conf.push_back( config_t() );
+    confs.push_back( config_t() );
 }
 
 Server::~Server() {
@@ -133,8 +133,7 @@ void Server::handleCGIEvent(struct kevent &occur_event) {
     } catch (const errstat_t& e) {
         std::cerr << "CGI error: " << e.what() << std::endl;
         
-		// errbuild 
-		Transaction::build( Response( cl, e.code ), cl.out );
+		Transaction::buildError( e.code, cl );
 		// write_event;
 
         DisconnectClient(client);
