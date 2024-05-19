@@ -1,9 +1,9 @@
 #include "Client.hpp"
 #include "HTTP.hpp"
 
-Client::Client(Server &connect_server) : srv(connect_server), client_socket(-1), Cgi_check(false), Cgi_exit(false) {}
+Client::Client(Server &connect_server) : srv(connect_server), client_socket(-1), Cgi_check(false), Cgi_exit(false), action( NULL ) {}
 
-Client::~Client() {}
+Client::~Client() { if ( action ) delete action; }
 
 const Server& Client::getServer() const { return srv; }
 const Server& Client::server() const { return srv; }
@@ -26,6 +26,7 @@ void Client::processClientRequest() {
     char buf[SIZE_BUF];
 
     ssize_t byte = recv(client_socket, buf, SIZE_BUF, 0);
+
     if (byte < 0) {
         throw err_t("Server socket error on receive");
     } else if (byte == 0) {
@@ -48,7 +49,8 @@ void Client::processClientRequest() {
 					logging.fs << in.body.str() << std::endl;
 
 					if ( !subprocs.pid ) {
-						action->act();
+						if ( action )
+							action->act();
 
 						in.reset();
 						srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
@@ -65,15 +67,18 @@ void Client::processClientRequest() {
 			out.reset();
 
 			Transaction::buildError( err.code, *this );
+			action = NULL;
 			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 		}
 
 		catch ( err_t& err ) {
 			log( "HTTP\t: Request: " + str_t( err.what() ) );
 
+
 			in.reset();
 
 			Transaction::buildError( 400, *this );
+			action = NULL;
 			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 		}
     }

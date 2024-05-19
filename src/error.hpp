@@ -23,6 +23,7 @@ enum err_msg_e {
 	TE_WITH_CONTENT_LEN,
 	TE_NOT_IMPLEMENTED,
 	SOURCE_NOT_FOUND,
+	SOURCE_NOT_DIR,
 
 	GET_WITH_BODY,
 	POST_EMPTY_CONTENT_LEN,
@@ -35,9 +36,12 @@ const str_t	err_msg[] = {
 	"invalid request line",
 	"invalid request field",
 	"a cnunked data exceeding hexsize",
+
 	"the transfer_encoding and content_length can not be taken at the same time",
 	"requested Transfer-Encoding way is not implemented",
 	"target source is not exist",
+	"requested with slash end but target source is not dir",
+
 	"the GET request may not be with body",
 	"the requested body size is unknown from client request",
 	"the requested body size exceeds configured size of limitation",

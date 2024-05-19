@@ -13,7 +13,7 @@ const sstream_t&			Response::body( void ) const { return _body; }
 Response::Response( void ) {}
 Response::Response( const uint_t& status, const config_t& conf ) {
 	_errpage( status, conf );
-	_addServerInfo( CLOSE );
+	_addServerInfo( CNCT_CLOSE );
 }
 Response::~Response( void ) {}
 
@@ -26,7 +26,9 @@ Response::act( const Request& rqst ) {
 		_doMethod( rqst );
 	}
 	catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
-	_addServerInfo( KEEP_ALIVE );
+
+	if ( rqst.header().connection == CNCT_KEEP_ALIVE ) _addServerInfo( CNCT_KEEP_ALIVE );
+	else _addServerInfo( CNCT_CLOSE );
 }
 
 void
@@ -226,7 +228,7 @@ response_line_s::response_line_s( void ) {
 }
 
 response_header_s::response_header_s( void ) {
-	connection			= KEEP_ALIVE;
+	connection			= CNCT_KEEP_ALIVE;
 	transfer_encoding	= TE_IDENTITY;
 	content_length		= 0;
 }

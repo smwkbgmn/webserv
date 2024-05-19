@@ -115,7 +115,14 @@ Request::_parseHeader( const str_t& field ) {
 
 	switch ( _add( _header.list, distance( HTTP::key.header_in, header ) ) ) {
 		case IN_HOST			: iss >> _header.host; break;
-		case IN_CONNECTION		: _header.connection = KEEP_ALIVE; break;
+
+		case IN_CONNECTION		: {
+			ssize_t cnt = distance( HTTP::http.connection, _token( iss, NONE ) );
+
+			if ( cnt != NOT_FOUND ) _header.connection = static_cast<connection_e>( cnt );
+			else _header.connection = CNCT_UNKNOWN;
+			break;
+		}
 
 		case IN_TRANSFER_ENC	: {	 
 			ssize_t te = distance( HTTP::http.encoding, _token( iss, NONE ) );
@@ -146,7 +153,7 @@ Request::_token( isstream_t& iss, char delim ) {
 
 void
 Request::_redirectURI( void ) {
-	std::clog << "old uri: " << _line.uri << std::endl;
+	// std::clog << "old uri: " << _line.uri << std::endl;
 
 	// With root
 	if ( *location().alias.begin() == '/' )
@@ -156,7 +163,7 @@ Request::_redirectURI( void ) {
 	else 
 		_line.uri = location().root +  _line.uri.substr( _line.uri.rfind( '/' ) );
 
-	std::clog << "new uri: " << _line.uri << std::endl;
+	// std::clog << "new uri: " << _line.uri << std::endl;
 
 	// With alias 
 	// if ( location().alias.length() == 1 )
@@ -169,7 +176,7 @@ Request::~Request( void ) {};
 
 /* STRUCT */
 request_header_s::request_header_s( void ) {
-	connection			= KEEP_ALIVE;
+	connection			= CNCT_KEEP_ALIVE;
 	transfer_encoding	= TE_IDENTITY;
 	content_length		= 0;
 }

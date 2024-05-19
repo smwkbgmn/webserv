@@ -42,6 +42,7 @@ Transaction::_validRequest( void ) {
 
 	if ( !getInfo( _rqst.line().uri, _rqst.info ) ) {
 		if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
+		if ( errno == 20 ) throw errstat_t( 404, err_msg[SOURCE_NOT_DIR] );
 		else throw errstat_t( 500 );
 	}
 }
