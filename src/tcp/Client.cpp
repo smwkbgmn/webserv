@@ -33,7 +33,6 @@ void Client::processClientRequest() {
         throw err_t("Client receive ended");
     } else {
 		try {
-			std::clog << "read byte: " << byte << std::endl;
 			if ( Transaction::recvMsg( in, buf, byte )) {
 				logging.fs << in.msg.str() << std::endl;
 

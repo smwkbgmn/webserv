@@ -9,13 +9,13 @@ getInfo( const str_t& target, fstat_t& info ) {
 	// if ( *target.rbegin() == '/' )
 	// 	return stat( target.substr( 0, target.length() - 1 ).c_str(), &info ) != ERROR;
 
-	// return stat( target.c_str(), &info ) != ERROR;
+	return stat( target.c_str(), &info ) != ERROR;
 
-	std::clog << "getInfo try at: " << target << std::endl;
+	// std::clog << "getInfo try at: " << target << std::endl;
 	
-	int result = stat( target.c_str(), &info );
-	std::clog << "getInfo result: " << result << std::endl;
-	return result != ERROR;	
+	// int result = stat( target.c_str(), &info );
+	// std::clog << "getInfo result: " << result << std::endl;
+	// return result != ERROR;	
 }
 
 bool

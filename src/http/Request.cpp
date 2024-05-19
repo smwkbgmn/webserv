@@ -153,7 +153,7 @@ Request::_token( isstream_t& iss, char delim ) {
 
 void
 Request::_redirectURI( void ) {
-	std::clog << "old uri: " << _line.uri << std::endl;
+	// std::clog << "old uri: " << _line.uri << std::endl;
 
 	// With root
 	if ( *location().alias.begin() == '/' )
@@ -163,7 +163,7 @@ Request::_redirectURI( void ) {
 	else 
 		_line.uri = location().root +  _line.uri.substr( _line.uri.rfind( '/' ) );
 
-	std::clog << "new uri: " << _line.uri << std::endl;
+	// std::clog << "new uri: " << _line.uri << std::endl;
 
 	// With alias 
 	// if ( location().alias.length() == 1 )
