@@ -73,9 +73,9 @@ enum version_e {
 };
 
 enum connection_e {
-	CNCT_KEEP_ALIVE,
-	CNCT_CLOSE,
-	CNCT_UNKNOWN
+	CN_KEEP_ALIVE,
+	CN_CLOSE,
+	CN_UNKNOWN
 };
 
 enum transfer_enc_e {
@@ -89,7 +89,8 @@ enum header_in_e {
 	IN_CONNECTION,
 	IN_TRANSFER_ENC,
 	IN_CONTENT_LEN,
-	IN_CONTENT_TYPE
+	IN_CONTENT_TYPE,
+	IN_COOKIE
 };
 
 enum header_out_e {
@@ -100,7 +101,8 @@ enum header_out_e {
 	OUT_CONTENT_LEN,
 	OUT_CONTENT_TYPE,
 	OUT_LOCATION,
-	OUT_ALLOW
+	OUT_ALLOW,
+	OUT_SET_COOKIE
 };
 
 enum cgi_env_e {
@@ -117,7 +119,8 @@ enum cgi_env_e {
 	PATH_INFO,
 	PATH_TRANSLATED,
 	QUERY_STRING,
-	UPLOAD_DIR
+	UPLOAD_DIR,
+	HTTP_COOKIE
 };
 
 /* STRUCT - Key, Http: core values for implementing HTTP */
@@ -219,6 +222,8 @@ typedef struct request_header_s {
 	size_t				content_length;
 	type_t				content_type;
 
+	str_t				cookie;
+
 	vec_uint_t			list;
 
 }	request_header_t;
@@ -242,6 +247,8 @@ typedef struct response_header_s {
 	type_t				content_type;
 	str_t				location;
 	vec_uint_t			allow;
+
+	str_t				cookie;
 
 	vec_uint_t			list;
 

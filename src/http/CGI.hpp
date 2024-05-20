@@ -26,6 +26,7 @@ class CGI {
 		/* init */
 		static void				_assignScriptBin( void );
 		static void				_assignEnvironList( void );
+		static void				_assignVectorChar( vec_cstr_t&, const vec_str_t& );
 
 		/* proceed */
 		static stat_t			_detach( const Request&, process_t& );
@@ -41,7 +42,6 @@ class CGI {
 
 		static bool				_redirect( const process_t& );
 		static stat_t			_execve( const process_t& );
-		static void				_assignVectorChar( vec_cstr_t&, const vec_str_t& );
 };
 
 #endif

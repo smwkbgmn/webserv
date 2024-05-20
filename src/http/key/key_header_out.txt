@@ -6,3 +6,4 @@ Content-Length
 Content-Type
 Location
 Allow
+Set-Cookie

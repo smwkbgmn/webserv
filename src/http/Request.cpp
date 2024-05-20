@@ -120,7 +120,7 @@ Request::_parseHeader( const str_t& field ) {
 			ssize_t cnt = distance( HTTP::http.connection, _token( iss, NONE ) );
 
 			if ( cnt != NOT_FOUND ) _header.connection = static_cast<connection_e>( cnt );
-			else _header.connection = CNCT_UNKNOWN;
+			else _header.connection = CN_UNKNOWN;
 			break;
 		}
 
@@ -134,6 +134,7 @@ Request::_parseHeader( const str_t& field ) {
 
 		case IN_CONTENT_LEN		: iss >> _header.content_length; break;
 		case IN_CONTENT_TYPE	: iss >> _header.content_type; break;
+		case IN_COOKIE			: iss >> _header.cookie; break;
 	}
 }
 
@@ -176,7 +177,7 @@ Request::~Request( void ) {};
 
 /* STRUCT */
 request_header_s::request_header_s( void ) {
-	connection			= CNCT_KEEP_ALIVE;
+	connection			= CN_KEEP_ALIVE;
 	transfer_encoding	= TE_IDENTITY;
 	content_length		= 0;
 }

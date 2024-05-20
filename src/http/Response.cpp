@@ -14,7 +14,7 @@ Response::Response( void ) {}
 
 Response::Response( const uint_t& status, const config_t& conf ) {
 	_errpage( status, conf );
-	_addServerInfo( CNCT_CLOSE );
+	_addServerInfo( CN_CLOSE );
 }
 
 Response::~Response( void ) {}
@@ -28,8 +28,8 @@ Response::act( const Request& rqst ) {
 		_doMethodValid( rqst );
 		_doMethod( rqst );
 
-		if ( rqst.header().connection == CNCT_KEEP_ALIVE ) _addServerInfo( CNCT_KEEP_ALIVE );
-		else _addServerInfo( CNCT_CLOSE );
+		if ( rqst.header().connection == CN_KEEP_ALIVE ) _addServerInfo( CN_KEEP_ALIVE );
+		else _addServerInfo( CN_CLOSE );
 	}
 	else _redirect( rqst.location().rewrite, 301 );
 }
@@ -216,7 +216,7 @@ response_line_s::response_line_s( void ) {
 }
 
 response_header_s::response_header_s( void ) {
-	connection			= CNCT_KEEP_ALIVE;
+	connection			= CN_KEEP_ALIVE;
 	transfer_encoding	= TE_IDENTITY;
 	content_length		= 0;
 }

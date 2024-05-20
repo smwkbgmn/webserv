@@ -17,6 +17,8 @@ HTTP::init( void ) {
 	_assignHeader();
 	_assignStatus();
 	_assignMime();
+
+	CGI::init();
 }
 
 void
@@ -174,6 +176,8 @@ config_s::config_s( void ) {
 	cgi_bin.index.push_back( "index.txt" );
 	cgi_bin.index_auto = TRUE;
 	// cgi_bin.index_auto = FALSE;
+
+	cgi_bin.upload_path = "html/new_upload";
 
 	locations.push_back( cgi_bin );
 }

@@ -113,28 +113,34 @@ void Server::handleCGIEvent(struct kevent &occur_event) {
 
     try {
 		// IF CGI DONE
+        if (WEXITSTATUS(cl.subprocs.stat) != EXIT_SUCCESS) {
+            throw errstat_t(500, "the CGI failed to exit as SUCCESS");
+        }
+
 		CGI::readFrom( cl.subprocs, cl.out.body );
 		CGI::build( cl.out );
 
-        if (WEXITSTATUS(cl.subprocs.stat) != EXIT_SUCCESS) {
-            throw errstat_t(500, "the CGI failed to exit as SUCCESS");
-
-        }
 		cl.in.reset();
 		cl.subprocs.reset();
 
 
         if (it->second->getCgiCheck())it->second->setCgiCheck(FALSE);
         if (it->second->getCgiExit())it->second->setCgiExit(FALSE);
-        add_events(it->second->get_process().pid, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
+        // add_events(it->second->get_process().pid, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
         add_events(client, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
-    } catch (const errstat_t& e) {
+    }
+	
+	catch (const errstat_t& e) {
         std::cerr << "CGI error: " << e.what() << std::endl;
         
-		Transaction::buildError( e.code, cl );
-		// write_event;
+		cl.out.reset();
 
-        DisconnectClient(client);
+		Transaction::buildError( e.code, cl );
+		
+		// write_event;
+		add_events(client, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+
+        // DisconnectClient(client);
     } 
 }
 
@@ -223,15 +229,18 @@ void Server::connectsever() {
         int newEvent = eventOccure();
         for (int i = 0; i < newEvent; ++i) {
             struct kevent &event = getEventList(i);
-                 if (errorcheck(event)) {
+                if (errorcheck(event))
                     continue;
-                 }
-                if (event.filter == EVFILT_READ) 
+					
+                if (event.filter == EVFILT_READ)
                     handleReadEvent(event);      
+
                 else if (event.filter == EVFILT_WRITE)
                     handleWriteEvent(event);
-                else if (event.filter == EVFILT_PROC) 
+
+                else if (event.filter == EVFILT_PROC)
                     handleProcessExitEvent(event); 
+					
                 else if (event.filter == EVFILT_TIMER)
                     handleTimerEvent(event);
         }

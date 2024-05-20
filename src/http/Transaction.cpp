@@ -17,7 +17,13 @@
 */
 
 /* ACCESS */
-const config_t&	Transaction::config( void ) { return _rqst.config(); }
+const config_t& Transaction::config( void ) { return _rqst.config(); }
+
+connection_e
+Transaction::connection( void ) {
+	if ( _rqst.header().connection == CN_CLOSE || _rspn.header().connection == CN_CLOSE ) return CN_CLOSE;
+	else return CN_KEEP_ALIVE;
+}
 
 /* INTANTIATE */
 Transaction::Transaction( Client& client ): _cl( client ), _rqst( client ) {
@@ -120,7 +126,7 @@ Transaction::_recvBodyPlain( msg_buffer_t& in, const process_t& procs, const cha
 	if ( !procs.pid )
 		in.body.write( buf, byte_read );
 
-	else {
+	else if ( !dead( procs ) ) {
 		if ( byte_read == 0 && in.body_read )
 			CGI::writeTo( procs, in.body.str().c_str(), in.body_read );
 		else
@@ -159,7 +165,7 @@ Transaction::_recvBodyChunk( msg_buffer_t& in, const process_t& procs, const cha
 bool
 Transaction::_recvBodyChunkData( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
 	if ( !procs.pid ) in.body.write( buf, byte_read - SIZE_CRLF );
-	else CGI::writeTo( procs, buf, byte_read - SIZE_CRLF );
+	else if ( !dead( procs ) ) CGI::writeTo( procs, buf, byte_read - SIZE_CRLF );
 
 	in.incomplete	= FALSE;
 	in.next_read	= SIZE_BUFF;
@@ -199,7 +205,7 @@ Transaction::_recvBodyChunkPredata( msg_buffer_t& in, const process_t& procs, co
 		hex = in.chunk_size;
 		while ( hex && chunk.get( data ) ) {
 			if ( !procs.pid ) in.body.write( &data, 1 );
-			else CGI::writeTo( procs, &data, 1 );
+			else if ( !dead( procs ) ) CGI::writeTo( procs, &data, 1 );
 
 			hex--;
 		}

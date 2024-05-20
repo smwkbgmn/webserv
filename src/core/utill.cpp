@@ -1,6 +1,9 @@
 #include "utill.hpp"
 
-/* UTILL */
+/* UTILL */ 
+bool	dead( const process_t& procs ) { return WEXITSTATUS( procs.stat ) != EXIT_SUCCESS; }
+bool	found( const size_t& pos ) { return pos != str_t::npos; }
+
 str_t
 token( isstream_t& iss, const char& delim ) {
 	str_t string;
@@ -12,7 +15,6 @@ token( isstream_t& iss, const char& delim ) {
 	return string;
 }
 
-bool found( const size_t& pos ) { return pos != str_t::npos; }
 
 /* FILE INFO */
 bool

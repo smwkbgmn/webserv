@@ -42,7 +42,7 @@ CGI::proceed( const Request& rqst, process_t& procs ) {
 	if ( rqst.line().method != GET && rqst.line().method != POST )
 		throw errstat_t( 403, err_msg[CGI_WITH_NOT_ALLOWED] );
 
-	if ( _detach( rqst, procs ) != SUCCESS )
+	if ( _detach( rqst, procs ) != EXIT_SUCCESS )
 		throwSysErr( "_detach", 500 );
 }
 
@@ -53,10 +53,10 @@ CGI::_detach( const Request& rqst, process_t& procs ) {
 
 	if ( !procs.pid ) {
 		_buildEnviron( rqst, procs );
-
-		return _execve( procs );
+		// return _execve( procs );
+		_execve( procs );
 	}
-	return SUCCESS;
+	return EXIT_SUCCESS;
 }
 
 /* PARENT */
@@ -90,7 +90,7 @@ void
 CGI::build( msg_buffer_t& out ) {
 	_buildLine( out );
 	if ( out.body.str().size() ) _buildHeader( out );
-	if ( out.chunk ) _buildChunk( out );
+	if ( out.chunk ) { out.body.seekg( 0 ); _buildChunk( out ); }
 }
 
 void
@@ -132,7 +132,7 @@ CGI::_buildHeaderServer( msg_buffer_t& out ) {
 	// Add connection 
 	out.msg << 
 	HTTP::key.header_out.at( OUT_CONNECTION ) << ':' << SP <<
-	HTTP::http.connection.at( CNCT_KEEP_ALIVE ) << CRLF;
+	HTTP::http.connection.at( CN_KEEP_ALIVE ) << CRLF;
 }
 
 void
@@ -159,20 +159,20 @@ CGI::_buildHeaderLen( msg_buffer_t& out, const size_t& pos_header_end ) {
 
 void
 CGI::_buildChunk( msg_buffer_t& out ) {
+	sstream_t	chunked;
+
 	char		data[15];
 	size_t		size = out.body.str().size();
 	size_t		frac;
-
-	sstream_t	chunked;
-
-	out.body.seekg( 0 );
 
 	while ( size > 0 ) {
 		if ( size > 14 ) frac = 15;
 		else frac = size; 
 		
+		// Add chunk head
 		chunked << hexdigt[frac] << CRLF;
 
+		// Add chunk data
 		out.body.read( data, frac );
 		chunked.write( data, frac );
 		chunked << CRLF;
@@ -218,6 +218,7 @@ CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
 			case PATH_TRANSLATED	: oss << rqst.line().uri; break;
 			case QUERY_STRING		: oss << rqst.line().query; break;
 			case UPLOAD_DIR			: oss << rqst.location().upload_path; break;
+			case HTTP_COOKIE		: oss << rqst.header().cookie; break;
 		}
 		procs.env.push_back( oss.str() );
 		return TRUE;
@@ -243,8 +244,8 @@ CGI::_execve( const process_t& procs ) {
 	_assignVectorChar( argv_c, procs.argv );
 	_assignVectorChar( env_c, procs.env );
 
-	if ( _redirect( procs ) )
-		return execve( argv_c[0], argv_c.data(), env_c.data() ); 
+	if ( _redirect( procs ) ) 
+		execve( argv_c[0], argv_c.data(), env_c.data() ); 
 	return EXIT_FAILURE;
 }
 
@@ -260,6 +261,3 @@ c_buffer_s::c_buffer_s( void ) {
 	total	= 0;
 	read	= 0;
 }
-
-
-// could you modify this  cgi script as possble to accept where the upload file be stored with the path

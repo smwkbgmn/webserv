@@ -74,7 +74,6 @@ void Client::processClientRequest() {
 		catch ( err_t& err ) {
 			log( "HTTP\t: Request: " + str_t( err.what() ) );
 
-
 			in.reset();
 
 			Transaction::buildError( 400, *this );

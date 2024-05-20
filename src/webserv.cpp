@@ -2,12 +2,10 @@
 
 /*
 	To do
-	- CGI 
-		Make the route able to accept uploaded files and configure where they should be saved
-
 	- Chunked request
+	- Add Date header at addServerInfo
 	- Implement cookies
-	> RFC 6265
+		> RFC 6265
 
 	- Add some checkign for invalid request at Request
 
@@ -31,14 +29,13 @@ int main( void ) {
 		// parseConfig( confs, argv[1] );
 
 		HTTP::init();
-		CGI::init();
 
 		Server server( confs );
 		server.connectsever();
 
 		return EXIT_SUCCESS;
 	}
-	catch ( err_t &err ) { log( str_t( err.what() ) ); return EXIT_FAILURE; }
+	catch ( err_t &err ) { std::clog << "check 3-1\n"; log( str_t( err.what() ) ); return EXIT_FAILURE; }
 	
 	return EXIT_FAILURE;
 }
