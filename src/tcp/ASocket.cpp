@@ -27,7 +27,7 @@ void ASocket::preSet() {
         close(server_socket);
         throw err_t("Failed to bind");
     }
-    if (listen(server_socket, 10) == ERROR)
+    if (listen(server_socket, 32) == ERROR)
     {
         close(server_socket);
         throw err_t("Failed to listen");
@@ -46,9 +46,7 @@ void ASocket::openSocket() {
     setAddr();
 
     ////////// FOR TEST //////////
-    int optval = 1;
-    setsockopt(this->server_socket, SOL_SOCKET, SO_REUSEADDR, &optval,
-               sizeof(optval));
+
 
     preSet();
     setNonBlocking(server_socket);

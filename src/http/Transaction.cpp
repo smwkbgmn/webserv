@@ -85,6 +85,7 @@ Transaction::recvMsg( msg_buffer_t& in, const char* buf, ssize_t& byte_read ) {
 		if ( !found( pos_header_end ) ) in.msg_read += byte_read;
 		else {
 			in.msg_done = TRUE;
+			logging.fs << in.msg.str() << std::endl;
 
 			size_t body_begin	= pos_header_end - in.msg_read + SIZE_MSG_END;
 			in.body_read		= byte_read - body_begin;
@@ -128,6 +129,7 @@ Transaction::_recvBodyPlain( msg_buffer_t& in, const process_t& procs, const cha
 		log( oss.str() );
 	}
 
+	std::clog << "recvBody checking " << in.body_size << ", " << in.body_read << std::endl;
 	return in.body_size == in.body_read;
 }
 

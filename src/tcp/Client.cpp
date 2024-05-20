@@ -27,10 +27,8 @@ void Client::processClientRequest() {
 
     ssize_t byte = recv(client_socket, buf, SIZE_BUF, 0);
 
-    if (byte < 0) {
+    if (byte <= 0) {
         throw err_t("Server socket error on receive");
-    } else if (byte == 0) {
-        throw err_t("Client receive ended");
     } else {
 		try {
 			if ( Transaction::recvMsg( in, buf, byte )) {
@@ -67,6 +65,7 @@ void Client::processClientRequest() {
 			out.reset();
 
 			Transaction::buildError( err.code, *this );
+			setCgiCheck(TRUE);
 			action = NULL;
 			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 		}
@@ -78,6 +77,7 @@ void Client::processClientRequest() {
 
 			Transaction::buildError( 400, *this );
 			action = NULL;
+			setCgiCheck(TRUE);
 			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 		}
     }
