@@ -42,20 +42,18 @@ CGI::proceed( const Request& rqst, process_t& procs ) {
 	if ( rqst.line().method != GET && rqst.line().method != POST )
 		throw errstat_t( 403, err_msg[CGI_WITH_NOT_ALLOWED] );
 
-	if ( _detach( rqst, procs ) != EXIT_SUCCESS )
-		throwSysErr( "_detach", 500 );
+	_detach( rqst, procs );
 }
 
-stat_t
+void
 CGI::_detach( const Request& rqst, process_t& procs ) {
-	if ( pipe( procs.fd ) == ERROR || ( procs.pid = fork() ) == ERROR )
-		return EXIT_FAILURE;
+	if ( pipe( procs.fd ) == ERROR ) throwSysErr( "pipe", 500 );
+	if ( ( procs.pid = fork() )  == ERROR ) throwSysErr( "fork", 500 );
 
 	if ( !procs.pid ) {
 		_buildEnviron( rqst, procs );
 		_execve( procs );
 	}
-	return EXIT_SUCCESS;
 }
 
 /* PARENT */
@@ -234,7 +232,7 @@ CGI::_redirect( const process_t& procs ) {
 	return TRUE;	
 }
 
-stat_t
+void
 CGI::_execve( const process_t& procs ) {
 	vec_cstr_t	argv_c;
 	vec_cstr_t	env_c;
@@ -242,9 +240,9 @@ CGI::_execve( const process_t& procs ) {
 	_assignVectorChar( argv_c, procs.argv );
 	_assignVectorChar( env_c, procs.env );
 
-	if ( _redirect( procs ) ) 
-		execve( argv_c[0], argv_c.data(), env_c.data() ); 
-	return EXIT_FAILURE;
+	if ( _redirect( procs ) &&
+		execve( argv_c[0], argv_c.data(), env_c.data() ) == ERROR )
+	exit( EXIT_FAILURE );
 }
 
 void

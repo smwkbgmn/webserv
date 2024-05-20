@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perlqweqwe -w
 use CGI;
 use File::Spec;
 

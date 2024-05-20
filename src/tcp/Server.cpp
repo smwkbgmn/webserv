@@ -40,8 +40,10 @@ struct kevent &Server::getEventList(int idx) {
 int Server::eventOccure() {
     int occure;
     occure = kevent(this->kq, NULL, 0, &EventList[0], 8, &timeout);
-    if (occure == -1)
-        throw err_t("Failed to make event");
+    // if (occure == -1)
+    //     throw err_t("Failed to make event");
+	
+	
     return occure;
 }
 

@@ -34,7 +34,7 @@ void Client::processClientRequest() {
     } else {
 		try {
 			if ( Transaction::recvMsg( in, buf, byte )) {
-				logging.fs << in.msg.str() << std::endl;
+				
 
 				if ( !action ) {
 					action = new Transaction( *this );
@@ -46,6 +46,7 @@ void Client::processClientRequest() {
 				}
 
 				if ( Transaction::recvBody( in, subprocs, buf, byte ) ) {
+					std::clog << "recvBody done\n";
 					logging.fs << in.body.str() << std::endl;
 
 					if ( !subprocs.pid ) {

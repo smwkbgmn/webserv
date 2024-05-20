@@ -28,7 +28,7 @@ class CGI {
 		static void				_assignVectorChar( vec_cstr_t&, const vec_str_t& );
 
 		/* proceed */
-		static stat_t			_detach( const Request&, process_t& );
+		static void				_detach( const Request&, process_t& );
 		static void				_buildEnviron( const Request&, process_t& );
 		static bool				_buildEnvironVar( const Request&, process_t&, uint_t idx );
 		
@@ -40,7 +40,7 @@ class CGI {
 		static void				_buildChunk( msg_buffer_t& );
 
 		static bool				_redirect( const process_t& );
-		static stat_t			_execve( const process_t& );
+		static void				_execve( const process_t& );
 };
 
 #endif
