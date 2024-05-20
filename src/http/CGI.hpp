@@ -26,26 +26,22 @@ class CGI {
 		/* init */
 		static void				_assignScriptBin( void );
 		static void				_assignEnvironList( void );
+		static void				_assignVectorChar( vec_cstr_t&, const vec_str_t& );
 
 		/* proceed */
 		static stat_t			_detach( const Request&, process_t& );
 		static void				_buildEnviron( const Request&, process_t& );
 		static bool				_buildEnvironVar( const Request&, process_t&, uint_t idx );
 		
-		// static void				_write( const process_t&, const Request& );
-		// static void				_wait( process_t& );
-		// static size_t			_read( process_t&, sstream_t& );
-
-		// static void				_build( sstream_t&, sstream_t&, size_t );
-		// static void				_buildLine( sstream_t&, const size_t& );
-		// static void				_buildHeader( const sstream_t&, sstream_t&, size_t& );
 		static void				_buildLine( msg_buffer_t& );
 		static void				_buildHeader( msg_buffer_t& );
+		static void				_buildHeaderServer( msg_buffer_t& );
+		static void				_buildHeaderType( msg_buffer_t&, const size_t& );
+		static void				_buildHeaderLen( msg_buffer_t&, const size_t& );
 		static void				_buildChunk( msg_buffer_t& );
 
 		static bool				_redirect( const process_t& );
 		static stat_t			_execve( const process_t& );
-		static void				_assignVectorChar( vec_cstr_t&, const vec_str_t& );
 };
 
 #endif

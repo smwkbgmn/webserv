@@ -17,7 +17,7 @@ class Request {
 		const config_t&				config( void ) const;
 		const location_t&			location( void ) const;
 
-		const request_line_t&		line( void ) const;
+   		const request_line_t&		line( void ) const;
 		const request_header_t&		header( void ) const;
 		const sstream_t&			body( void ) const;
 
@@ -39,9 +39,9 @@ class Request {
 		void						_parseHeader( const str_t& );
 		ssize_t						_add( vec_uint_t&, ssize_t );
 
-		void						_redirectURI( void );
+		str_t						_token( isstream_t&, const char& );
 
-		str_t						_token( isstream_t&, char );
+		void						_redirectURI( void );
 		
 };
 

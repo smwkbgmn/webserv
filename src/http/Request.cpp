@@ -69,7 +69,7 @@ Request::_assignMethod( str_t token ) {
 }
 
 /*
-	Should be replaced differently along which alias is applied
+	Should be replaced differently along which location is applied
 	1. dir: append root at begin of URI
 	2. extension: same as dir, but apply the extension config instead of dir
 	3. file: same as dir, but apply the file config instead of dir
@@ -120,7 +120,7 @@ Request::_parseHeader( const str_t& field ) {
 			ssize_t cnt = distance( HTTP::http.connection, _token( iss, NONE ) );
 
 			if ( cnt != NOT_FOUND ) _header.connection = static_cast<connection_e>( cnt );
-			else _header.connection = CNCT_UNKNOWN;
+			else _header.connection = CN_UNKNOWN;
 			break;
 		}
 
@@ -134,6 +134,7 @@ Request::_parseHeader( const str_t& field ) {
 
 		case IN_CONTENT_LEN		: iss >> _header.content_length; break;
 		case IN_CONTENT_TYPE	: iss >> _header.content_type; break;
+		case IN_COOKIE			: iss >> _header.cookie; break;
 	}
 }
 
@@ -141,12 +142,12 @@ ssize_t
 Request::_add( vec_uint_t& list, ssize_t id ) { if ( id != NOT_FOUND ) list.push_back( id ); return id; }
 
 str_t
-Request::_token( isstream_t& iss, char delim ) {
+Request::_token( isstream_t& iss, const char& delim ) {
 	str_t token;
 
 	if ( ( delim && !std::getline( iss, token, delim ) ) ||
 		( !delim && !std::getline( iss, token ) ) )
-		throw err_t( "_token: " + err_msg[INVALID_REQUEST_LINE] );
+		throw err_t( "_token: " + err_msg[INVALID_REQUEST_FIELD] );
 
 	return token;
 }
@@ -156,7 +157,7 @@ Request::_redirectURI( void ) {
 	// std::clog << "old uri: " << _line.uri << std::endl;
 
 	// With root
-	if ( *location().alias.begin() == '/' )
+	if ( *location().path.begin() == '/' )
 		_line.uri = _line.uri.replace( 0, 0, location().root );
 
 	// With extension
@@ -176,7 +177,7 @@ Request::~Request( void ) {};
 
 /* STRUCT */
 request_header_s::request_header_s( void ) {
-	connection			= CNCT_KEEP_ALIVE;
+	connection			= CN_KEEP_ALIVE;
 	transfer_encoding	= TE_IDENTITY;
 	content_length		= 0;
 }

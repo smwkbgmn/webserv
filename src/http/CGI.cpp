@@ -20,9 +20,9 @@ CGI::init( void ) {
 
 void
 CGI::_assignScriptBin( void ) {
-	script_bin.insert( std::make_pair<str_t, path_t>( ".php", "/usr/bin/php" ) );
-	script_bin.insert( std::make_pair<str_t, path_t>( ".pl", "/usr/bin/perl" ) );
-	script_bin.insert( std::make_pair<str_t, path_t>( ".py", "/usr/bin/python" ) );
+	script_bin.insert( std::make_pair<str_t, path_t>( "php", "/usr/bin/php" ) );
+	script_bin.insert( std::make_pair<str_t, path_t>( "pl", "/usr/bin/perl" ) );
+	script_bin.insert( std::make_pair<str_t, path_t>( "py", "/usr/bin/python" ) );
 }
 
 void
@@ -39,7 +39,10 @@ void
 CGI::proceed( const Request& rqst, process_t& procs ) {
 	log( "CGI\t: proceed" );
 
-	if ( _detach( rqst, procs ) != SUCCESS )
+	if ( rqst.line().method != GET && rqst.line().method != POST )
+		throw errstat_t( 403, err_msg[CGI_WITH_NOT_ALLOWED] );
+
+	if ( _detach( rqst, procs ) != EXIT_SUCCESS )
 		throwSysErr( "_detach", 500 );
 }
 
@@ -50,10 +53,10 @@ CGI::_detach( const Request& rqst, process_t& procs ) {
 
 	if ( !procs.pid ) {
 		_buildEnviron( rqst, procs );
-
-		return _execve( procs );
+		// return _execve( procs );
+		_execve( procs );
 	}
-	return SUCCESS;
+	return EXIT_SUCCESS;
 }
 
 /* PARENT */
@@ -87,7 +90,7 @@ void
 CGI::build( msg_buffer_t& out ) {
 	_buildLine( out );
 	if ( out.body.str().size() ) _buildHeader( out );
-	if ( out.chunk ) _buildChunk( out );
+	if ( out.chunk ) { out.body.seekg( 0 ); _buildChunk( out ); }
 }
 
 void
@@ -105,18 +108,45 @@ void
 CGI::_buildHeader( msg_buffer_t& out ) {
 	size_t pos_header_end = out.body.str().find( MSG_END );
 
+	_buildHeaderServer( out );
+
+	// Add headers from the CGI contents and adjust out.body buffer 
 	if ( found( pos_header_end ) ) {
 		out.msg << out.body.str().substr( 0, pos_header_end + 2 );
 		out.body.str( out.body.str().substr( pos_header_end + 4 ) );
 	}
 
+	_buildHeaderType( out, pos_header_end );
+	_buildHeaderLen( out, pos_header_end );
+	
+	out.msg << CRLF;
+}
+
+void
+CGI::_buildHeaderServer( msg_buffer_t& out ) {
+	// Add server info
+	out.msg << 
+	HTTP::key.header_out.at( OUT_SERVER ) << ':' << SP <<
+	software << CRLF;
+
+	// Add connection 
+	out.msg << 
+	HTTP::key.header_out.at( OUT_CONNECTION ) << ':' << SP <<
+	HTTP::http.connection.at( CN_KEEP_ALIVE ) << CRLF;
+}
+
+void
+CGI::_buildHeaderType( msg_buffer_t& out, const size_t& pos_header_end ) {
 	if ( !found( pos_header_end ) || ( found( pos_header_end ) &&
 		!found( out.msg.str().find( HTTP::key.header_out.at( OUT_CONTENT_TYPE ) ) ) ) ) {
 		out.msg <<
 		HTTP::key.header_out.at( OUT_CONTENT_TYPE ) << ':' << SP <<
 		HTTP::key.mime.at( "txt" ) << CRLF;
 	}
-		 
+}
+
+void
+CGI::_buildHeaderLen( msg_buffer_t& out, const size_t& pos_header_end ) {
 	if ( !found( pos_header_end ) || ( found( pos_header_end ) &&
 		!found( out.msg.str().find( HTTP::key.header_out.at( OUT_CONTENT_LEN ) ) ) ) ) {
 		out.msg << 
@@ -125,25 +155,24 @@ CGI::_buildHeader( msg_buffer_t& out ) {
 
 		out.chunk = TRUE;
 	}
-	out.msg << CRLF;
 }
 
 void
 CGI::_buildChunk( msg_buffer_t& out ) {
+	sstream_t	chunked;
+
 	char		data[15];
 	size_t		size = out.body.str().size();
 	size_t		frac;
-
-	sstream_t	chunked;
-
-	out.body.seekg( 0 );
 
 	while ( size > 0 ) {
 		if ( size > 14 ) frac = 15;
 		else frac = size; 
 		
+		// Add chunk head
 		chunked << hexdigt[frac] << CRLF;
 
+		// Add chunk data
 		out.body.read( data, frac );
 		chunked.write( data, frac );
 		chunked << CRLF;
@@ -172,7 +201,7 @@ CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
 			case SERVER_PORT		: oss << rqst.config().listen; break;
 			case SERVER_PROTOCOL	: oss << HTTP::http.signature << '/' << HTTP::http.version.at( VERSION_11 ); break;
 			case REMOTE_ADDR		: break;
-			case REMOTE_HOST		: break;
+			case REMOTE_HOST		: oss << rqst.header().host; break;
 			case GATEWAY_INTERFACE	: break;
 			case REQUEST_METHOD		: oss << str_method[rqst.line().method]; break;
 			case SCRIPT_NAME		: oss << rqst.line().uri.substr( rqst.line().uri.rfind( '/' ) + 1 ); break;
@@ -188,6 +217,8 @@ CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
 			case PATH_INFO			: oss << rqst.line().uri.substr( rqst.location().root.length() + 1 ); break;
 			case PATH_TRANSLATED	: oss << rqst.line().uri; break;
 			case QUERY_STRING		: oss << rqst.line().query; break;
+			case UPLOAD_DIR			: oss << rqst.location().upload_path; break;
+			case HTTP_COOKIE		: oss << rqst.header().cookie; break;
 		}
 		procs.env.push_back( oss.str() );
 		return TRUE;
@@ -213,8 +244,8 @@ CGI::_execve( const process_t& procs ) {
 	_assignVectorChar( argv_c, procs.argv );
 	_assignVectorChar( env_c, procs.env );
 
-	if ( _redirect( procs ) )
-		return execve( argv_c[0], argv_c.data(), env_c.data() ); 
+	if ( _redirect( procs ) ) 
+		execve( argv_c[0], argv_c.data(), env_c.data() ); 
 	return EXIT_FAILURE;
 }
 

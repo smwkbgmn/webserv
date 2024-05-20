@@ -11,24 +11,27 @@ const sstream_t&			Response::body( void ) const { return _body; }
 
 /* INSTANTIATE */
 Response::Response( void ) {}
+
 Response::Response( const uint_t& status, const config_t& conf ) {
 	_errpage( status, conf );
-	_addServerInfo( CNCT_CLOSE );
+	_addServerInfo( CN_CLOSE );
 }
+
 Response::~Response( void ) {}
 
+/* METHOD - act: do request method after valid the request message */
 void
 Response::act( const Request& rqst ) {
 	log( "HTTP\t: constructing response" );
 
-	try {
+	if ( rqst.location().rewrite.empty() ) {
 		_doMethodValid( rqst );
 		_doMethod( rqst );
-	}
-	catch ( errstat_t& errstat ) { _errpage( errstat.code, rqst.config() ); }
 
-	if ( rqst.header().connection == CNCT_KEEP_ALIVE ) _addServerInfo( CNCT_KEEP_ALIVE );
-	else _addServerInfo( CNCT_CLOSE );
+		if ( rqst.header().connection == CN_KEEP_ALIVE ) _addServerInfo( CN_KEEP_ALIVE );
+		else _addServerInfo( CN_CLOSE );
+	}
+	else _redirect( rqst.location().rewrite, 301 );
 }
 
 void
@@ -43,26 +46,13 @@ Response::_doMethod( const Request& rqst ) {
 				_mime( rqst.line().uri );
 				_header.list.push_back( OUT_CONTENT_LEN );
 				_header.list.push_back( OUT_CONTENT_TYPE );
-			}
-			break;
+			} break;
 
-		case POST:
-			HTTP::POST( rqst );
-
-			_line.status = 204;
-			break;
-
-		case DELETE:
-			HTTP::DELETE( rqst );
-
-			_line.status = 204;
-			break;
-
-		case NOT_ALLOWED:
-			_errpage( 405, rqst.config() );
-			break;
+		case POST		: HTTP::POST( rqst ); _line.status = 204; break;
+		case DELETE		: HTTP::DELETE( rqst ); _line.status = 204; break;
+		case NOT_ALLOWED: _errpage( 405, rqst.config() ); break;
 		
-		case UNKNOWN:
+		case UNKNOWN: {
 			vec_uint_t::const_iterator iter = rqst.location().allow.begin();
 			while ( iter != rqst.location().allow.end() )
 				_header.allow.push_back( *iter );
@@ -70,6 +60,7 @@ Response::_doMethod( const Request& rqst ) {
 
 			_errpage( 501, rqst.config() );
 			break;
+		}
 	}
 }
 
@@ -91,11 +82,8 @@ Response::_doMethodValid( const Request& rqst ) {
 				throw errstat_t( 405, err_msg[POST_OVER_CONTENT_LEN] );
 			break;
 
-		case DELETE:
-			break;
-
-		default:
-			break;
+		case DELETE	: break;
+		default		: break;
 	}
 }
 
@@ -167,8 +155,8 @@ path_t
 Response::_indexURIConceal( const Request& rqst, const path_t& index  ) {
 	path_t	concealed;
 
-	if ( rqst.location().alias.length() > 1 )
-		concealed += rqst.location().alias;
+	if ( rqst.location().path.length() > 1 )
+		concealed += rqst.location().path;
 	concealed += rqst.line().uri.substr( rqst.location().root.length() );
 
 	if ( !index.empty() )
@@ -228,7 +216,7 @@ response_line_s::response_line_s( void ) {
 }
 
 response_header_s::response_header_s( void ) {
-	connection			= CNCT_KEEP_ALIVE;
+	connection			= CN_KEEP_ALIVE;
 	transfer_encoding	= TE_IDENTITY;
 	content_length		= 0;
 }

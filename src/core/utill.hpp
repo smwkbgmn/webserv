@@ -28,7 +28,9 @@ distance( const Container& obj, const Target token ) {
 }
 
 /* UTILL */
+bool 		dead( const process_t& );
 bool		found( const size_t& );
+str_t		token( isstream_t&, const char& );
 
 /* FILE INFO */
 bool		getInfo( const str_t&, fstat_t& );

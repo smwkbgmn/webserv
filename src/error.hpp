@@ -16,6 +16,8 @@ typedef std::runtime_error	err_t;
 typedef std::exception		exception_t;
 
 enum err_msg_e {
+	TOKEN_FAIL_GETLINE,
+
 	INVALID_REQUEST_LINE,
 	INVALID_REQUEST_FIELD,
 	CHUNK_EXCEED_HEX,
@@ -24,6 +26,7 @@ enum err_msg_e {
 	TE_NOT_IMPLEMENTED,
 	SOURCE_NOT_FOUND,
 	SOURCE_NOT_DIR,
+	CGI_WITH_NOT_ALLOWED,
 
 	GET_WITH_BODY,
 	POST_EMPTY_CONTENT_LEN,
@@ -33,6 +36,8 @@ enum err_msg_e {
 };
 
 const str_t	err_msg[] = {
+	"token fail to getline",
+	
 	"invalid request line",
 	"invalid request field",
 	"a cnunked data exceeding hexsize",
@@ -41,6 +46,7 @@ const str_t	err_msg[] = {
 	"requested Transfer-Encoding way is not implemented",
 	"target source is not exist",
 	"requested with slash end but target source is not dir",
+	"cgi may be with GET and POST method only",
 
 	"the GET request may not be with body",
 	"the requested body size is unknown from client request",

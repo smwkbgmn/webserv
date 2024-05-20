@@ -1,7 +1,20 @@
 #include "utill.hpp"
 
-/* UTILL */
-bool found( const size_t& pos ) { return pos != str_t::npos; }
+/* UTILL */ 
+bool	dead( const process_t& procs ) { return WEXITSTATUS( procs.stat ) != EXIT_SUCCESS; }
+bool	found( const size_t& pos ) { return pos != str_t::npos; }
+
+str_t
+token( isstream_t& iss, const char& delim ) {
+	str_t string;
+
+	if ( ( delim && !std::getline( iss, string, delim ) ) ||
+		( !delim && !std::getline( iss, string ) ) )
+		throw err_t( "_token: " + err_msg[TOKEN_FAIL_GETLINE] );
+
+	return string;
+}
+
 
 /* FILE INFO */
 bool

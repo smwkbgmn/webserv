@@ -17,14 +17,21 @@
 */
 
 /* ACCESS */
-const config_t&	Transaction::config( void ) { return _rqst.config(); }
+const config_t& Transaction::config( void ) { return _rqst.config(); }
+
+connection_e
+Transaction::connection( void ) {
+	if ( _rqst.header().connection == CN_CLOSE || _rspn.header().connection == CN_CLOSE ) return CN_CLOSE;
+	else return CN_KEEP_ALIVE;
+}
 
 /* INTANTIATE */
 Transaction::Transaction( Client& client ): _cl( client ), _rqst( client ) {
 	log( "HTTP\t: constructing Transaction" );
 
 	_validRequest();
-	if ( _rqst.line().method == POST ) _setBodyEnd();
+	
+	_setBodyEnd();
 	if ( _invokeCGI( _rqst, _cl.subprocs ) ) CGI::proceed( _rqst, _cl.subprocs );
 }
 
@@ -54,20 +61,20 @@ Transaction::_setBodyEnd( void ) {
 }
 
 bool
-Transaction::_invokeCGI( const Request& rqst, process_t& procs ) {	
-	size_t	dot = rqst.line().uri.rfind( "." );
+Transaction::_invokeCGI( const Request& rqst, process_t& procs ) {
+	if ( !rqst.location().cgi || isDir( rqst.info ) ) return FALSE;
+
+	size_t	dot = rqst.line().uri.rfind( '.' );
 	str_t	ext;
 
-	if ( isDir( rqst.info ) )
-		return FALSE;
+	if ( found( dot ) ) ext = rqst.line().uri.substr( dot + 1 );
+	if ( ext.empty() ) return FALSE;
 
-	if ( found( dot ) )
-		ext = rqst.line().uri.substr( dot );
-
-	if ( !ext.empty() && ext != ".cgi" && ext != ".exe" ) {
+	if ( ext != "cgi" && ext != "exe" ) {
 		try { procs.argv.push_back( CGI::script_bin.at( ext ) );  }
 		catch( exception_t& exc ) { return FALSE; }
 	}
+
 	procs.argv.push_back( rqst.line().uri );
 	return TRUE;
 }
@@ -119,7 +126,7 @@ Transaction::_recvBodyPlain( msg_buffer_t& in, const process_t& procs, const cha
 	if ( !procs.pid )
 		in.body.write( buf, byte_read );
 
-	else {
+	else if ( !dead( procs ) ) {
 		if ( byte_read == 0 && in.body_read )
 			CGI::writeTo( procs, in.body.str().c_str(), in.body_read );
 		else
@@ -158,7 +165,7 @@ Transaction::_recvBodyChunk( msg_buffer_t& in, const process_t& procs, const cha
 bool
 Transaction::_recvBodyChunkData( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
 	if ( !procs.pid ) in.body.write( buf, byte_read - SIZE_CRLF );
-	else CGI::writeTo( procs, buf, byte_read - SIZE_CRLF );
+	else if ( !dead( procs ) ) CGI::writeTo( procs, buf, byte_read - SIZE_CRLF );
 
 	in.incomplete	= FALSE;
 	in.next_read	= SIZE_BUFF;
@@ -198,7 +205,7 @@ Transaction::_recvBodyChunkPredata( msg_buffer_t& in, const process_t& procs, co
 		hex = in.chunk_size;
 		while ( hex && chunk.get( data ) ) {
 			if ( !procs.pid ) in.body.write( &data, 1 );
-			else CGI::writeTo( procs, &data, 1 );
+			else if ( !dead( procs ) ) CGI::writeTo( procs, &data, 1 );
 
 			hex--;
 		}
