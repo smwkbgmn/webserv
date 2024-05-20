@@ -38,8 +38,7 @@ void
 Response::_doMethod( const Request& rqst ) {
 	switch ( rqst.line().method ) {
 		case GET:
-			if ( isDir( rqst.info ) )
-				_index( rqst );
+			if ( isDir( rqst.info ) ) _index( rqst );
 			else {
 				HTTP::GET( rqst.line().uri, _body, _header.content_length );
 
@@ -90,9 +89,11 @@ Response::_doMethodValid( const Request& rqst ) {
 void
 Response::_addServerInfo( const connection_e& connection ) {	
 	_header.server		= software;
+	_header.date		= getNow();
 	_header.connection	= connection;
 
 	_header.list.push_back( OUT_SERVER );
+	_header.list.push_back( OUT_DATE );
 	_header.list.push_back( OUT_CONNECTION );
 }
 
@@ -153,16 +154,10 @@ Response::_indexAuto( const Request& rqst ) {
  
 path_t
 Response::_indexURIConceal( const Request& rqst, const path_t& index  ) {
-	path_t	concealed;
-
-	if ( rqst.location().path.length() > 1 )
-		concealed += rqst.location().path;
-	concealed += rqst.line().uri.substr( rqst.location().root.length() );
+	path_t	concealed = rqst.line().uri.substr( rqst.location().root.length() );
 
 	if ( !index.empty() )
 		concealed += "/" + index;
-
-	// std::clog << "_uriConceal: " << concealed << std::endl;
 
 	return concealed;
 }

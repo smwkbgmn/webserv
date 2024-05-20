@@ -119,23 +119,26 @@ void msg_buffer_s::reset() {
     msg.str("");
     msg.clear();
 
-    msg_done = false;
-    msg_read = 0;
+    msg_done 	= false;
+    msg_read 	= 0;
 
     body.str("");
     body.clear();
 
-    body_size = 0;
-    body_read = 0;
+    body_size 	= 0;
+    body_read 	= 0;
+
+	chunk		= FALSE;
+	incomplete	= 0;
 }
 
 process_s::process_s() { reset(); }
 
 void process_s::reset() {
-    pid = NONE;
-    stat = NONE;
-    fd[R] = NONE;
-    fd[W] = NONE;
+    pid		= NONE;
+    stat	= NONE;
+    fd[R]	= NONE;
+    fd[W]	= NONE;
 
     argv.clear();
     env.clear();

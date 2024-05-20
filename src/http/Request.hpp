@@ -41,6 +41,7 @@ class Request {
 
 		str_t						_token( isstream_t&, const char& );
 
+		void						_valid( void );
 		void						_redirectURI( void );
 		
 };

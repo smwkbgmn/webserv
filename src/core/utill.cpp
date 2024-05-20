@@ -15,6 +15,41 @@ token( isstream_t& iss, const char& delim ) {
 	return string;
 }
 
+/*
+	#define __DARWIN_STRUCT_STAT64 { \
+		dev_t		st_dev;                 [XSI] ID of device containing file
+		mode_t		st_mode;                [XSI] Mode of file (see below)
+		nlink_t		st_nlink;               [XSI] Number of hard links
+		__darwin_ino64_t st_ino;            [XSI] File serial number
+		uid_t		st_uid;                 [XSI] User ID of the file
+		gid_t		st_gid;                 [XSI] Group ID of the file
+		dev_t		st_rdev;                [XSI] Device ID
+		__DARWIN_STRUCT_STAT64_TIMES \
+		off_t		st_size;                [XSI] file size, in bytes
+		blkcnt_t	st_blocks;              [XSI] blocks allocated for file
+		blksize_t	st_blksize;             [XSI] optimal blocksize for I/O
+		__uint32_t	st_flags;               user defined flags for file
+		__uint32_t	st_gen;                 file generation number
+		__int32_t	st_lspare;              RESERVED: DO NOT USE!
+		__int64_t	st_qspare[2];           RESERVED: DO NOT USE!
+	}
+
+ 	[XSI] The following macros shall be provided to test whether a file is
+ 	of the specified type.  The value m supplied to the macros is the value
+ 	of st_mode from a stat structure.  The macro shall evaluate to a non-zero
+ 	value if the test is true; 0 if the test is false.
+
+	#define S_ISBLK(m)      (((m) & S_IFMT) == S_IFBLK)      block special 
+	#define S_ISCHR(m)      (((m) & S_IFMT) == S_IFCHR)      char special 
+	#define S_ISDIR(m)      (((m) & S_IFMT) == S_IFDIR)      directory 
+	#define S_ISFIFO(m)     (((m) & S_IFMT) == S_IFIFO)      fifo or socket 
+	#define S_ISREG(m)      (((m) & S_IFMT) == S_IFREG)      regular file 
+	#define S_ISLNK(m)      (((m) & S_IFMT) == S_IFLNK)      symbolic link 
+	#define S_ISSOCK(m)     (((m) & S_IFMT) == S_IFSOCK)     socket 
+	#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)
+	#define S_ISWHT(m)      (((m) & S_IFMT) == S_IFWHT)      OBSOLETE: whiteout 
+	#endif
+*/
 
 /* FILE INFO */
 bool
@@ -23,12 +58,6 @@ getInfo( const str_t& target, fstat_t& info ) {
 	// 	return stat( target.substr( 0, target.length() - 1 ).c_str(), &info ) != ERROR;
 
 	return stat( target.c_str(), &info ) != ERROR;
-
-	// std::clog << "getInfo try at: " << target << std::endl;
-	
-	// int result = stat( target.c_str(), &info );
-	// std::clog << "getInfo result: " << result << std::endl;
-	// return result != ERROR;	
 }
 
 bool
@@ -39,6 +68,18 @@ isExist( const str_t& target ) {
 }
 
 bool isDir( const fstat_t& info ) { return S_ISDIR( info.st_mode ); }
+
+/* TIME */
+ctime_t	getNow( void ) { return std::time( 0 ); }
+
+str_t
+timeToStr( const ctime_t& time ) { 
+	char time_str[75];
+
+	std::strftime( time_str, sizeof( time_str ), "%a, %d %b %Y %H:%M:%S GMT", std::gmtime( &time ) );
+	return str_t( time_str );
+}
+
 
 /* BUILT-IN SCRIPT */
 void
