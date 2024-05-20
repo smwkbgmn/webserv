@@ -29,8 +29,6 @@ Transaction::connection( void ) {
 Transaction::Transaction( Client& client ): _cl( client ), _rqst( client ) {
 	log( "HTTP\t: constructing Transaction" );
 
-	_validRequest();
-	
 	_setBodyEnd();
 	if ( _invokeCGI( _rqst, _cl.subprocs ) ) CGI::proceed( _rqst, _cl.subprocs );
 }
@@ -40,18 +38,6 @@ void
 Transaction::act( void ) {
 	_rspn.act( _rqst );
 	build( _rspn, _cl.out );
-}
-
-void
-Transaction::_validRequest( void ) {
-	if ( _rqst.header().transfer_encoding == TE_UNKNOWN )
-		throw errstat_t( 501, err_msg[TE_NOT_IMPLEMENTED] );
-
-	if ( !getInfo( _rqst.line().uri, _rqst.info ) ) {
-		if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
-		if ( errno == 20 ) throw errstat_t( 404, err_msg[SOURCE_NOT_DIR] );
-		else throw errstat_t( 500 );
-	}
 }
 
 void
@@ -98,15 +84,15 @@ Transaction::recvMsg( msg_buffer_t& in, const char* buf, ssize_t& byte_read ) {
 
 		if ( !found( pos_header_end ) ) in.msg_read += byte_read;
 		else {
-			in.msg_done			= TRUE;
+			in.msg_done = TRUE;
 
-			size_t body_begin	= pos_header_end - in.msg_read + 4;
+			size_t body_begin	= pos_header_end - in.msg_read + SIZE_MSG_END;
 			in.body_read		= byte_read - body_begin;
 
 			if ( in.body_read )
 				in.body.write( &buf[body_begin], in.body_read );
 
-			byte_read			= 0;
+			byte_read = 0;
 		}
 	}
 	return in.msg_done;
@@ -116,7 +102,10 @@ bool
 Transaction::recvBody( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
 	// Keep FALSE untill meet the content-length or tail of chunk (0CRLFCRLF)
 	if ( !in.chunk ) return _recvBodyPlain( in, procs, buf, byte_read );
-	else return _recvBodyChunk( in, procs, buf, byte_read );
+	else {
+		if ( byte_read == 0 && in.body_read ) return _recvBodyChunkPredata( in, procs ); 	
+		return _recvBodyChunk( in, procs, buf );
+	}
 }
 
 bool
@@ -143,88 +132,62 @@ Transaction::_recvBodyPlain( msg_buffer_t& in, const process_t& procs, const cha
 }
 
 bool
-Transaction::_recvBodyChunk( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
-	// In case of following read after chunk head
-	if ( in.incomplete ) return _recvBodyChunkData( in, procs, buf, byte_read );
+Transaction::_recvBodyChunk( msg_buffer_t& in, const process_t& procs, const char* buf ) {
+	isstream_t	iss( buf );
 
-	// In case of first body receiving right after receving message done
-	if ( !byte_read && in.body_read ) {
-		char buf_temp[in.body_read];
-
-		in.body.read( buf_temp, in.body_read );
-		in.body.str( "" );
-
-		return _recvBodyChunkPredata( in, procs, buf_temp );
-	}
-
-	// In case of getting the chunk head
-	else
-		return _recvBodyChunkHead( in, buf );
+	if ( in.incomplete && _recvBodyChunkIncomplete( in, procs, iss ) ) return TRUE;
+	return _recvBodyChunkData( in, procs, iss );
 }
 
 bool
-Transaction::_recvBodyChunkData( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
-	if ( !procs.pid ) in.body.write( buf, byte_read - SIZE_CRLF );
-	else if ( !dead( procs ) ) CGI::writeTo( procs, buf, byte_read - SIZE_CRLF );
-
-	in.incomplete	= FALSE;
-	in.next_read	= SIZE_BUFF;
-
-	return FALSE;
-}
-
-bool
-Transaction::_recvBodyChunkHead( msg_buffer_t& in, const char* buf ) {
-	sstream_t	chunk( buf );
-
-	chunk >> std::hex >> in.chunk_size >> std::ws;
+Transaction::_recvBodyChunkData( msg_buffer_t& in, const process_t& procs, isstream_t& iss ) {
+	char		data[SIZE_BUFF];
 	
-	if ( !in.chunk_size ) return TRUE;
+	ssize_t		frac = 1;
+	ssize_t		left;
 
-	in.next_read	= in.chunk_size;
-	in.incomplete	= TRUE;
-	
-	return FALSE;
+	while ( frac ) {
+		iss >> std::hex >> frac >> std::ws;
+
+		if ( iss.fail() || frac > SIZE_BUFF ) throw errstat_t( 400 );
+
+		left = iss.str().size();
+		if ( left < frac + SIZE_CRLF ) in.incomplete = frac + SIZE_CRLF - left;
+		if ( left < frac ) frac = left;
+
+		iss.read( data, frac );
+		if ( !procs.pid ) in.body.write( data, frac );
+		else if ( !dead( procs ) ) CGI::writeTo( procs, data, frac );
+		else return TRUE;
+
+		if ( in.incomplete ) break;
+
+		iss >> std::ws;
+	}
+	return frac == 0;
 }
 
 bool
-Transaction::_recvBodyChunkPredata( msg_buffer_t& in, const process_t& procs, const char* buf ) {
-	size_t		hex;
-	char		data;
-	sstream_t	chunk( buf );
+Transaction::_recvBodyChunkPredata( msg_buffer_t& in, const process_t& procs ) {
+	isstream_t	iss( in.body.str() );
 
-	while ( chunk.str().size() ) {
-		//  Get chunk head
-		chunk >> std::hex >> in.chunk_size >> std::ws;
+	in.body.str( "" );
+	in.body.clear();
 
-		// If chunk size is0, the message is end
-		if ( !in.chunk_size ) return TRUE;
-		if ( in.chunk_size > 0xf ) throw errstat_t( 400, err_msg[CHUNK_EXCEED_HEX] );
+	return _recvBodyChunkData( in, procs, iss );
+}
 
-		// Write body from chunk 
-		hex = in.chunk_size;
-		while ( hex && chunk.get( data ) ) {
-			if ( !procs.pid ) in.body.write( &data, 1 );
-			else if ( !dead( procs ) ) CGI::writeTo( procs, &data, 1 );
+bool
+Transaction::_recvBodyChunkIncomplete( msg_buffer_t& in, const process_t& procs, isstream_t& iss ) {
+	char data[SIZE_BUFF];
 
-			hex--;
-		}
+	iss.read( data, in.incomplete );
+	if ( !procs.pid ) in.body.write( data, in.incomplete );
+	else if ( !dead( procs ) ) CGI::writeTo( procs, data, in.incomplete );
+	else return TRUE;
 
-		// If unread byte is left, set the next_read
-		// as rest of byte and read it following read 
-		if ( hex ) {
-			in.incomplete	= TRUE;
-			in.next_read	= hex + SIZE_CRLF;
-			
-			return FALSE;
-		}
-
-		if ( chunk.peek() != CR ) throw errstat_t( 400, err_msg[CHUNK_EXCEED_HEX] );
-
-		// If writing body is done well, discard the CRLF and
-		// set the next_read with size of next chunk line head
-		chunk >> std::ws;
-	}
+	iss >> std::ws;
+	in.incomplete = 0;
 
 	return FALSE;
 }
@@ -268,7 +231,7 @@ void
 Transaction::_buildHeaderValue( const response_header_t& header, uint_t id, sstream_t& out_msg ) {
 	switch( id ) {
 		case OUT_SERVER			: out_msg << header.server; break;
-		case OUT_DATE			: break;
+		case OUT_DATE			: out_msg << timeToStr( header.date ); break;
 		case OUT_CONNECTION		: out_msg << str_connection[header.connection]; break;
 		case OUT_TRANSFER_ENC	: out_msg << HTTP::http.encoding.at( header.transfer_encoding ); break;
 		case OUT_CONTENT_LEN	: out_msg << header.content_length; break;
@@ -284,6 +247,7 @@ Transaction::_buildHeaderValue( const response_header_t& header, uint_t id, sstr
 			}
 			break;
 		}
+		case OUT_SET_COOKIE		: out_msg << header.cookie; break;
 	}
 	out_msg << CRLF;
 }

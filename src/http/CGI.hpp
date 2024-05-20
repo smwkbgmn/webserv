@@ -3,7 +3,6 @@
 
 # include <unistd.h>
 # include <sys/wait.h>
-# include <new>
 
 # include "HTTP.hpp"
 

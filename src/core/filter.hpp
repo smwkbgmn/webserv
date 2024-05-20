@@ -21,14 +21,17 @@
 	https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 */
 
-# define NONE		0
+# define NONE			0
 
-# define CR			'\r'
-# define LF			'\n'
-# define CRLF		"\r\n"
-# define SP			' '
+# define CR				'\r'
+# define LF				'\n'
+# define SP				' '
 
-# define MSG_END	"\r\n\r\n"
+# define CRLF			"\r\n"
+# define SIZE_CRLF		2
+
+# define MSG_END		"\r\n\r\n"
+# define SIZE_MSG_END	4
 
 /* STRINGS - for assigning vector values (because of the version
 limitation, not available to use the vector argument initialize list) */
@@ -197,9 +200,7 @@ typedef struct msg_buffer_s {
 	ssize_t				body_size;
 
 	bool				chunk;
-	size_t				chunk_size;
-	bool				incomplete;
-	size_t				next_read;
+	size_t				incomplete;
 
 }	msg_buffer_t;
 
@@ -240,7 +241,7 @@ typedef struct response_header_s {
 	response_header_s( void );
 
 	str_t				server;
-	// date_t				date;
+	ctime_t				date;
 	connection_e		connection;
 	transfer_enc_e		transfer_encoding;
 	size_t				content_length;

@@ -53,7 +53,6 @@ CGI::_detach( const Request& rqst, process_t& procs ) {
 
 	if ( !procs.pid ) {
 		_buildEnviron( rqst, procs );
-		// return _execve( procs );
 		_execve( procs );
 	}
 	return EXIT_SUCCESS;
@@ -68,7 +67,6 @@ CGI::writeTo( const process_t& procs, const char* in_body, const size_t& size ) 
 
 void
 CGI::wait( process_t& procs ) {
-	// Should be replaced the NONE with WNOHANG after restruct the flow
 	if ( waitpid( procs.pid, &procs.stat, WNOHANG ) == ERROR )
 		throwSysErr( "wait", 500 );
 }

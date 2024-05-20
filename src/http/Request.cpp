@@ -17,19 +17,22 @@ Request::Request( const Client& client ): _client( client ), _config( 0 ), _loca
 	log( "HTTP\t: constructing requeset" );
 
 	_parse( _client.buffer().msg );
-
-	if ( _header.transfer_encoding == TE_CHUNKED &&
-		distance( _header.list, IN_CONTENT_LEN ) != NOT_FOUND )
-		throw err_t( err_msg[TE_WITH_CONTENT_LEN] );
-	
-	if ( _line.method != UNKNOWN &&
-		lookup( location().allow, static_cast<uint_t>( _line.method ) ) == location().allow.end() ) 
-		_line.method = NOT_ALLOWED;
+	_valid();
 
 	_config		= HTTP::setConfig( _header.host, _client.server().config() );
 	_location	= HTTP::setLocation( _line.uri, config().locations );
 
 	_redirectURI();
+
+	if ( !getInfo( _line.uri, info ) ) {
+		if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
+		if ( errno == 20 ) throw errstat_t( 404, err_msg[SOURCE_NOT_DIR] );
+		else throw errstat_t( 500 );
+	}
+
+	if ( _line.method != UNKNOWN &&
+		distance( location().allow, static_cast<uint_t>( _line.method ) ) == NOT_FOUND ) 
+		_line.method = NOT_ALLOWED;
 }
 
 void
@@ -77,11 +80,6 @@ Request::_assignMethod( str_t token ) {
 
 void
 Request::_assignURI( str_t token ) { 
-	// _location = HTTP::setLocation( token, _client.server().config().locations );
-
-	// In config parsing, the location value should be conformed that only starting 
-	// with slash or dot be allowed  
-
 	_line.uri = token;
 
 	size_t pos_query = _line.uri.find( '?' );
@@ -153,9 +151,17 @@ Request::_token( isstream_t& iss, const char& delim ) {
 }
 
 void
-Request::_redirectURI( void ) {
-	// std::clog << "old uri: " << _line.uri << std::endl;
+Request::_valid( void ) {
+	if ( _header.transfer_encoding == TE_UNKNOWN )
+		throw errstat_t( 501, err_msg[TE_NOT_IMPLEMENTED] );
 
+	if ( _header.transfer_encoding == TE_CHUNKED &&
+		distance( _header.list, IN_CONTENT_LEN ) != NOT_FOUND )
+		throw err_t( err_msg[TE_WITH_CONTENT_LEN] );
+}
+
+void
+Request::_redirectURI( void ) {
 	// With root
 	if ( *location().path.begin() == '/' )
 		_line.uri = _line.uri.replace( 0, 0, location().root );
@@ -163,14 +169,6 @@ Request::_redirectURI( void ) {
 	// With extension
 	else 
 		_line.uri = location().root +  _line.uri.substr( _line.uri.rfind( '/' ) );
-
-	// std::clog << "new uri: " << _line.uri << std::endl;
-
-	// With alias 
-	// if ( location().alias.length() == 1 )
-	// 	_line.uri = token.replace( 0, 0, location().root );
-	// else
-	// 	_line.uri = token.replace( 0, location().alias.length(), location().root );
 }
 
 Request::~Request( void ) {};

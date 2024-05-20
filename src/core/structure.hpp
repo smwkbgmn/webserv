@@ -30,8 +30,10 @@ typedef str_t						type_t;
 
 /* POSIX */
 # include <sys/stat.h>
+# include <ctime>
 
 typedef struct stat					fstat_t;
+typedef std::time_t					ctime_t;
 
 /* I/O */
 # include <iostream>
@@ -86,3 +88,4 @@ typedef struct process_s {
 # include "filter.hpp"
 
 #endif
+
