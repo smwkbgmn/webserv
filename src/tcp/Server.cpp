@@ -40,10 +40,8 @@ struct kevent &Server::getEventList(int idx) {
 int Server::eventOccure() {
     int occure;
     occure = kevent(this->kq, NULL, 0, &EventList[0], 8, &timeout);
-    // if (occure == -1)
-    //     throw err_t("Failed to make event");
-	
-	
+    if (occure == -1)
+        throw err_t("Failed to make event");
     return occure;
 }
 
@@ -77,8 +75,11 @@ void Server::ServerPreset() {
 void Server::add_events(uintptr_t ident, int16_t filter, uint16_t flags,
                            uint32_t fflags, intptr_t data, void *udata) {
     struct kevent temp_event;
-    EV_SET(&temp_event, ident, filter, flags, fflags, data, udata);
-    kevent(kq, &temp_event, 1, NULL, 0, NULL);
+     EV_SET(&temp_event, ident, filter, flags, fflags, data, udata);
+    if (kevent(kq, &temp_event, 1, NULL, 0, NULL) == -1) {
+        std::cerr << "Failed to add event (ident: " << ident 
+                  << ", filter: " << filter << "): " << strerror(errno) << std::endl;
+    }
 }
 
 
@@ -93,21 +94,16 @@ void Server::handleNewConnection() {
     this->setNonBlocking(newClient->getSocket());
     ClientMap[client_fd] = newClient;
     add_events(client_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client_event);
-    add_events(client_fd, EVFILT_TIMER, EV_ONESHOT, 0, 30000, &client_event);
+    add_events(client_fd, EVFILT_TIMER,EV_ADD |EV_ONESHOT, 0, 30000,NULL);
 }
 
 void Server::handleClientEvent(struct kevent &occur_event) {
     ConnectClients::iterator it = ClientMap.find(occur_event.ident);
     if (it != ClientMap.end()) {
-        try {
             it->second->processClientRequest();
-        } catch (const err_t& e) {
-            std::clog<<"111111111111\n";
-            DisconnectClient(it->second->getSocket());
-        }
+       
     } 
 }
-
 void Server::handleCGIEvent(struct kevent &occur_event) {
     int client = *(static_cast<int*>(occur_event.udata));
     ConnectClients::iterator it = ClientMap.find(client);
@@ -124,27 +120,36 @@ void Server::handleCGIEvent(struct kevent &occur_event) {
 
 		cl.in.reset();
 		cl.subprocs.reset();
+        cl.setCgiExit(FALSE);
 
-
-        if (it->second->getCgiCheck())it->second->setCgiCheck(FALSE);
-        if (it->second->getCgiExit())it->second->setCgiExit(FALSE);
-        // add_events(it->second->get_process().pid, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
+        
+    	add_events(it->second->get_process().pid, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
+    
+        add_events(occur_event.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
         add_events(client, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
     }
 	
 	catch (const errstat_t& e) {
+        std::clog <<"if it's in"<<std::endl;
         std::cerr << "CGI error: " << e.what() << std::endl;
         
 		cl.out.reset();
-
+        close(cl.subprocs.fd[R]);
 		Transaction::buildError( e.code, cl );
 		
-		// write_event;
-		add_events(client, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+		cl.setCgiCheck(TRUE);
+        // write_event;
 
-        // DisconnectClient(client);
+    	add_events(it->second->get_process().pid, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
+        add_events(occur_event.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+        add_events(client, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
     } 
+    //     add_events(it->second->getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    // 	add_events(it->second->get_process().pid, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
+        // add_events(it->second->get_process().fd[R], EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
+    //     add_events(client, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 }
+
 
 
 void Server::handleReadEvent(struct kevent &occur_event) {
@@ -157,22 +162,31 @@ void Server::handleReadEvent(struct kevent &occur_event) {
         handleCGIEvent(occur_event);
 }
 
+
 void Server::handleWriteEvent(struct kevent& event) {
+
     ConnectClients::iterator it = ClientMap.find(event.ident);
     
     if (it != ClientMap.end()) {
         if (!it->second->sendData()) {
             DisconnectClient(it->second->getSocket());
-        } else {
-            std::ostringstream msg;
-            msg << "Data sent successfully to client: " << event.ident;
-            // log(msg.str());
+            return;
         }
-    } else {
-        std::ostringstream msg;
-        msg << "Client not found in map for write event: " << event.ident;
-    }
+
+          if (it->second->get_process().pid)
+        {
+            kill(it->second->get_process().pid,SIGTERM);
+            it->second->setCgiCheck(FALSE);
+            return;
+        }
+        if (it->second->action != NULL && it->second->action->connection() == 1) {
+            DisconnectClient(it->second->getSocket());
+            return;
+        }
+        add_events(it->second->getSocket(), EVFILT_TIMER, EV_ONESHOT, 0,30000, NULL); 
+    } 
 }
+
 
 
 void Server::handleProcessExitEvent(struct kevent& event) {
@@ -184,7 +198,7 @@ void Server::handleProcessExitEvent(struct kevent& event) {
         CGI::wait(procs);
         it->second->setCgiExit(TRUE);
         add_events(procs.fd[R], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, it->second->get_client_socket_ptr());
-        // add_events(procs.fd[R], EVFILT_TIMER, EV_ONESHOT, 0,30000, it->second->get_client_socket_ptr());
+        
     }
 }
 
@@ -197,24 +211,21 @@ void Server::handleTimerEvent(struct kevent& event) {
     it = ClientMap.find(event.ident);
     if (it != ClientMap.end()) {    
         std::clog <<"this is time eror\n";
-        std::clog<<"55555555555555555555555\n";
         DisconnectClient(event.ident); 
     }
     else 
     {
         it = ClientMap.find(check_client);
         if (it != ClientMap.end()) {
-            if (it->second->getCgiCheck()) {
+            if (it->second->get_process().pid) {
                 if (it->second->getCgiExit())
                 {
                     close(event.ident);
                     DisconnectClient(check_client);
-                    it->second->setCgiCheck(FALSE);
                     it->second->setCgiExit(FALSE);
                 }
                 else{ 
                     kill(event.ident, SIGTERM);
-                    it->second->setCgiCheck(FALSE);
                     it->second->setCgiExit(FALSE); 
                     std::ostringstream msg;
                     msg << "Process terminated due to timeout: PID=" << event.ident;
