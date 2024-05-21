@@ -245,9 +245,9 @@ CGI::_execve( const process_t& procs ) {
 	_assignVectorChar( argv_c, procs.argv );
 	_assignVectorChar( env_c, procs.env );
 
-	if ( _redirect( procs ) &&
+	if ( !_redirect( procs ) ||
 		execve( argv_c[0], argv_c.data(), env_c.data() ) == ERROR )
-	exit( EXIT_FAILURE );
+		exit( EXIT_FAILURE );
 }
 
 void

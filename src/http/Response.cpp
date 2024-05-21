@@ -25,13 +25,15 @@ Response::act( const Request& rqst ) {
 	log( "HTTP\t: constructing response" );
 
 	if ( rqst.location().rewrite.empty() ) {
+
 		_doMethodValid( rqst );
 		_doMethod( rqst );
 
 		if ( rqst.header().connection == CN_KEEP_ALIVE ) _addServerInfo( CN_KEEP_ALIVE );
 		else _addServerInfo( CN_CLOSE );
 	}
-	else _redirect( rqst.location().rewrite, 301 );
+	else _redirect( rqst.location().rewrite +
+		rqst.line().uri.substr( rqst.location().root.length() + 1 ), 301 );
 }
 
 void

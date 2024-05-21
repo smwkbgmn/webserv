@@ -29,6 +29,12 @@ Transaction::connection( void ) {
 Transaction::Transaction( Client& client ): _cl( client ), _rqst( client ) {
 	log( "HTTP\t: constructing Transaction" );
 
+	if ( !getInfo( _rqst.line().uri, _rqst.info ) && _rqst.location().rewrite.empty() ) {
+		if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
+		if ( errno == 20 ) throw errstat_t( 404, err_msg[SOURCE_NOT_DIR] );
+		else throw errstat_t( 500 );
+	}
+ 
 	_setBodyEnd();
 	if ( _invokeCGI( _rqst, _cl.subprocs ) ) CGI::proceed( _rqst, _cl.subprocs );
 }
@@ -48,7 +54,7 @@ Transaction::_setBodyEnd( void ) {
 
 bool
 Transaction::_invokeCGI( const Request& rqst, process_t& procs ) {
-	if ( !rqst.location().cgi || isDir( rqst.info ) ) return FALSE;
+	if ( !rqst.location().cgi || isDir( rqst.info ) || !isExist( rqst.line().uri ) ) return FALSE;
 
 	size_t	dot = rqst.line().uri.rfind( '.' );
 	str_t	ext;
@@ -85,7 +91,6 @@ Transaction::recvMsg( msg_buffer_t& in, const char* buf, ssize_t& byte_read ) {
 		if ( !found( pos_header_end ) ) in.msg_read += byte_read;
 		else {
 			in.msg_done = TRUE;
-			logging.fs << in.msg.str() << std::endl;
 
 			size_t body_begin	= pos_header_end - in.msg_read + SIZE_MSG_END;
 			in.body_read		= byte_read - body_begin;

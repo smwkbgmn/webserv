@@ -130,7 +130,8 @@ HTTP::setLocation( const path_t& uri, const vec_location_t& locations ) {
 
 			idx = 1;
 			for ( iter = locations.begin() + 1; iter != locations.end(); ++iter ) {
-				if ( ext == iter->path && iter->path.length() > precise ) result = idx;
+				if ( ext == iter->path && iter->path.length() > precise &&
+					uri.find( iter->rewrite ) != 0 ) result = idx;
 				++idx;
 			}
 		}

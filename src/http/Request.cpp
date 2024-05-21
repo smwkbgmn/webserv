@@ -6,6 +6,7 @@
 /* ACCESS */
 const Client&			Request::client( void ) const { return _client; }
 const config_t&			Request::config( void ) const { return client().server().config().at( _config ); }
+// const config_t&			Request::config( void ) const { return client().server().config(); }
 const location_t&		Request::location( void ) const { return config().locations.at( _location ); }
 
 const request_line_t&	Request::line( void ) const { return _line; }
@@ -14,7 +15,9 @@ const sstream_t&		Request::body( void ) const { return _client.buffer().body; }
 
 /* CONSTRUCT */
 Request::Request( const Client& client ): _client( client ), _config( 0 ), _location( 0 ) {
-	log( "HTTP\t: constructing requeset" );
+// Request::Request( const Client& client ): _client( client ), _location( 0 ) {
+	log( "HTTP\t: constructing requeset from client" );
+	std::clog << _client.getSocket() << std::endl;
 
 	_parse( _client.buffer().msg );
 	_valid();
@@ -22,15 +25,11 @@ Request::Request( const Client& client ): _client( client ), _config( 0 ), _loca
 	_config		= HTTP::setConfig( _header.host, _client.server().config() );
 	_location	= HTTP::setLocation( _line.uri, config().locations );
 
-	std::clog << "config: " << _config << ", " << _location << std::endl;
+	std::clog << "conf " << _config << ", " << _location << std::endl;
 
+	std::clog << "origin uri: " << _line.uri << std::endl;
 	_redirectURI();
-
-	if ( !getInfo( _line.uri, info ) ) {
-		if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
-		if ( errno == 20 ) throw errstat_t( 404, err_msg[SOURCE_NOT_DIR] );
-		else throw errstat_t( 500 );
-	}
+	std::clog << "redirected uri: " << _line.uri << std::endl;
 
 	if ( _line.method != UNKNOWN &&
 		distance( location().allow, static_cast<uint_t>( _line.method ) ) == NOT_FOUND ) 
@@ -96,11 +95,11 @@ Request::_assignVersion( str_t token ) {
 	isstream_t iss( token );
 
 	if ( _token( iss, '/' ) != HTTP::http.signature )
-		throw err_t( err_msg[INVALID_REQUEST_LINE] );
+		throw errstat_t( 400, err_msg[INVALID_REQUEST_LINE] );
 	
 	vec_str_iter_t iter = lookup( HTTP::http.version, _token( iss, NONE ) );
 
-	if ( iter == HTTP::http.version.end() ) throw err_t( err_msg[INVALID_REQUEST_LINE] );
+	if ( iter == HTTP::http.version.end() ) throw errstat_t( 400, err_msg[INVALID_REQUEST_LINE] );
 	if ( *iter != HTTP::http.version.at( VERSION_11 ) ) throw errstat_t( 505, err_msg[VERSION_NOT_SUPPORTED] );
 
 	_line.version = static_cast<version_e>( std::distance( HTTP::http.version.begin(), iter ) );
@@ -148,7 +147,7 @@ Request::_token( isstream_t& iss, const char& delim ) {
 
 	if ( ( delim && !std::getline( iss, token, delim ) ) ||
 		( !delim && !std::getline( iss, token ) ) )
-		throw err_t( "_token: " + err_msg[INVALID_REQUEST_FIELD] );
+		throw errstat_t( 400, "_token: " + err_msg[INVALID_REQUEST_FIELD] );
 
 	return token;
 }
@@ -160,7 +159,7 @@ Request::_valid( void ) {
 
 	if ( _header.transfer_encoding == TE_CHUNKED &&
 		distance( _header.list, IN_CONTENT_LEN ) != NOT_FOUND )
-		throw err_t( err_msg[TE_WITH_CONTENT_LEN] );
+		throw errstat_t( 400, err_msg[TE_WITH_CONTENT_LEN] );
 }
 
 void
