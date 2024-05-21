@@ -29,6 +29,12 @@ Transaction::connection( void ) {
 Transaction::Transaction( Client& client ): _cl( client ), _rqst( client ) {
 	log( "HTTP\t: constructing Transaction" );
 
+	if ( !getInfo( _rqst.line().uri, _rqst.info ) && _rqst.location().rewrite.empty() ) {
+		if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
+		if ( errno == 20 ) throw errstat_t( 404, err_msg[SOURCE_NOT_DIR] );
+		else throw errstat_t( 500 );
+	}
+ 
 	_setBodyEnd();
 	if ( _invokeCGI( _rqst, _cl.subprocs ) ) CGI::proceed( _rqst, _cl.subprocs );
 }
@@ -48,7 +54,7 @@ Transaction::_setBodyEnd( void ) {
 
 bool
 Transaction::_invokeCGI( const Request& rqst, process_t& procs ) {
-	if ( !rqst.location().cgi || isDir( rqst.info ) ) return FALSE;
+	if ( !rqst.location().cgi || isDir( rqst.info ) || !isExist( rqst.line().uri ) ) return FALSE;
 
 	size_t	dot = rqst.line().uri.rfind( '.' );
 	str_t	ext;
@@ -85,7 +91,6 @@ Transaction::recvMsg( msg_buffer_t& in, const char* buf, ssize_t& byte_read ) {
 		if ( !found( pos_header_end ) ) in.msg_read += byte_read;
 		else {
 			in.msg_done = TRUE;
-			logging.fs << in.msg.str() << std::endl;
 
 			size_t body_begin	= pos_header_end - in.msg_read + SIZE_MSG_END;
 			in.body_read		= byte_read - body_begin;
@@ -123,13 +128,16 @@ Transaction::_recvBodyPlain( msg_buffer_t& in, const process_t& procs, const cha
 			CGI::writeTo( procs, buf, byte_read );
 	}
 
+	else return TRUE;
+
 	if ( in.body_read ) {
 		osstream_t oss;
-		oss << "TCP\t: body read by " << byte_read << " so far: " << in.body_read << " / " << in.body_size << std::endl;
+
+		oss << "TCP\t: body read by " << byte_read <<
+		" so far: " << in.body_read << " / " << in.body_size << std::endl;
 		log( oss.str() );
 	}
 
-	std::clog << "recvBody checking " << in.body_size << ", " << in.body_read << std::endl;
 	return in.body_size == in.body_read;
 }
 
@@ -153,7 +161,7 @@ Transaction::_recvBodyChunkData( msg_buffer_t& in, const process_t& procs, isstr
 
 		if ( iss.fail() || frac > SIZE_BUFF ) throw errstat_t( 400 );
 
-		left = iss.str().size();
+		left = streamsize( iss );
 		if ( left < frac + SIZE_CRLF ) in.incomplete = frac + SIZE_CRLF - left;
 		if ( left < frac ) frac = left;
 

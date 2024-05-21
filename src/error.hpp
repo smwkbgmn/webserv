@@ -20,6 +20,7 @@ enum err_msg_e {
 
 	INVALID_REQUEST_LINE,
 	INVALID_REQUEST_FIELD,
+	VERSION_NOT_SUPPORTED,
 	CHUNK_EXCEED_HEX,
 	
 	TE_WITH_CONTENT_LEN,
@@ -40,6 +41,7 @@ const str_t	err_msg[] = {
 	
 	"invalid request line",
 	"invalid request field",
+	"version not supported",
 	"a cnunked data exceeding hexsize",
 
 	"the transfer_encoding and content_length can not be taken at the same time",

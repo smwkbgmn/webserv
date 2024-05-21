@@ -28,18 +28,18 @@ typedef std::vector<int> socket_list_t;
 
 class ASocket {
 public:
-    sockaddr_t addr;
-    socket_t server_socket;
+    // sockaddr_t addr;
+    // socket_t server_socket;
     socket_list_t server_list;
 
     ASocket();
     virtual ~ASocket();
 
-    void setAddr();
+    void setAddr(int, sockaddr_t &);
     void setNonBlocking(int);
-    void socketOpen();
-    void preSet();
-    void openSocket();
+    void socketOpen(int&);
+    void preSet(int &,sockaddr_t&);
+    void openSocket(int,int&);
 };
 
 #endif

@@ -80,9 +80,9 @@ void handleRoot(std::istringstream& iss, location_t& currentLocation) {
     if (iss.peek() != EOF) {
         throw std::runtime_error("Error in root directive");
     }
-    if (!rootValue.empty() && rootValue[rootValue.size() - 1] == '/') {
-        throw std::runtime_error("Error: Can't finish with '/'");
-    }
+    // if (!rootValue.empty() && rootValue[rootValue.size() - 1] == '/') {
+    //     throw std::runtime_error("Error: Can't finish with '/'");
+    // }
     currentLocation.root = rootValue;
 }
 
@@ -136,21 +136,21 @@ void handleCGI(std::istringstream& iss, location_t& currentLocation) {
     }
 }
 
-void handleUpload(std::istringstream& iss, location_t& currentLocation) {
-    std::string value;
-    iss >> value;
-    if (value == "on") {
-        currentLocation.upload = true;
-    } else if (value == "off") {
-        currentLocation.upload = false;
-    } else {
-        throw std::runtime_error("Invalid value for Upload: " + value);
-    }
-}
+// void handleUpload(std::istringstream& iss, location_t& currentLocation) {
+//     std::string value;
+//     iss >> value;
+//     if (value == "on") {
+//         currentLocation.upload = true;
+//     } else if (value == "off") {
+//         currentLocation.upload = false;
+//     } else {
+//         throw std::runtime_error("Invalid value for Upload: " + value);
+//     }
+// }
 
 void handleUploadPath(std::istringstream& iss, location_t& currentLocation) {
-    if (!(iss >> currentLocation.upload_path) || iss.peek() != EOF) {
-        throw std::runtime_error("Error: Invalid upload_path format");
+    if (!(iss >> currentLocation.upload) || iss.peek() != EOF) {
+        throw std::runtime_error("Error: Invalid upload format");
     }
 }
 
@@ -241,9 +241,9 @@ void parseConfig(std::vector<config_t>& serv, const std::string& filename) {
                 handleRewrite(iss, currentLocation);
             } else if (key == "cgi") {
                 handleCGI(iss, currentLocation);
+            // } else if (key == "upload") {
+            //     handleUpload(iss, currentLocation);
             } else if (key == "upload") {
-                handleUpload(iss, currentLocation);
-            } else if (key == "upload_path") {
                 handleUploadPath(iss, currentLocation);
             } else {
                 throw std::runtime_error("Unknown directive in location block: " + key);

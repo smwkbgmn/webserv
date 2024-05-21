@@ -51,6 +51,7 @@ void Client::processClientRequest() {
 							action->act();
 
 						in.reset();
+						// srv.add_events(client_socket, EVFILT_READ, EV_DELETE | EV_ONESHOT, 0, 0, NULL);
 						srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 					}
 					else close( subprocs.fd[W] );
@@ -67,6 +68,7 @@ void Client::processClientRequest() {
 			Transaction::buildError( err.code, *this );
 			setCgiCheck(TRUE);
 			action = NULL;
+			srv.add_events(client_socket, EVFILT_READ, EV_DELETE | EV_ONESHOT, 0, 0, NULL);
 			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 		}
 
@@ -78,13 +80,14 @@ void Client::processClientRequest() {
 			Transaction::buildError( 400, *this );
 			action = NULL;
 			setCgiCheck(TRUE);
+			srv.add_events(client_socket, EVFILT_READ, EV_DELETE | EV_ONESHOT, 0, 0, NULL);
 			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 		}
     }
 }
 
 bool Client::sendData() {
-   size_t length = out.msg.str().size(); 
+	size_t length = streamsize( out.msg );
 
 	log( "TCP\t: sending\n" );
 	logging.fs << out.msg.str() << "\n" << std::endl;
@@ -94,8 +97,8 @@ bool Client::sendData() {
 
 	//////////////////////////////////////////////////////////////////////
 
-	if ( out.body.str().size() ) {
-		length = out.body.str().size(); 
+	if ( streamsize( out.body ) ) {
+		length = streamsize( out.body );
 
 		logging.fs << out.body.str() << "\n" << std::endl;
 

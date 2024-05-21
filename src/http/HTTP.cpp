@@ -69,8 +69,7 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 		target.push_back(source[idx]);
 }
 
-/* METHOD - getLocationConf: get index for location_t matching with request URI */
-
+/* METHOD - setConfig: get index for config_t matching with server name and port */
 size_t
 HTTP::setConfig( const str_t& host, const vec_config_t& configs ) {
 	if ( configs.size() > 1 && !host.empty() ) {
@@ -113,6 +112,7 @@ HTTP::_setConfigMatchName( const str_t& host, const vec_str_t& names, const uint
 	3. file: other else, means without slash or dot neither ( = / )
 */
 
+/* METHOD - setLocation: get index for location_t matching with location path */
 size_t
 HTTP::setLocation( const path_t& uri, const vec_location_t& locations ) {
 	if ( locations.size() > 1 ) {
@@ -120,6 +120,9 @@ HTTP::setLocation( const path_t& uri, const vec_location_t& locations ) {
 
 		vec_location_t::const_iterator	iter;
 		size_t							idx;
+
+		size_t							precise	= 0;
+		ssize_t							result	= NOT_FOUND;
 		
 		// Search for extension config 
 		if ( found( dot ) ) {
@@ -127,72 +130,43 @@ HTTP::setLocation( const path_t& uri, const vec_location_t& locations ) {
 
 			idx = 1;
 			for ( iter = locations.begin() + 1; iter != locations.end(); ++iter ) {
-				if ( ext == iter->path ) return idx;
+				if ( ext == iter->path && iter->path.length() > precise &&
+					uri.find( iter->rewrite ) != 0 ) result = idx;
 				++idx;
 			}
 		}
+		if ( result != NOT_FOUND ) return result;
 
 		// Search for location config
 		idx = 1;
 		for ( iter = locations.begin() + 1; iter != locations.end(); ++iter ) {
-			if ( uri.find( iter->path ) == 0 ) return idx;
+			if ( uri.find( iter->path ) == 0  && iter->path.length() > precise ) result = idx;
 			++idx;
 		}
+		if ( result != NOT_FOUND ) return result;
 	}
+	
+	// Set default
 	return 0;
 }
 
 /* STURCT */
 config_s::config_s( void ) {
-	// if no server_names are given, set the default name while conf parsing
-	names.push_back( "webserv.com" );
+	names.push_back( "localhost" );
+	listen			= 8080;
+	root			= "html";
 
-	listen			= 8080; // mandatory
-	root			= "html"; // mandatory
-
-	client_max_body	= 10240; // 10M
-
-	/*
-		The root configuration (i.e. location for "/") could be set or not and
-		either case the location conf for the root MUST exist. It works as the 
-		default.
-	*/
-	locations.push_back( location_s( *this ) );
-	
-	// add location for cgi-bin 
-	location_s cgi_bin( *this );
-
-	cgi_bin.path = "/cgi-bin";
-
-	// when parsing config, if the root for location has no block,
-	// inherit the server config root
-	cgi_bin.root = "html";
-	cgi_bin.cgi	= TRUE;
-
-	cgi_bin.allow.push_back( GET );
-	cgi_bin.allow.push_back( POST );
-	cgi_bin.allow.push_back( DELETE );
-
-	cgi_bin.index.push_back( "index.txt" );
-	cgi_bin.index_auto = TRUE;
-	// cgi_bin.index_auto = FALSE;
-
-	cgi_bin.upload_path = "html/new_upload";
-
-	locations.push_back( cgi_bin );
+	client_max_body	= 10240;
 }
 
 location_s::location_s( const config_s& serverconf ) {
-	path			= "/"; // mandatory
-	root			= serverconf.root; // mandatory
+	path			= "/";
+	root			= serverconf.root;
 
-	// allow > may should be removed later ( since using the conf file )
 	allow.push_back( GET );
-	allow.push_back( POST );
-	allow.push_back( DELETE );	
 
-	// index_auto		= FALSE;
-	index_auto		= TRUE;
+	cgi				= FALSE;
+	upload			= "html/upload";
 
-	index.push_back( "index.html" );
+	index_auto		= FALSE;
 }

@@ -25,13 +25,15 @@ Response::act( const Request& rqst ) {
 	log( "HTTP\t: constructing response" );
 
 	if ( rqst.location().rewrite.empty() ) {
+
 		_doMethodValid( rqst );
 		_doMethod( rqst );
 
 		if ( rqst.header().connection == CN_KEEP_ALIVE ) _addServerInfo( CN_KEEP_ALIVE );
 		else _addServerInfo( CN_CLOSE );
 	}
-	else _redirect( rqst.location().rewrite, 301 );
+	else _redirect( rqst.location().rewrite +
+		rqst.line().uri.substr( rqst.location().root.length() + 1 ), 301 );
 }
 
 void
@@ -154,10 +156,14 @@ Response::_indexAuto( const Request& rqst ) {
  
 path_t
 Response::_indexURIConceal( const Request& rqst, const path_t& index  ) {
-	path_t	concealed = rqst.line().uri.substr( rqst.location().root.length() );
+	std::clog << "origin URI: " << rqst.line().uri << std::endl;
+
+	path_t	concealed = rqst.location().path + rqst.line().uri.substr( rqst.location().root.length() );
 
 	if ( !index.empty() )
 		concealed += "/" + index;
+
+	std::clog << "concealed URI: " << concealed << std::endl;
 
 	return concealed;
 }
@@ -166,7 +172,7 @@ void
 Response::_indexAutoBuild( const Request& rqst ) {
 	autoindexScript( rqst.line().uri, _body );
 	_header.content_type	= HTTP::key.mime.at( "html" );
-	_header.content_length	= _body.str().size();
+	_header.content_length	= streamsize( _body );
 	_header.list.push_back( OUT_CONTENT_LEN );
 	_header.list.push_back( OUT_CONTENT_TYPE );
 }
@@ -189,7 +195,7 @@ Response::_errpage( const uint_t& status, const config_t& config ) {
 	if ( status < 500 ) page = config.file_40x;
 	else page = config.file_50x;
 
-	if ( !page.empty() && isExist( page ) ) HTTP::GET( page, _body, _header.content_length );
+	if ( page.length() && isExist( page ) ) HTTP::GET( page, _body, _header.content_length );
 	else _errpageBuild( status );
 
 	_header.content_type = HTTP::key.mime.at( "html" );
@@ -201,7 +207,7 @@ Response::_errpage( const uint_t& status, const config_t& config ) {
 void
 Response::_errpageBuild( const uint_t& status ) {
 	errpageScript( _body, status, HTTP::key.status.at( status ) );
-	_header.content_length = _body.str().size();
+	_header.content_length = streamsize( _body );
 }
 
 /* STRUCT */
