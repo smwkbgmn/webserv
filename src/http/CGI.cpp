@@ -85,7 +85,7 @@ CGI::readFrom( const process_t& procs, sstream_t& out_body) {
 void
 CGI::build( msg_buffer_t& out ) {
 	_buildLine( out );
-	if ( out.body.str().size() ) _buildHeader( out );
+	if ( streamsize( out.body ) ) _buildHeader( out );
 	if ( out.chunk ) { out.body.seekg( 0 ); _buildChunk( out ); }
 }
 
@@ -94,7 +94,7 @@ CGI::_buildLine( msg_buffer_t& out ) {
 	out.msg << 
 	HTTP::http.signature << '/' << HTTP::http.version.at( VERSION_11 ) << SP;
 
-	if ( !out.body.str().size() ) out.msg << "204" << SP << HTTP::key.status.at( 204 ) << CRLF;
+	if ( !streamsize( out.body ) ) out.msg << "204" << SP << HTTP::key.status.at( 204 ) << CRLF;
 	else out.msg << "200" << SP << HTTP::key.status.at( 200 );
 	
 	out.msg << CRLF;
@@ -124,6 +124,11 @@ CGI::_buildHeaderServer( msg_buffer_t& out ) {
 	out.msg << 
 	HTTP::key.header_out.at( OUT_SERVER ) << ':' << SP <<
 	software << CRLF;
+
+	// Add date
+	out.msg << 
+	HTTP::key.header_out.at( OUT_DATE ) << ':' << SP <<
+	timeToStr( getNow() ) << CRLF;
 
 	// Add connection 
 	out.msg << 
@@ -158,7 +163,7 @@ CGI::_buildChunk( msg_buffer_t& out ) {
 	sstream_t	chunked;
 
 	char		data[15];
-	size_t		size = out.body.str().size();
+	size_t		size = streamsize( out.body );
 	size_t		frac;
 
 	while ( size > 0 ) {
@@ -213,7 +218,7 @@ CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
 			case PATH_INFO			: oss << rqst.line().uri.substr( rqst.location().root.length() + 1 ); break;
 			case PATH_TRANSLATED	: oss << rqst.line().uri; break;
 			case QUERY_STRING		: oss << rqst.line().query; break;
-			case UPLOAD_DIR			: oss << rqst.location().upload_path; break;
+			case UPLOAD_DIR			: oss << rqst.location().upload; break;
 			case HTTP_COOKIE		: oss << rqst.header().cookie; break;
 		}
 		procs.env.push_back( oss.str() );

@@ -22,6 +22,8 @@ Request::Request( const Client& client ): _client( client ), _config( 0 ), _loca
 	_config		= HTTP::setConfig( _header.host, _client.server().config() );
 	_location	= HTTP::setLocation( _line.uri, config().locations );
 
+	std::clog << "config: " << _config << ", " << _location << std::endl;
+
 	_redirectURI();
 
 	if ( !getInfo( _line.uri, info ) ) {
@@ -94,13 +96,14 @@ Request::_assignVersion( str_t token ) {
 	isstream_t iss( token );
 
 	if ( _token( iss, '/' ) != HTTP::http.signature )
-		throw err_t( "_assignVersion: " + err_msg[INVALID_REQUEST_LINE] );
+		throw err_t( err_msg[INVALID_REQUEST_LINE] );
 	
 	vec_str_iter_t iter = lookup( HTTP::http.version, _token( iss, NONE ) );
-	if ( iter == HTTP::http.version.end() )
-		_line.version = NOT_SUPPORTED;
-	else
-		_line.version = static_cast<version_e>( std::distance( HTTP::http.version.begin(), iter ) );
+
+	if ( iter == HTTP::http.version.end() ) throw err_t( err_msg[INVALID_REQUEST_LINE] );
+	if ( *iter != HTTP::http.version.at( VERSION_11 ) ) throw errstat_t( 505, err_msg[VERSION_NOT_SUPPORTED] );
+
+	_line.version = static_cast<version_e>( std::distance( HTTP::http.version.begin(), iter ) );
 }
 
 void
@@ -162,10 +165,10 @@ Request::_valid( void ) {
 
 void
 Request::_redirectURI( void ) {
-	// With root
+	// With dir and file
 	if ( *location().path.begin() == '/' )
-		_line.uri = _line.uri.replace( 0, 0, location().root );
-
+		_line.uri.replace( 0, location().path.length(), location().root );
+	
 	// With extension
 	else 
 		_line.uri = location().root +  _line.uri.substr( _line.uri.rfind( '/' ) );

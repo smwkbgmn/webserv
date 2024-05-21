@@ -159,8 +159,7 @@ typedef struct location_s {
 	vec_uint_t			allow;
 	
 	bool				cgi;
-	bool				upload;
-	path_t				upload_path;
+	path_t				upload;
 
 	vec_name_t			index;
 	bool 				index_auto;

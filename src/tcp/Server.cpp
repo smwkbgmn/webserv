@@ -94,7 +94,7 @@ void Server::handleNewConnection() {
     this->setNonBlocking(newClient->getSocket());
     ClientMap[client_fd] = newClient;
     add_events(client_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client_event);
-    add_events(client_fd, EVFILT_TIMER,EV_ADD |EV_ONESHOT, 0, 30000,NULL);
+    add_events(client_fd, EVFILT_TIMER,EV_ADD |EV_ONESHOT, 0, 500000,NULL);
 }
 
 void Server::handleClientEvent(struct kevent &occur_event) {
@@ -183,7 +183,7 @@ void Server::handleWriteEvent(struct kevent& event) {
             DisconnectClient(it->second->getSocket());
             return;
         }
-        add_events(it->second->getSocket(), EVFILT_TIMER, EV_ONESHOT, 0,30000, NULL); 
+        add_events(it->second->getSocket(), EVFILT_TIMER, EV_ONESHOT, 0,500000, NULL); 
     } 
 }
 

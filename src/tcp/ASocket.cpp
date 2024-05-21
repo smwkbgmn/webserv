@@ -47,8 +47,11 @@ void ASocket::openSocket() {
 
     ////////// FOR TEST //////////
 
+	int optval = 1;
+    setsockopt(this->server_socket, SOL_SOCKET, SO_REUSEADDR, &optval,
+               sizeof(optval));
 
     preSet();
     setNonBlocking(server_socket);
-    // log("TCP\t: Listening on port 8080\n");
+    log("TCP\t: Listening on port 8080\n");
 }

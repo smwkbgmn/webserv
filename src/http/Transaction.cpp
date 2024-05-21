@@ -123,13 +123,16 @@ Transaction::_recvBodyPlain( msg_buffer_t& in, const process_t& procs, const cha
 			CGI::writeTo( procs, buf, byte_read );
 	}
 
+	else return TRUE;
+
 	if ( in.body_read ) {
 		osstream_t oss;
-		oss << "TCP\t: body read by " << byte_read << " so far: " << in.body_read << " / " << in.body_size << std::endl;
+
+		oss << "TCP\t: body read by " << byte_read <<
+		" so far: " << in.body_read << " / " << in.body_size << std::endl;
 		log( oss.str() );
 	}
 
-	std::clog << "recvBody checking " << in.body_size << ", " << in.body_read << std::endl;
 	return in.body_size == in.body_read;
 }
 
@@ -153,7 +156,7 @@ Transaction::_recvBodyChunkData( msg_buffer_t& in, const process_t& procs, isstr
 
 		if ( iss.fail() || frac > SIZE_BUFF ) throw errstat_t( 400 );
 
-		left = iss.str().size();
+		left = streamsize( iss );
 		if ( left < frac + SIZE_CRLF ) in.incomplete = frac + SIZE_CRLF - left;
 		if ( left < frac ) frac = left;
 

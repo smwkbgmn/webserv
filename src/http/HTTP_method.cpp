@@ -6,7 +6,7 @@ HTTP::GET( const path_t& uri, sstream_t& body, size_t& size ) {
 		File target( uri, READ_BINARY );
 		
 		body << target.fs.rdbuf();
-		size = body.str().size();
+		size = streamsize( body );
 	}
 
 	catch ( exception_t& exc ) {

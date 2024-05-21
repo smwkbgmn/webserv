@@ -84,7 +84,7 @@ void Client::processClientRequest() {
 }
 
 bool Client::sendData() {
-   size_t length = out.msg.str().size(); 
+	size_t length = streamsize( out.msg );
 
 	log( "TCP\t: sending\n" );
 	logging.fs << out.msg.str() << "\n" << std::endl;
@@ -94,8 +94,8 @@ bool Client::sendData() {
 
 	//////////////////////////////////////////////////////////////////////
 
-	if ( out.body.str().size() ) {
-		length = out.body.str().size(); 
+	if ( streamsize( out.body ) ) {
+		length = streamsize( out.body );
 
 		logging.fs << out.body.str() << "\n" << std::endl;
 
