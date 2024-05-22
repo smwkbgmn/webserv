@@ -33,7 +33,7 @@ Response::act( const Request& rqst ) {
 		else _addServerInfo( CN_CLOSE );
 	}
 	else _redirect( rqst.location().rewrite +
-		rqst.line().uri.substr( rqst.location().root.length() + 1 ), 301 );
+		rqst.line().uri.substr( rqst.location().root.length() ), 302 );
 }
 
 void
@@ -156,14 +156,10 @@ Response::_indexAuto( const Request& rqst ) {
  
 path_t
 Response::_indexURIConceal( const Request& rqst, const path_t& index  ) {
-	std::clog << "origin URI: " << rqst.line().uri << std::endl;
-
 	path_t	concealed = rqst.location().path + rqst.line().uri.substr( rqst.location().root.length() );
 
 	if ( !index.empty() )
 		concealed += "/" + index;
-
-	std::clog << "concealed URI: " << concealed << std::endl;
 
 	return concealed;
 }

@@ -15,21 +15,19 @@ const sstream_t&		Request::body( void ) const { return _client.buffer().body; }
 
 /* CONSTRUCT */
 Request::Request( const Client& client ): _client( client ), _config( 0 ), _location( 0 ) {
-// Request::Request( const Client& client ): _client( client ), _location( 0 ) {
-	log( "HTTP\t: constructing requeset from client" );
-	std::clog << _client.getSocket() << std::endl;
+	log( "HTTP\t: constructing requeset" );
 
 	_parse( _client.buffer().msg );
 	_valid();
 
 	_config		= HTTP::setConfig( _header.host, _client.server().config() );
 	_location	= HTTP::setLocation( _line.uri, config().locations );
+	// std::clog << "conf " << _config << ", " << _location << std::endl;
 
-	std::clog << "conf " << _config << ", " << _location << std::endl;
 
-	std::clog << "origin uri: " << _line.uri << std::endl;
+	// std::clog << "origin uri: " << _line.uri << std::endl;
 	_redirectURI();
-	std::clog << "redirected uri: " << _line.uri << std::endl;
+	// std::clog << "redirected uri: " << _line.uri << std::endl;
 
 	if ( _line.method != UNKNOWN &&
 		distance( location().allow, static_cast<uint_t>( _line.method ) ) == NOT_FOUND ) 
@@ -81,6 +79,8 @@ Request::_assignMethod( str_t token ) {
 
 void
 Request::_assignURI( str_t token ) { 
+	if ( token.at( 0 ) != '/' ) throw errstat_t( 400, err_msg[INVALID_REQUEST_LINE] );
+
 	_line.uri = token;
 
 	size_t pos_query = _line.uri.find( '?' );
