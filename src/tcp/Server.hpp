@@ -11,6 +11,7 @@ class Client;
 typedef std::map<int, Client*> ConnectClients;
 typedef int kque;
 typedef std::vector<struct kevent> eventQueue;
+typedef std::vector<port_t> vec_port_t;
 
 
 class Server : public ASocket {
@@ -21,8 +22,8 @@ private:
     ConnectClients ClientMap;
     char client_event[8];
     char server_event[8];
+	vec_port_t	port_tried;
 
-	// config_t	confs;
 	const vec_config_t& confs;
     
 public:

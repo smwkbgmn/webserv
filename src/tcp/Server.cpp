@@ -99,48 +99,6 @@ void Server::handleClientEvent(struct kevent &occur_event) {
 
 }
 
-void Server::handleCGIEvent(struct kevent &occur_event) {
-    int client = *(static_cast<int*>(occur_event.udata));
-    ConnectClients::iterator it = ClientMap.find(client);
-	Client& cl = *it->second;
-
-    try {
-
-        process_t& procs = it->second->get_process();
-        CGI::wait(procs);
-        it->second->setCgiExit(TRUE);
-        if (WEXITSTATUS(cl.subprocs.stat) != EXIT_SUCCESS) {
-            throw errstat_t(500, "the CGI failed to exit as SUCCESS");
-        }
-
-		CGI::readFrom( cl.subprocs, cl.out.body );
-		CGI::build( cl.out );
-
-		cl.in.reset();
-		cl.subprocs.reset();
-        cl.setCgiExit(FALSE);
-
-        
-    	add_events(it->second->get_process().pid, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
-        add_events(occur_event.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-        add_events(client, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
-    }
-	
-	catch (const errstat_t& e) {
-		log( "TCP\t: " + str_t( e.what() ) );
-        
-		cl.out.reset();
-        close(cl.subprocs.fd[R]);
-		Transaction::buildError( e.code, cl );
-		
-		cl.setCgiCheck(TRUE);
-        // write_event;
-
-    	add_events(it->second->get_process().pid, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
-        add_events(occur_event.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-        add_events(client, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
-    } 
-}
 
 
 
@@ -172,9 +130,8 @@ void Server::handleWriteEvent(struct kevent& event) {
             DisconnectClient(it->second->getSocket());
             return;
         }
-        add_events(it->second->getSocket(), EVFILT_TIMER, EV_ONESHOT, 0,30000, NULL); 
-    } 
-
+    	} 
+		add_events(event.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
 }
 
 
@@ -201,9 +158,10 @@ void Server::handleProcessExitEvent(struct kevent& event) {
 		cl.subprocs.reset();
         cl.setCgiExit(FALSE);
 
-        
-    	add_events(it->second->get_process().pid, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
+        std::clog << event.ident<<std::endl;
+    	add_events(event.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
         add_events(event.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+		add_events(client ,EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
         add_events(client, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
     }
 	
@@ -234,13 +192,15 @@ void Server::handleTimerEvent(struct kevent& event) {
     it = ClientMap.find(event.ident);
     try{
     if (it != ClientMap.end()) {
-        add_events(event.ident,EVFILT_TIMER,EV_DELETE,0,0,NULL);
-        throw errstat_t(503,"Time out request");
+		// add_events(event.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+        // add_events(event.ident,EVFILT_TIMER,EV_DELETE,0,0,NULL);
+        // throw errstat_t(503,"Time out request");
+		DisconnectClient(event.ident);
     }
     else if (event.udata != NULL) 
     {
-        add_events(event.ident,EVFILT_READ,EV_DELETE,0,0,NULL);
-        add_events(event.ident,EVFILT_TIMER,EV_DELETE,0,0,NULL);
+		add_events(event.ident,EVFILT_READ,EV_DELETE,0,0,NULL);
+       	add_events(event.ident,EVFILT_TIMER,EV_DELETE,0,0,NULL);
         throw errstat_t(503,"Time out request IN CGI");
     }
     }
@@ -256,6 +216,8 @@ void Server::handleTimerEvent(struct kevent& event) {
         }
         else if (event.udata != NULL) 
         {
+			std::clog <<event.ident;
+
             it = ClientMap.find(check_client);
             if (it != ClientMap.end() && it->second != NULL) {
                 Client& cl = *it->second;
@@ -282,15 +244,10 @@ void Server::devide(vec_config_t& confs) {
     vec_config_t::iterator it = confs.begin();
     vec_config_t::iterator ite = confs.end();  
     for (; it != ite; ++it) { 
-        // vec_config_t::iterator tmp = confs.begin();
-        // for (; tmp != it; ++tmp) {  
-        //     if (tmp->listen == it->listen) {
-        //       continue;
-        //     }
-        // }
-        
-        ServerPreset(it->listen);
-        
+		
+        if ( distance( port_tried, it->listen) == NOT_FOUND )
+            ServerPreset(it->listen);
+        port_tried.push_back( it->listen );
     }
 }
 

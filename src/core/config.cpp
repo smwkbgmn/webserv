@@ -264,4 +264,12 @@ void parseConfig(std::vector<config_t>& serv, const std::string& filename) {
             }
         }
     }
+	
+	vec_config_t::iterator it = serv.begin();
+    vec_config_t::iterator ite = serv.end();
+    for(; it !=ite; it++)
+    {
+        if(it->locations.empty())
+            it->locations.push_back( location_t(*it) );
+    }
 }

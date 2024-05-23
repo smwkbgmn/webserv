@@ -11,7 +11,6 @@ int* Client::get_client_socket_ptr() { return &client_socket; }
 const int& Client::getSocket() const { return client_socket; }
 const msg_buffer_t& Client::buffer() const { return in; }
 process_t& Client::get_process() { return subprocs; }
-// osstream_t& Client::getOss() { return out; }
 bool Client::getCgiCheck()  { return Cgi_check; }
 bool Client::getCgiExit()  { return Cgi_exit; }
 msg_buffer_t& Client::get_in() { return in; }
@@ -38,7 +37,9 @@ void Client::processClientRequest() {
 					action = new Transaction( *this );
 
 					if ( subprocs.pid ) {
-						srv.add_events(subprocs.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 30000, get_client_socket_ptr());
+						std::clog <<subprocs.pid<<std::endl;
+						srv.add_events(client_socket, EVFILT_TIMER, EV_DELETE | EV_ONESHOT, 0, 0, NULL);
+						srv.add_events(subprocs.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 10000, get_client_socket_ptr());
 						srv.add_events(subprocs.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, get_client_socket_ptr());
 					}
 				}
@@ -51,7 +52,7 @@ void Client::processClientRequest() {
 							action->act();
 
 						in.reset();
-						// srv.add_events(client_socket, EVFILT_READ, EV_DELETE | EV_ONESHOT, 0, 0, NULL);
+						srv.add_events(client_socket, EVFILT_TIMER, EV_DELETE , 0, 0, NULL);
 						srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 					}
 					else close( subprocs.fd[W] );
