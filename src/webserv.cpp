@@ -2,17 +2,21 @@
 
 int
 main( int argc, char* argv[] ) {
-	if ( argc == 2 ) {
-		try {
-			vec_config_t confs;
-			parseConfig( confs, argv[1] );
+	try { if ( argc == 1 || argc == 2 ) run( argc, argv ); }
+	catch ( exception_t &exc ) { log( str_t( exc.what() ) ); }
 
-			HTTP::init();
-
-			Server server( confs);
-			server.connectsever(confs);
-		}
-		catch ( err_t &err ) { log( str_t( err.what() ) ); return EXIT_FAILURE; }
-	}
 	return EXIT_FAILURE;
+}
+
+void
+run( const int& argc, char* const argv[] ) {
+	vec_config_t confs;
+
+	if ( argc == 2 ) parseConfig( confs, argv[1] );
+	else confs.push_back( config_t() ); 
+
+	HTTP::init();
+
+	Server server( confs );
+	server.connectsever( confs );
 }

@@ -127,8 +127,7 @@ void Server::handleCGIEvent(struct kevent &occur_event) {
     }
 	
 	catch (const errstat_t& e) {
-        std::clog <<"if it's in"<<std::endl;
-        std::cerr << "CGI error: " << e.what() << std::endl;
+		log( "TCP\t: " + str_t( e.what() ) );
         
 		cl.out.reset();
         close(cl.subprocs.fd[R]);
@@ -209,9 +208,8 @@ void Server::handleProcessExitEvent(struct kevent& event) {
     }
 	
 	catch (const errstat_t& e) {
-        std::clog <<"if it's in"<<std::endl;
-        std::cerr << "CGI error: " << e.what() << std::endl;
-        
+        log( "TCP\t: " + str_t( e.what() ) );
+
 		cl.out.reset();
         close(cl.subprocs.fd[R]);
 		Transaction::buildError( e.code, cl );
@@ -234,7 +232,6 @@ void Server::handleTimerEvent(struct kevent& event) {
         check_client = *(static_cast<int *>(event.udata));
     }
     it = ClientMap.find(event.ident);
-      std::clog <<"time error happebnd"<<std::endl;
     try{
     if (it != ClientMap.end()) {
         add_events(event.ident,EVFILT_TIMER,EV_DELETE,0,0,NULL);
@@ -242,15 +239,13 @@ void Server::handleTimerEvent(struct kevent& event) {
     }
     else if (event.udata != NULL) 
     {
-        std::clog <<"time error happebnd in cgi"<<std::endl;
         add_events(event.ident,EVFILT_READ,EV_DELETE,0,0,NULL);
         add_events(event.ident,EVFILT_TIMER,EV_DELETE,0,0,NULL);
         throw errstat_t(503,"Time out request IN CGI");
     }
     }
     catch (const errstat_t& e) {
-        std::clog <<"if it's in"<<std::endl;
-        std::cerr << "CGI error: " << e.what() << std::endl;
+		log( "TCP\t: " + str_t( e.what() ) );
         
         if (it != ClientMap.end()) {    
             Client& cl = *it->second;

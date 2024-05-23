@@ -5,4 +5,6 @@
 # include "Server.hpp"
 # include "HTTP.hpp"
 
+void	run( const int& argc, char* const argv[] );
+
 #endif
