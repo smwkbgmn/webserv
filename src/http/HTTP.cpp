@@ -72,14 +72,12 @@ HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 /* METHOD - setConfig: get index for config_t matching with server name and port */
 size_t
 HTTP::setConfig( const str_t& host, const vec_config_t& configs ) {
-	// std::clog << "determining host's config: " << host << std::endl;
 	if ( configs.size() > 1 && !host.empty() ) {
 		vec_config_t::const_iterator	iter;
 		size_t							idx;
 
 		idx = 1;
 		for ( iter = configs.begin() + 1; iter != configs.end(); ++iter ) {
-			// std::clog << "checking server config " << idx << std::endl;
 			if ( _setConfigMatchName( host, iter->names, iter->listen ) ) return idx;
 			++idx;
 		}
@@ -98,7 +96,6 @@ HTTP::_setConfigMatchName( const str_t& host, const vec_str_t& names, const uint
 		name = token( iss, ':' );
 		iss >> std::ws >> port;
 
-		// std::clog << "name: " << name << ", port: " << port << ", found_name: " << distance( names, name ) << std::endl;
 		return distance( names, name ) != NOT_FOUND &&
 			port == listen;
 	}
@@ -164,7 +161,7 @@ config_s::config_s( void ) {
 
 	// vector default. if no block for these vector,
 	// push a default values while parsing configs
-	locations.push_back( location_t( *this ) ); 
+	// locations.push_back( location_t( *this ) ); 
 }
 
 location_s::location_s( const config_s& serverconf ) {
@@ -176,8 +173,5 @@ location_s::location_s( const config_s& serverconf ) {
 
 	index_auto		= FALSE;
 
-	// vector defualt.
 	allow.push_back( GET ); 
-
-	index.push_back( "index.html" );
 }

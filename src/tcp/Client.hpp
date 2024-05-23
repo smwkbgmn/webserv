@@ -44,9 +44,6 @@ public:
 	const msg_buffer_t&	buffer() const;
     const std::string getBufferContents() const;
   
-    bool isMsgDone( const char*, ssize_t& );
-    bool isBodyDone( const char*, const size_t& );
-
     const Server& getServer() const;
 	const Server& server() const;
     int* get_client_socket_ptr();
@@ -55,7 +52,6 @@ public:
     bool getCgiExit();
     msg_buffer_t& get_in();
     process_t& get_process();
-    // osstream_t& getOss();
 
     void setSocket(const int& );
     void setServer(const Server& );

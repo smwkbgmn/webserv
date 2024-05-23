@@ -13,7 +13,10 @@ run( const int& argc, char* const argv[] ) {
 	vec_config_t confs;
 
 	if ( argc == 2 ) parseConfig( confs, argv[1] );
-	else confs.push_back( config_t() ); 
+	else {
+		confs.push_back( config_t() );
+		confs.front().locations.push_back( location_t( confs.front() ) );
+	} 
 
 	HTTP::init();
 
