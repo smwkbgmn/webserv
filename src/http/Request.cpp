@@ -6,7 +6,6 @@
 /* ACCESS */
 const Client&			Request::client( void ) const { return _client; }
 const config_t&			Request::config( void ) const { return client().server().config().at( _config ); }
-// const config_t&			Request::config( void ) const { return client().server().config(); }
 const location_t&		Request::location( void ) const { return config().locations.at( _location ); }
 
 const request_line_t&	Request::line( void ) const { return _line; }
@@ -22,12 +21,8 @@ Request::Request( const Client& client ): _client( client ), _config( 0 ), _loca
 
 	_config		= HTTP::setConfig( _header.host, _client.server().config() );
 	_location	= HTTP::setLocation( _line.uri, config().locations );
-	// std::clog << "conf " << _config << ", " << _location << std::endl;
 
-
-	// std::clog << "origin uri: " << _line.uri << std::endl;
 	_redirectURI();
-	// std::clog << "redirected uri: " << _line.uri << std::endl;
 
 	if ( _line.method != UNKNOWN &&
 		distance( location().allow, static_cast<uint_t>( _line.method ) ) == NOT_FOUND ) 
@@ -117,9 +112,9 @@ Request::_parseHeader( const str_t& field ) {
 		case IN_HOST			: iss >> _header.host; break;
 
 		case IN_CONNECTION		: {
-			ssize_t cnt = distance( HTTP::http.connection, _token( iss, NONE ) );
+			ssize_t cn = distance( HTTP::http.connection, _token( iss, NONE ) );
 
-			if ( cnt != NOT_FOUND ) _header.connection = static_cast<connection_e>( cnt );
+			if ( cn != NOT_FOUND ) _header.connection = static_cast<connection_e>( cn );
 			else _header.connection = CN_UNKNOWN;
 			break;
 		}

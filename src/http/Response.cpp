@@ -56,7 +56,7 @@ Response::_doMethod( const Request& rqst ) {
 		case UNKNOWN: {
 			vec_uint_t::const_iterator iter = rqst.location().allow.begin();
 			while ( iter != rqst.location().allow.end() )
-				_header.allow.push_back( *iter );
+				_header.allow.push_back( *iter++ );
 			_header.list.push_back( OUT_ALLOW );
 
 			_errpage( 501, rqst.config() );
