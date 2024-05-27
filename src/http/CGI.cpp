@@ -39,10 +39,17 @@ void
 CGI::proceed( const Request& rqst, process_t& procs ) {
 	log( "CGI\t: proceed" );
 
+	_valid( rqst );
+	_detach( rqst, procs );
+}
+
+void
+CGI::_valid( const Request& rqst ) {
 	if ( rqst.line().method != GET && rqst.line().method != POST )
 		throw errstat_t( 403, err_msg[CGI_WITH_NOT_ALLOWED] );
-
-	_detach( rqst, procs );
+		
+	if ( rqst.header().content_length > rqst.config().client_max_body )
+		throw errstat_t( 413, err_msg[POST_OVER_CONTENT_LEN] );
 }
 
 void

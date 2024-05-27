@@ -158,7 +158,7 @@ void Server::handleProcessExitEvent(struct kevent& event) {
 		cl.subprocs.reset();
         cl.setCgiExit(FALSE);
 
-        std::clog << event.ident<<std::endl;
+        // std::clog << event.ident<<std::endl;
     	add_events(event.ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
         add_events(event.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
 		add_events(client ,EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
@@ -216,7 +216,7 @@ void Server::handleTimerEvent(struct kevent& event) {
         }
         else if (event.udata != NULL) 
         {
-			std::clog <<event.ident;
+			// std::clog <<event.ident;
 
             it = ClientMap.find(check_client);
             if (it != ClientMap.end() && it->second != NULL) {

@@ -21,7 +21,8 @@ const config_t& Transaction::config( void ) { return _rqst.config(); }
 
 connection_e
 Transaction::connection( void ) {
-	if ( _rqst.header().connection == CN_CLOSE || _rspn.header().connection == CN_CLOSE ) return CN_CLOSE;
+	if ( _rqst.header().connection == CN_CLOSE ||
+		_rspn.header().connection == CN_CLOSE ) return CN_CLOSE;
 	else return CN_KEEP_ALIVE;
 }
 
@@ -32,18 +33,11 @@ Transaction::Transaction( Client& client ): _cl( client ), _rqst( client ) {
 	if ( !getInfo( _rqst.line().uri, _rqst.info ) && _rqst.location().rewrite.empty() ) {
 		if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
 		if ( errno == 20 ) throw errstat_t( 404, err_msg[SOURCE_NOT_DIR] );
-		else throw errstat_t( 500 );
+		throw errstat_t( 500 );
 	}
  
 	_setBodyEnd();
 	if ( _invokeCGI( _rqst, _cl.subprocs ) ) CGI::proceed( _rqst, _cl.subprocs );
-}
-
-/* METHOD - act: do the requested method and build plain response message */
-void
-Transaction::act( void ) {
-	_rspn.act( _rqst );
-	build( _rspn, _cl.out );
 }
 
 void
@@ -69,6 +63,13 @@ Transaction::_invokeCGI( const Request& rqst, process_t& procs ) {
 
 	procs.argv.push_back( rqst.line().uri );
 	return TRUE;
+}
+
+/* METHOD - act: do the requested method and build plain response message */
+void
+Transaction::act( void ) {
+	_rspn.act( _rqst );
+	build( _rspn, _cl.out );
 }
 
 /*	
@@ -106,7 +107,7 @@ Transaction::recvMsg( msg_buffer_t& in, const char* buf, ssize_t& byte_read ) {
 
 bool
 Transaction::recvBody( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
-	// Keep FALSE untill meet the content-length or tail of chunk (0CRLFCRLF)
+	// Keep FALSE unless meet the size of content-length or tail of chunk (0CRLFCRLF)
 	if ( !in.chunk ) return _recvBodyPlain( in, procs, buf, byte_read );
 	else {
 		if ( byte_read == 0 && in.body_read ) return _recvBodyChunkPredata( in, procs ); 	
@@ -207,8 +208,8 @@ void
 Transaction::build( const Response& rspn, msg_buffer_t& out ) {
 	_buildLine( rspn, out.msg );
 	_buildHeader( rspn, out.msg );
-	if ( rspn.body() )
-		_buildBody( rspn, out );
+
+	if ( rspn.body() ) _buildBody( rspn, out );
 }
 
 void

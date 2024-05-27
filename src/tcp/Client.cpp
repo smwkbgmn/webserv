@@ -37,7 +37,7 @@ void Client::processClientRequest() {
 					action = new Transaction( *this );
 
 					if ( subprocs.pid ) {
-						std::clog <<subprocs.pid<<std::endl;
+						// std::clog <<subprocs.pid<<std::endl;
 						srv.add_events(client_socket, EVFILT_TIMER, EV_DELETE | EV_ONESHOT, 0, 0, NULL);
 						srv.add_events(subprocs.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 10000, get_client_socket_ptr());
 						srv.add_events(subprocs.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, get_client_socket_ptr());

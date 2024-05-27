@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perlqwe
 use strict;
 use warnings;
 use CGI;
