@@ -24,7 +24,9 @@ void Client::processClientRequest() {
 
     char buf[SIZE_BUF];
 
+	log( "TCP\t: receiving data" );
     ssize_t byte = recv(client_socket, buf, SIZE_BUF, 0);
+	log( "TCP\t: receiving done by " + std::to_string( byte ) );
 
     if (byte <= 0) {
         throw err_t("Server socket error on receive");

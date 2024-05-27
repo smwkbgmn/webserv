@@ -3,12 +3,12 @@
 map_str_path_t	CGI::script_bin;
 map_uint_str_t	CGI::environ_list;
 
-/*k
+/*
 	.cgi, .exe and files in configured cgi-bin directory
 	-> execute directly
 
-	other else .perl, .php, .py.. so on
-	-> /usr/bin/perl..
+	other else .perl, .php, .py.. so on 
+	-> call the script interpreter as first arg and script path as second arg
 */
 
 /* METHOD - init: assign keys for running CGI */
@@ -45,8 +45,10 @@ CGI::proceed( const Request& rqst, process_t& procs ) {
 
 void
 CGI::_valid( const Request& rqst ) {
-	if ( rqst.line().method != GET && rqst.line().method != POST )
-		throw errstat_t( 403, err_msg[CGI_WITH_NOT_ALLOWED] );
+	if ( rqst.line().method != GET && rqst.line().method != POST ) {
+		if ( rqst.line().method == NOT_ALLOWED ) throw errstat_t( 405 );
+		else throw errstat_t( 403, err_msg[CGI_WITH_NOT_ALLOWED] );
+	}
 		
 	if ( rqst.header().content_length > rqst.config().client_max_body )
 		throw errstat_t( 413, err_msg[POST_OVER_CONTENT_LEN] );

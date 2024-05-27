@@ -57,13 +57,19 @@ const str_t	err_msg[] = {
 };
 
 typedef struct errstat_s: err_t {
-	uint_t	code;
+	uint_t		code;
+	size_t		confidx;
 
 	errstat_s( const uint_t& );
+	errstat_s( const uint_t&, const size_t& );
+
 	errstat_s( const uint_t&, const str_t& );
+	errstat_s( const uint_t&, const str_t&, const size_t& );
+	 
 }	errstat_t;
 
-void	throwSysErr( const str_t&, uint_t );
+void	throwSysErr( const str_t&, const uint_t& );
+void	throwSysErr( const str_t&, const uint_t&, const size_t& );
 
 # include "log.hpp"
 

@@ -33,6 +33,8 @@
 # define MSG_END		"\r\n\r\n"
 # define SIZE_MSG_END	4
 
+# define DEFAULT		0
+
 /* STRINGS - for assigning vector values (because of the version
 limitation, not available to use the vector argument initialize list) */
 const str_t str_method[] = {
