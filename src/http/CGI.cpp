@@ -3,12 +3,12 @@
 map_str_path_t	CGI::script_bin;
 map_uint_str_t	CGI::environ_list;
 
-/*k
+/*
 	.cgi, .exe and files in configured cgi-bin directory
 	-> execute directly
 
-	other else .perl, .php, .py.. so on
-	-> /usr/bin/perl..
+	other else .perl, .php, .py.. so on 
+	-> call the script interpreter as first arg and script path as second arg
 */
 
 /* METHOD - init: assign keys for running CGI */
