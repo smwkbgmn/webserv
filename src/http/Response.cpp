@@ -80,7 +80,7 @@ Response::_doMethodValid( const Request& rqst ) {
 				throw errstat_t( 411, err_msg[POST_EMPTY_CONTENT_LEN] );
 
 			if ( rqst.header().content_length > rqst.config().client_max_body )
-				throw errstat_t( 405, err_msg[POST_OVER_CONTENT_LEN] );
+				throw errstat_t( 413, err_msg[POST_OVER_CONTENT_LEN] );
 			break;
 
 		case DELETE	: break;

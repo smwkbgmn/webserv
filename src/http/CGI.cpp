@@ -35,14 +35,23 @@ CGI::_assignEnvironList( void ) {
 }
 
 /* METHOD - proceed: get outsourcing data */
+
+
 void
 CGI::proceed( const Request& rqst, process_t& procs ) {
 	log( "CGI\t: proceed" );
 
+	_valid( rqst );
+	_detach( rqst, procs );
+}
+
+void
+CGI::_valid( const Request& rqst ) {
 	if ( rqst.line().method != GET && rqst.line().method != POST )
 		throw errstat_t( 403, err_msg[CGI_WITH_NOT_ALLOWED] );
-
-	_detach( rqst, procs );
+		
+	if ( rqst.header().content_length > rqst.config().client_max_body )
+		throw errstat_t( 413, err_msg[POST_OVER_CONTENT_LEN] );
 }
 
 void
@@ -54,6 +63,7 @@ CGI::_detach( const Request& rqst, process_t& procs ) {
 		_buildEnviron( rqst, procs );
 		_execve( procs );
 	}
+	_wait( procs );
 }
 
 /* PARENT */
@@ -64,7 +74,7 @@ CGI::writeTo( const process_t& procs, const char* in_body, const size_t& size ) 
 }
 
 void
-CGI::wait( process_t& procs ) {
+CGI::_wait( process_t& procs ) {
 	if ( waitpid( procs.pid, &procs.stat, WNOHANG ) == ERROR )
 		throwSysErr( "wait", 500 );
 }

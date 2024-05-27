@@ -172,7 +172,6 @@ location_s::location_s( const config_s& serverconf ) {
 	upload			= "html/upload";
 
 	index_auto		= FALSE;
-	index.push_back( "index.html" );
 
 	allow.push_back( GET ); 
 }
