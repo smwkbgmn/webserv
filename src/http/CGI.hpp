@@ -18,6 +18,7 @@ class CGI {
 		static void 			proceed( const Request&, process_t& );
 		static void				writeTo( const process_t&, const char*, const size_t& );
 		static void				readFrom( const process_t&, sstream_t& );
+		static void				wait( process_t& );
 		static void				build( msg_buffer_t& );
 
 	private:
@@ -30,7 +31,6 @@ class CGI {
 		static void				_valid( const Request& );
 
 		static void				_detach( const Request&, process_t& );
-		static void				_wait( process_t& );
 		static void				_buildEnviron( const Request&, process_t& );
 		static bool				_buildEnvironVar( const Request&, process_t&, uint_t idx );
 		

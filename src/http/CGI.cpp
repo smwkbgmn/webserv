@@ -35,8 +35,6 @@ CGI::_assignEnvironList( void ) {
 }
 
 /* METHOD - proceed: get outsourcing data */
-
-
 void
 CGI::proceed( const Request& rqst, process_t& procs ) {
 	log( "CGI\t: proceed" );
@@ -63,7 +61,6 @@ CGI::_detach( const Request& rqst, process_t& procs ) {
 		_buildEnviron( rqst, procs );
 		_execve( procs );
 	}
-	_wait( procs );
 }
 
 /* PARENT */
@@ -74,7 +71,7 @@ CGI::writeTo( const process_t& procs, const char* in_body, const size_t& size ) 
 }
 
 void
-CGI::_wait( process_t& procs ) {
+CGI::wait( process_t& procs ) {
 	if ( waitpid( procs.pid, &procs.stat, WNOHANG ) == ERROR )
 		throwSysErr( "wait", 500 );
 }
