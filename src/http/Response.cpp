@@ -144,7 +144,7 @@ Response::_indexFileValid( const Request& rqst, fstat_t& info ) {
 		iter != rqst.location().index.end(); ++iter ) {
 		if ( getInfo( rqst.line().uri + *iter, info ) ) 
 			return *iter;
-		}
+	}
 	return "";
 }
 
