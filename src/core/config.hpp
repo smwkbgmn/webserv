@@ -13,11 +13,11 @@
 #include <climits>
 #include <cctype>
 
-#include "structure.hpp"
+#include "type.hpp"
 
 #define on true
 #define off false
 
-void parseConfig(std::vector<config_t>& serv, const std::string& filename);
+void configParse(std::vector<config_t>& serv, const std::string& filename);
 
 #endif

@@ -3,7 +3,7 @@
 import cgi
 
 def generate_error_page(status_code, explanation):
-    print("Content-Type: text/html\r\n\r\n")  # Required HTTP header
+    log::print("Content-Type: text/html\r\n\r\n")  # Required HTTP header
 
     # HTML body for the error page
     error_page = """
@@ -42,7 +42,7 @@ def generate_error_page(status_code, explanation):
     </html>
     """.format(status_code, explanation, status_code, explanation, cgi.escape(explanation))
 
-    print(error_page)
+    log::print(error_page)
 
 def main():
     form = cgi.FieldStorage()

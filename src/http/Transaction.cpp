@@ -1,7 +1,7 @@
+#include "Transaction.hpp"
+
 #include "HTTP.hpp"
 #include "Client.hpp"
-
-#include "Transaction.hpp"
 
 /*	HTTP MESSAGE FORMMAT
 
@@ -28,8 +28,6 @@ Transaction::connection( void ) {
 
 /* INTANTIATE */
 Transaction::Transaction( Client& client ): _cl( client ), _rqst( client ) {
-	log( "HTTP\t: constructing Transaction" );
-
 	if ( !getInfo( _rqst.line().uri, _rqst.info ) && _rqst.location().rewrite.empty() ) {
 		if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
 		if ( errno == 20 ) throw errstat_t( 404, err_msg[SOURCE_NOT_DIR] );
@@ -37,7 +35,7 @@ Transaction::Transaction( Client& client ): _cl( client ), _rqst( client ) {
 	}
  
 	_setBodyEnd();
-	if ( _invokeCGI( _rqst, _cl.subprocs ) ) CGI::proceed( _rqst, _cl.subprocs );
+	if ( _invokeCGI( _rqst, _cl.subproc ) ) CGI::proceed( _rqst, _cl.subproc );
 }
 
 void
@@ -74,7 +72,7 @@ Transaction::act( void ) {
 
 /*	
 	METHOD -
-	recvMsg: store request line and header field at stream buffer
+	recvHead: store request line and header field at stream buffer
 	then determine if the receiving message is done
 
 	recvBody: store contetnts at steram buffer and
@@ -82,41 +80,50 @@ Transaction::act( void ) {
 */
 
 bool
-Transaction::recvMsg( msg_buffer_t& in, const char* buf, ssize_t& byte_read ) {
-	if ( !in.msg_done ) {
-		in.msg.write( buf, byte_read );
+Transaction::recvHead( message_t& in, char* buf, ssize_t& byte_read ) {
+	if ( !in.head_done ) {
+		in.head.write( buf, byte_read );
 
-		size_t pos_header_end = in.msg.str().find( MSG_END, in.msg_read - \
-			( in.msg_read * ( in.msg_read < 3 ) + 3 * !( in.msg_read < 3 ) ) );
+		size_t pos_header_end = in.head.str().find( MSG_END, in.head_read - \
+			( in.head_read * ( in.head_read < 3 ) + 3 * !( in.head_read < 3 ) ) );
 
-		if ( !found( pos_header_end ) ) in.msg_read += byte_read;
+		if ( !found( pos_header_end ) ) in.head_read += byte_read;
 		else {
-			in.msg_done = TRUE;
+			in.head_done = TRUE;
 
-			size_t body_begin	= pos_header_end - in.msg_read + SIZE_MSG_END;
-			in.body_read		= byte_read - body_begin;
+			size_t body_begin = pos_header_end - in.head_read + SIZE_MSG_END;
+			byte_read -= body_begin;
 
-			if ( in.body_read )
-				in.body.write( &buf[body_begin], in.body_read );
-
-			byte_read = 0;
+			if ( byte_read )
+				strncpy( buf, &buf[body_begin], byte_read );
 		}
+		// else {
+		// 	in.head_done = TRUE;
+
+		// 	size_t body_begin	= pos_header_end - in.head_read + SIZE_MSG_END;
+		// 	in.body_read		= byte_read - body_begin;
+
+		// 	if ( in.body_read )
+		// 		in.body.write( &buf[body_begin], in.body_read );
+
+		// 	byte_read = 0;
+		// }
 	}
-	return in.msg_done;
+	return in.head_done;
 }
 
 bool
-Transaction::recvBody( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
-	// Keep FALSE unless meet the size of content-length or tail of chunk (0CRLFCRLF)
+Transaction::recvBody( message_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
 	if ( !in.chunk ) return _recvBodyPlain( in, procs, buf, byte_read );
 	else {
 		if ( byte_read == 0 && in.body_read ) return _recvBodyChunkPredata( in, procs ); 	
 		return _recvBodyChunk( in, procs, buf );
 	}
+	/* Keep FALSE unless meet the size of content-length or tail of chunk (0CRLFCRLF) */
 }
 
 bool
-Transaction::_recvBodyPlain( msg_buffer_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
+Transaction::_recvBodyPlain( message_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
 	in.body_read += byte_read;
 
 	if ( !procs.pid )
@@ -128,22 +135,21 @@ Transaction::_recvBodyPlain( msg_buffer_t& in, const process_t& procs, const cha
 		else
 			CGI::writeTo( procs, buf, byte_read );
 	}
-
 	else return TRUE;
 
 	if ( in.body_read ) {
 		osstream_t oss;
 
-		oss << "TCP\t: body read by " << byte_read <<
-		" so far: " << in.body_read << " / " << in.body_size << std::endl;
-		log( oss.str() );
+		oss << "body read by " << byte_read <<
+		" so far: " << in.body_read << " / " << in.body_size;
+		log::print( oss.str() );
 	}
 
 	return in.body_size == in.body_read;
 }
 
 bool
-Transaction::_recvBodyChunk( msg_buffer_t& in, const process_t& procs, const char* buf ) {
+Transaction::_recvBodyChunk( message_t& in, const process_t& procs, const char* buf ) {
 	isstream_t	iss( buf );
 
 	if ( in.incomplete && _recvBodyChunkIncomplete( in, procs, iss ) ) return TRUE;
@@ -151,7 +157,7 @@ Transaction::_recvBodyChunk( msg_buffer_t& in, const process_t& procs, const cha
 }
 
 bool
-Transaction::_recvBodyChunkData( msg_buffer_t& in, const process_t& procs, isstream_t& iss ) {
+Transaction::_recvBodyChunkData( message_t& in, const process_t& procs, isstream_t& iss ) {
 	char		data[SIZE_BUFF];
 	
 	ssize_t		frac = 1;
@@ -179,7 +185,7 @@ Transaction::_recvBodyChunkData( msg_buffer_t& in, const process_t& procs, isstr
 }
 
 bool
-Transaction::_recvBodyChunkPredata( msg_buffer_t& in, const process_t& procs ) {
+Transaction::_recvBodyChunkPredata( message_t& in, const process_t& procs ) {
 	isstream_t	iss( in.body.str() );
 
 	in.body.str( "" );
@@ -189,7 +195,7 @@ Transaction::_recvBodyChunkPredata( msg_buffer_t& in, const process_t& procs ) {
 }
 
 bool
-Transaction::_recvBodyChunkIncomplete( msg_buffer_t& in, const process_t& procs, isstream_t& iss ) {
+Transaction::_recvBodyChunkIncomplete( message_t& in, const process_t& procs, isstream_t& iss ) {
 	char data[SIZE_BUFF];
 
 	iss.read( data, in.incomplete );
@@ -205,9 +211,9 @@ Transaction::_recvBodyChunkIncomplete( msg_buffer_t& in, const process_t& procs,
 
 /* METHOD - build: build response message base with response object */
 void
-Transaction::build( const Response& rspn, msg_buffer_t& out ) {
-	_buildLine( rspn, out.msg );
-	_buildHeader( rspn, out.msg );
+Transaction::build( const Response& rspn, message_t& out ) {
+	_buildLine( rspn, out.head );
+	_buildHeader( rspn, out.head );
 
 	if ( rspn.body() ) _buildBody( rspn, out );
 }
@@ -229,7 +235,7 @@ Transaction::_buildHeader( const Response& rspn, sstream_t& out_msg ) {
 		iter != rspn.header().list.end(); ++iter ) {
 		_buildHeaderName( *iter, out_msg );
 		_buildHeaderValue( rspn.header(), *iter, out_msg );
-	}
+	} 
 	out_msg << CRLF;
 }
 
@@ -264,12 +270,34 @@ Transaction::_buildHeaderValue( const response_header_t& header, uint_t id, sstr
 }
 
 void
-Transaction::_buildBody( const Response& rspn, msg_buffer_t& out ) {
+Transaction::_buildBody( const Response& rspn, message_t& out ) {
 	out.body << rspn.body().rdbuf();
 }
 
 void
 Transaction::buildError( const uint_t& status, Client& cl ) {
-	if ( cl.action ) build( Response( status, cl.action->config() ), cl.out );
-	else build( Response( status, cl.server().configDefault() ), cl.out );
+	cl.out.reset();
+	
+	if ( cl.trans ) build( Response( status, cl.trans->config() ), cl.out );
+	else build( Response( status, cl.server().config().at(DEFAULT) ), cl.out );
+}
+
+/* STRUCT */
+message_s::message_s() { reset(); }
+
+void message_s::reset() {
+	head.str("");
+	head.clear();
+
+	head_done	= false;
+	head_read	= 0;
+	
+	body.str("");
+	body.clear();
+
+	body_size	= 0;
+	body_read 	= 0;
+
+	chunk		= false;
+	incomplete	= 0;
 }

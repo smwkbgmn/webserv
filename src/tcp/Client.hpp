@@ -1,63 +1,52 @@
 #ifndef CLIENT_HPP
-#define CLIENT_HPP
+# define CLIENT_HPP
 
-#include "utill.hpp"
- 
-#include "ASocket.hpp"
-#include "Server.hpp"
+# include "CGI.hpp"
+# include "Server.hpp"
+# include "Transaction.hpp"
 
-#include <sstream>
-#include <map>
-#include <string>
+class Kqueue;
+// struct proces_t;
 
-#include <cstring>
+class Client: public Socket {
+	
+	public:
+		Client() = delete;
+		Client(const Server&);
+		Client(Client&&) noexcept;
+		~Client();
 
-#define SIZE_BUFF 1024
-#define SIZE_CRLF 2
-#define SIZE_CHUNK_HEAD 3
+		// For move sementics to container
+		Client&			operator=(Client&&) noexcept;
+		// For searching map container sock_Client
+		bool			operator==(const Client&) const;
 
-#include "Transaction.hpp"
+		const Server&	server() const;
 
-class Server;
+		Transaction*	trans;
+		message_t		in;
+		message_t		out;
+		
+		process_t		subproc;
 
-class Client {
-private:
-    Server&		srv;
-    int			client_socket;
+		// what for? //////////
+		bool			cgi;
+		bool			cgi_exit;
+		///////////////////////
 
-    bool        Cgi_check;
-    bool        Cgi_exit;
+		ssize_t			receive(Kqueue&);
+		bool			send();
+		void			reset();
 
-public:
-	msg_buffer_t	in;
-    msg_buffer_t	out;
+	private:
+		const Server&	_srv;
+		char			_buff[SIZE_BUFF_RECV];
+	
+		void			_receiveTransaction(Kqueue&, ssize_t&);
 
-	Transaction*	action;
-    process_t		subprocs;
+		ssize_t			_send(sstream_t&);
 
-    Client(Server& server);
-    ~Client();
-
-    bool sendData();              
-    void processClientRequest();
-
-	const msg_buffer_t&	buffer() const;
-    const std::string getBufferContents() const;
-  
-    const Server& getServer() const;
-	const Server& server() const;
-    int* get_client_socket_ptr();
-    const int& getSocket() const;
-    bool getCgiCheck();
-    bool getCgiExit();
-    msg_buffer_t& get_in();
-    process_t& get_process();
-
-    void setSocket(const int& );
-    void setServer(const Server& );
-    void setCgiCheck(bool ); 
-    void setCgiExit(bool ) ;
-
+		void			_resetTransaction();
 };
 
-#endif // CLIENT_HPP
+#endif

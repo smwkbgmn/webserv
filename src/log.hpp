@@ -4,17 +4,19 @@
 # include <ctime>
 # include <filesystem>
 
-# include "structure.hpp"
+# include "type.hpp"
 
-extern const std::time_t	begin;
-extern File					logging;
+namespace log {
+	extern const std::time_t	begin;
+	extern File					history;
 
-std::string	logFname( void );
-std::string	strTime( void );
+	std::string	logFname( void );
+	std::string	strTime( void );
 
-void		timestamp( void );
-void		log( const str_t& );
+	void		timestamp( void );
+	void		print( const str_t& );
 
-void		printVec( vec_str_t&, const str_t );
+	void		printVec( vec_str_t&, const str_t );
+}
 
 #endif

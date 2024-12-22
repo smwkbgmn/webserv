@@ -6,7 +6,35 @@
 
 # include "HTTP.hpp"
 
+# define SIZE_BUFF_C 2048
+
 enum pipe_mode_e { R, W };
+
+class Request;
+
+// typedef struct process_s {
+// 	process_s( void );
+
+// 	void		reset( void );
+
+// 	pid_t		pid;
+// 	stat_t		stat;
+// 	pipe_t		fd[2];
+
+// 	vec_str_t	argv;
+// 	vec_str_t	env;
+// }	process_t;
+
+typedef struct c_buffer_s {
+	c_buffer_s( void );
+	
+	char		ptr[SIZE_BUFF_C];
+
+	size_t		total;
+	ssize_t		read;
+}	c_buffer_t;
+
+typedef struct message_s message_t;
 
 class CGI {
 	public:
@@ -19,7 +47,7 @@ class CGI {
 		static void				writeTo( const process_t&, const char*, const size_t& );
 		static void				readFrom( const process_t&, sstream_t& );
 		static void				wait( process_t& );
-		static void				build( msg_buffer_t& );
+		static void				build( message_t& );
 
 	private:
 		/* init */
@@ -34,12 +62,12 @@ class CGI {
 		static void				_buildEnviron( const Request&, process_t& );
 		static bool				_buildEnvironVar( const Request&, process_t&, uint_t idx );
 		
-		static void				_buildLine( msg_buffer_t& );
-		static void				_buildHeader( msg_buffer_t& );
-		static void				_buildHeaderServer( msg_buffer_t& );
-		static void				_buildHeaderType( msg_buffer_t&, const size_t& );
-		static void				_buildHeaderLen( msg_buffer_t&, const size_t& );
-		static void				_buildChunk( msg_buffer_t& );
+		static void				_buildLine( message_t& );
+		static void				_buildHeader( message_t& );
+		static void				_buildHeaderServer( message_t& );
+		static void				_buildHeaderType( message_t&, const size_t& );
+		static void				_buildHeaderLen( message_t&, const size_t& );
+		static void				_buildChunk( message_t& );
 
 		static bool				_redirect( const process_t& );
 		static void				_execve( const process_t& );

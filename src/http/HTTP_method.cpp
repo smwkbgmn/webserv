@@ -10,7 +10,7 @@ HTTP::GET( const path_t& uri, sstream_t& body, size_t& size ) {
 	}
 
 	catch ( exception_t& exc ) {
-		log( "HTTP\t: " + str_t( exc.what() ) );
+		log::print( "HTTP\t: " + str_t( exc.what() ) );
 		throw errstat_t( 500 );
 	}
 }
@@ -24,7 +24,7 @@ HTTP::POST( const Request& rqst ) {
 	}
 	
 	catch ( exception_t& exc ) {
-		log( "HTTP\t: " + str_t( exc.what() ) );
+		log::print( "HTTP\t: " + str_t( exc.what() ) );
 		throw errstat_t( 500 );
 	}
 }

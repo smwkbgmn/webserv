@@ -15,7 +15,7 @@
 class Request;
 class Response;
 
-const str_t		software		= "webserv/1.0";
+const str_t		software		= "Webserv/1.0";
 
 const path_t	dir_keys		= "src/http/key/";
 const path_t	file_status		= dir_keys + "key_status.txt";

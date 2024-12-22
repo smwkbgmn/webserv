@@ -6,6 +6,8 @@ keys_t HTTP::key;
 /* METHOD - init: assign basic HTTP info and load keys */
 void
 HTTP::init( void ) {
+	log::print("Loading HTTP Module...");
+	
 	http.signature			= "HTTP";
 	http.type_unknown		= "text/plain";
 
@@ -17,8 +19,6 @@ HTTP::init( void ) {
 	_assignHeader();
 	_assignStatus();
 	_assignMime();
-
-	CGI::init();
 }
 
 void

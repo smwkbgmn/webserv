@@ -4,7 +4,7 @@
 # include <exception>
 # include <sys/errno.h>
 
-# include "structure.hpp"
+# include "type.hpp"
 
 # define ERROR -1
 # define SUCCESS 0
@@ -68,6 +68,7 @@ typedef struct errstat_s: err_t {
 	 
 }	errstat_t;
 
+void	throwSysErr( const str_t&);
 void	throwSysErr( const str_t&, const uint_t& );
 void	throwSysErr( const str_t&, const uint_t&, const size_t& );
 
@@ -151,7 +152,7 @@ versioning were being used and the representation being PUT included changes to
 a resource that conflict with those made by an earlier (third-party) request,
 the origin server might use a 409 response to indicate that it can't complete
 the request. In this case, the response representation would likely contain
-information useful for merging the differences based on the revision history.
+information useful for merging the differences based on the revision log::history.
 
 15.5.11. 410 Gone
 The 410 (Gone) status code indicates that access to the target resource is no
