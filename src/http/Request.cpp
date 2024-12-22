@@ -10,13 +10,13 @@ const location_t&		Request::location( void ) const { return config().locations.a
 
 const request_line_t&	Request::line( void ) const { return _line; }
 const request_header_t&	Request::header( void ) const { return _header; }
-const sstream_t&		Request::body( void ) const { return _client.buffer().body; }
+const sstream_t&		Request::body( void ) const { return _client.in.body; }
 
 /* CONSTRUCT */
 Request::Request( const Client& client ): _client( client ), _config( 0 ), _location( 0 ) {
-	log( "HTTP\t: constructing requeset" );
+	// log::print( "HTTP\t: constructing requeset" );
 
-	_parse( _client.buffer().msg );
+	_parse( _client.in.head );
 	_valid();
 
 	_config		= HTTP::setConfig( _header.host, _client.server().config() );

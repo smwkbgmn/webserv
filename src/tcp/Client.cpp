@@ -1,151 +1,158 @@
 #include "Client.hpp"
-#include "HTTP.hpp"
+#include "Webserv.hpp"
+#include "Transaction.hpp"
 
-Client::Client(Server &connect_server) : srv(connect_server), client_socket(-1), Cgi_check(false), Cgi_exit(false), action( NULL ) {}
+/* INSTANCIATE */
+Client::Client(const Server& srv):
+	Socket(srv.sock()),
+	trans(nullptr),
+	cgi(false),
+	cgi_exit(false),
+	_srv(srv) {
 
-Client::~Client() { if ( action ) delete action; }
+	setNonblock();
+}
 
-const Server& Client::getServer() const { return srv; }
-const Server& Client::server() const { return srv; }
-int* Client::get_client_socket_ptr() { return &client_socket; }
-const int& Client::getSocket() const { return client_socket; }
-const msg_buffer_t& Client::buffer() const { return in; }
-process_t& Client::get_process() { return subprocs; }
-bool Client::getCgiCheck()  { return Cgi_check; }
-bool Client::getCgiExit()  { return Cgi_exit; }
-msg_buffer_t& Client::get_in() { return in; }
+Client::Client(Client&& source) noexcept:
+	Socket(std::move(source)),
+	trans(source.trans),
+	in(std::move(source.in)),
+	out(std::move(source.out)),
+	subproc(std::move(source.subproc)),
+	cgi(source.cgi),
+	cgi_exit(source.cgi_exit),
+	_srv(source._srv) {
 
-void Client::setSocket(const int& socket) { client_socket = socket; }
-// void Client::setServer(const Server& serv) { srv = serv; }
-void Client::setCgiCheck(bool value) { Cgi_check = value; }
-void Client::setCgiExit(bool value) { Cgi_exit = value; }
+	source.trans = nullptr;
+}
 
-void Client::processClientRequest() {
+Client::~Client() {
+	if (trans) {
+		delete trans;
+	}
+}
+/* OPERATOR OVERLOAD */
+Client& Client::operator=(Client&& source) noexcept {
+	if (this != &source) {
+		// do move things
+	}
+	return *this;
+}
 
-    char buf[SIZE_BUF];
+bool Client::operator==(const Client& source) const {
+	return sock() == source.sock();
+}
 
-	log( "TCP\t: receiving data" );
-    ssize_t byte = recv(client_socket, buf, SIZE_BUF, 0);
-	log( "TCP\t: receiving done by " + std::to_string( byte ) );
+/* ACCESS */
+const Server& Client::server() const {
+	return _srv;
+}
 
-    if (byte <= 0) {
-        throw err_t("Server socket error on receive");
-    } else {
-		try {
-			if ( Transaction::recvMsg( in, buf, byte )) {
-				logging.fs << in.msg.str() << std::endl;
+/* METHOD */
+ssize_t Client::receive(Kqueue& kq) {
+	log::print("receiving");
 
-				if ( !action ) {
-					action = new Transaction( *this );
+    ssize_t byte = recv(sock(), _buff, SIZE_BUFF_RECV, 0);
+	log::print("receiving done by " + std::to_string(byte));
 
-					if ( subprocs.pid ) {
-						// std::clog <<subprocs.pid<<std::endl;
-						srv.add_events(client_socket, EVFILT_TIMER, EV_DELETE | EV_ONESHOT, 0, 0, NULL);
-						srv.add_events(subprocs.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 10000, get_client_socket_ptr());
-						srv.add_events(subprocs.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, get_client_socket_ptr());
-					}
-				}
+	if (byte > 0) {
+		try { _receiveTransaction(kq, byte); }
+		catch (err_t& err) {
+			log::print("Request: " + str_t(err.what()));
 
-				if ( Transaction::recvBody( in, subprocs, buf, byte ) ) {
-					logging.fs << in.body.str() << std::endl;
+			const errstat_t* errstat = dynamic_cast<const errstat_t*>(&err);
+			if (errstat) {
+				Transaction::buildError(errstat->code, *this);
+			}
+			else {
+				Transaction::buildError(400, *this);
+			}
+			// cgi = true;
 
-					if ( !subprocs.pid ) {
-						if ( action )
-							action->act();
+			// kq.add(sock(), EVFILT_READ, EV_ADD | EV_DISABLE, 0, 0, reinterpret_cast<void*>(&evnt_udata[EV_UDATA_MESSAGE]));
+			kq.add(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+		}
+	}
+	else if (byte == 0) {
+		kq.add(sock(), EVFILT_READ, EV_ADD | EV_DISABLE, 0, 0, reinterpret_cast<void*>(&evnt_udata[EV_UDATA_MESSAGE]));
+	}
+	else {
+		throw err_t("Server socket error on receive");
+	}
+	return byte;
+}
 
-						in.reset();
-						srv.add_events(client_socket, EVFILT_TIMER, EV_DELETE , 0, 0, NULL);
-						srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
-					}
-					else close( subprocs.fd[W] );
-				}
+void Client::_receiveTransaction(Kqueue& kq, ssize_t& byte_recv) {
+	if (Transaction::recvHead(in, _buff, byte_recv)) {
+		log::history.fs << in.head.str() << std::endl;
+
+		if (!trans) {
+			trans = new Transaction(*this);
+
+			if (subproc.pid) {
+				/*
+					When CGI request has received, disable requests from the client 
+					and remove the client timer by replacing it with process timer
+				*/
+				kq.add(sock(), EVFILT_TIMER, EV_DELETE | EV_ONESHOT, 0, 0, nullptr);
+				kq.add(sock(), EVFILT_READ, EV_ADD | EV_DISABLE, 0, 0, reinterpret_cast<void*>(&evnt_udata[EV_UDATA_MESSAGE]));
+				kq.add(subproc.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_PROC_TIMEOUT, reinterpret_cast<void*>(const_cast<int*>(&sock())));
+				kq.add(subproc.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, reinterpret_cast<void*>(const_cast<int*>(&sock())));
 			}
 		}
 
-		catch ( errstat_t& err ) {
-			log( "HTTP\t: transaction: " + str_t( err.what() ) );
+		if (Transaction::recvBody(in, subproc, _buff, byte_recv)) {
+			log::history.fs << in.body.str() << std::endl;
 
-			in.reset();
-			out.reset();
+			if (!subproc.pid) {
+				if (trans) { trans->act(); }
 
-			Transaction::buildError( err.code, *this );
-			setCgiCheck(TRUE);
-			action = NULL;
-			srv.add_events(client_socket, EVFILT_READ, EV_DELETE | EV_ONESHOT, 0, 0, NULL);
-			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+				in.reset();
+				kq.add(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+			}
+			else { close(subproc.fd[W]); }
 		}
-
-		catch ( err_t& err ) {
-			log( "HTTP\t: Request: " + str_t( err.what() ) );
-
-			in.reset();
-
-			Transaction::buildError( 400, *this );
-			action = NULL;
-			setCgiCheck(TRUE);
-			srv.add_events(client_socket, EVFILT_READ, EV_DELETE | EV_ONESHOT, 0, 0, NULL);
-			srv.add_events(client_socket, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
-		}
-    }
+	}
 }
 
-bool Client::sendData() {
-	size_t length = streamsize( out.msg );
+bool Client::send() {
+	log::print("sending");
 
-	log( "TCP\t: sending\n" );
-	logging.fs << out.msg.str() << "\n" << std::endl;
-
-	ssize_t bytesSent = send(client_socket, out.msg.str().c_str(), length, 0);  
-	if (bytesSent < 0) return false;
-
-	//////////////////////////////////////////////////////////////////////
-
-	if ( streamsize( out.body ) ) {
-		length = streamsize( out.body );
-
-		logging.fs << out.body.str() << "\n" << std::endl;
-
-		bytesSent = send(client_socket, out.body.str().c_str(), length, 0);  
-		if (bytesSent < 0) return false;
-
+	ssize_t byte = _send(out.head);
+	if (byte < 0) {
+		return false;
 	}
-	
-	out.reset();
 
-	if ( action ) { delete action; action = NULL; }
+	if (out.body.peek() != EOF) {
+		ssize_t byte_body = _send(out.body);
+
+		if (byte_body < 0) {
+			return false;
+		}
+		byte += byte_body;
+	}
+
+	log::print("sending done by " + std::to_string(byte));
 
 	return true;
 }
 
-/* STRUCT */
+ssize_t Client::_send(sstream_t& source) {
+	log::history.fs << source.str() << '\n' << std::endl;
 
-msg_buffer_s::msg_buffer_s() { reset(); }
-
-void msg_buffer_s::reset() {
-    msg.str("");
-    msg.clear();
-
-    msg_done 	= false;
-    msg_read 	= 0;
-
-    body.str("");
-    body.clear();
-
-    body_size 	= 0;
-    body_read 	= 0;
-
-	chunk		= FALSE;
-	incomplete	= 0;
+	return ::send(sock(), source.str().c_str(), streamsize(source), NONE);
 }
 
-process_s::process_s() { reset(); }
-
-void process_s::reset() {
-    pid		= NONE;
-    stat	= NONE;
-    fd[R]	= NONE;
-    fd[W]	= NONE;
-
-    argv.clear();
-    env.clear();
+void Client::reset() {
+	_resetTransaction();
+	in.reset();
+	out.reset();
 }
+
+void Client::_resetTransaction() {
+	if (trans) {
+		delete trans;
+		trans = NULL;
+	}
+}
+

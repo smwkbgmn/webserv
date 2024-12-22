@@ -5,7 +5,8 @@ FLAG		= -Wall -Wextra -Werror \
 $(FLG_STD) -I src -I src/core -I src/http -I src/tcp
 
 
-FLG_STD		= -std=c++98
+# FLG_STD		= -std=c++98
+FLG_STD		= -std=c++11
 
 SRC			= \
 $(wildcard src/*.cpp) \

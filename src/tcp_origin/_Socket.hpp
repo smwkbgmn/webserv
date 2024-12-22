@@ -3,7 +3,7 @@
 
 #include "error.hpp"
 #include "log.hpp"
-#include "structure.hpp"
+#include "type.hpp"
 #include <cstring>
 #include <exception>
 #include <fcntl.h>
@@ -26,14 +26,14 @@ typedef struct sockaddr_in sockaddr_t;
 typedef int socket_t;
 typedef std::vector<int> socket_list_t;
 
-class ASocket {
+class Socket {
 public:
     // sockaddr_t addr;
     // socket_t server_socket;
     socket_list_t server_list;
 
-    ASocket();
-    virtual ~ASocket();
+    Socket();
+    virtual ~Socket();
 
     void setAddr(int, sockaddr_t &);
     void setNonBlocking(int);

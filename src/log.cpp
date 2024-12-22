@@ -1,22 +1,22 @@
 #include "log.hpp"
 
-const std::time_t	begin	= std::time( NULL );
-File				logging( "log/" + logFname(), WRITE );
+const std::time_t	log::begin = std::time( NULL );
+File				log::history( "log/" + logFname(), WRITE );
 
 std::string
-logFname( void ) {
+log::logFname( void ) {
 	fstat_t	info;
 
 	if ( stat( "log", &info ) == ERROR )
 		mkdir( "log", 0755 );
 		
-	std::string	fname = strTime() + ".log";
+	std::string	fname = log::strTime() + ".log";
 
 	return fname;
 }
 
 std::string
-strTime( void ) {
+log::strTime( void ) {
 	std::time_t	now = std::time( NULL );
 
 	char		buf[80];
@@ -26,7 +26,7 @@ strTime( void ) {
 }
 
 void
-timestamp( void ) {
+log::timestamp( void ) {
 	std::time_t	now			= std::time( NULL );
 	std::time_t	elapse		= now - begin;
 	std::tm*	timeinfo	= std::localtime( &elapse );
@@ -38,7 +38,7 @@ timestamp( void ) {
 }
 
 void
-log( const str_t& msg ) {
+log::print( const str_t& msg ) {
 	timestamp();
 	std::clog << msg << std::endl;
 }

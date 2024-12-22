@@ -1,4 +1,5 @@
 #include "utill.hpp"
+#include "CGI.hpp"
 
 /* UTILL */ 
 bool	dead( const process_t& procs ) { return WEXITSTATUS( procs.stat ) != EXIT_SUCCESS; }

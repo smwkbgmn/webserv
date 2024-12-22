@@ -22,15 +22,19 @@ Response::~Response( void ) {}
 /* METHOD - act: do request method after valid the request message */
 void
 Response::act( const Request& rqst ) {
-	log( "HTTP\t: constructing response" );
+	// log::print( "HTTP\t: constructing response" );
 
 	if ( rqst.location().rewrite.empty() ) {
 
 		_doMethodValid( rqst );
 		_doMethod( rqst );
 
-		if ( rqst.header().connection == CN_KEEP_ALIVE ) _addServerInfo( CN_KEEP_ALIVE );
-		else _addServerInfo( CN_CLOSE );
+		if ( rqst.header().connection != CN_CLOSE ) {
+			_addServerInfo( CN_KEEP_ALIVE );
+		}
+		else {
+			_addServerInfo( CN_CLOSE );
+		}
 	}
 	else _redirect( rqst.location().rewrite +
 		rqst.line().uri.substr( rqst.location().root.length() ), 302 );
@@ -39,7 +43,7 @@ Response::act( const Request& rqst ) {
 void
 Response::_doMethod( const Request& rqst ) {
 	switch ( rqst.line().method ) {
-		case GET:
+		case GET		:
 			if ( isDir( rqst.info ) ) _index( rqst );
 			else {
 				HTTP::GET( rqst.line().uri, _body, _header.content_length );
@@ -53,7 +57,7 @@ Response::_doMethod( const Request& rqst ) {
 		case DELETE		: HTTP::DELETE( rqst ); _line.status = 204; break;
 		case NOT_ALLOWED: _errpage( 405, rqst.config() ); break;
 		
-		case UNKNOWN: {
+		case UNKNOWN	: {
 			vec_uint_t::const_iterator iter = rqst.location().allow.begin();
 			while ( iter != rqst.location().allow.end() )
 				_header.allow.push_back( *iter++ );

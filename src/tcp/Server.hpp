@@ -1,64 +1,35 @@
 #ifndef SERVER_HPP
-#define SERVER_HPP
+# define SERVER_HPP
 
-#include "ASocket.hpp"
-#include "Client.hpp"
-#include "structure.hpp"
+# include "Socket.hpp"
 
-#define MAX_EVENTS 10
-class Client;
+# define MAX_CLIENT 32
+# define DEFAULT	0
 
-typedef std::map<int, Client*> ConnectClients;
-typedef int kque;
-typedef std::vector<struct kevent> eventQueue;
-typedef std::vector<port_t> vec_port_t;
+class Server: public Socket {
 
+	public:
+		Server(const port_t&);
+		Server(Server&&) noexcept;
+		~Server();
 
-class Server : public ASocket {
-private:
-    kque kq;
-    eventQueue EventList;
-    struct timespec timeout;
-    ConnectClients ClientMap;
-    char client_event[8];
-    char server_event[8];
-	vec_port_t	port_tried;
+		Server&	operator=(Server&&) noexcept;
 
-	const vec_config_t& confs;
-    
-public:
-    Server( const vec_config_t& );
-	// Server( const vec_config_t& );
-    ~Server();
-    void add_events(uintptr_t, int16_t, uint16_t, uint32_t, intptr_t, void *);
+		const config_t&	config(const size_t&) const;
+		const vec<config_t>&	config() const;
 
-    void connectsever(vec_config_t confs);
-// void connectsever( );
-    void DisconnectClient(int client_fd);
+		void					configAdd(const config_t&);
 
-    void ServerPreset(int );
-    int eventOccure();
-    bool errorcheck(struct kevent &);
-    
-    void handleReadEvent(struct kevent &);
-    void handleWriteEvent(struct kevent& );
-    void handleProcessExitEvent(struct kevent&);
-    void handleTimerEvent(struct kevent& );
-    void handleCGIEvent(struct kevent &);
-    void handleClientEvent(struct kevent &);
-    void handleNewConnection(int);
+	private:
+		sockaddr_in_t	_addr;
+		socklen_t		_addr_len;
+		vec<config_t>	_conf;
 
+		void	_open(const port_t&);
+		void	_openSetAddr(const int&);
+		// void	_openSetNonblock();
 
-    void devide(vec_config_t& );
-
-    struct kevent &getEventList(int);
-
-    char* getClientEvent() { return client_event; }
-    char* getServerEvent() { return server_event; }
-
-    const vec_config_t& config( void ) const { return confs; }
-	// const config_t&	config( void ) const { return confs; }
-	const config_t& configDefault( void ) const { return confs.at( 0 ); }
 };
+
 
 #endif

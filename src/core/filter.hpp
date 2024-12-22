@@ -1,7 +1,7 @@
 #ifndef FILTER_HPP
 # define FILTER_HPP
 
-# include "structure.hpp"
+# include "type.hpp"
 
 /*
 	token	= 1*tchar
@@ -187,23 +187,22 @@ typedef struct config_s {
 typedef std::vector<config_t> vec_config_t;
 
 /* STRUCT - Buffer for messages (composed with two parts of msg and body part) */
-typedef struct msg_buffer_s {
-	msg_buffer_s( void );
-
-	void				reset( void );
+// typedef struct message_s{
+// 	message_s();
 	
-	sstream_t			msg;
-	ssize_t				msg_read;
-	bool				msg_done;
+// 	void	reset();
+	
+// 	sstream_t	head;
+// 	ssize_t		head_read;
+// 	bool		head_done;
 
-	sstream_t			body;
-	ssize_t				body_read;
-	ssize_t				body_size;
+// 	sstream_t	body;
+// 	ssize_t		body_read;
+// 	ssize_t		body_size;
 
-	bool				chunk;
-	size_t				incomplete;
-
-}	msg_buffer_t;
+// 	bool		chunk;
+// 	size_t		incomplete;
+// }	message_t;
 
 /* STRUCT - Request, Response */
 typedef struct {

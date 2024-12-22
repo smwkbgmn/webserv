@@ -1,4 +1,5 @@
 #include "CGI.hpp"
+#include "Transaction.hpp"
 
 map_str_path_t	CGI::script_bin;
 map_uint_str_t	CGI::environ_list;
@@ -14,6 +15,8 @@ map_uint_str_t	CGI::environ_list;
 /* METHOD - init: assign keys for running CGI */
 void
 CGI::init( void ) {
+	log::print("Loading CGI Module...");
+
 	_assignScriptBin();
 	_assignEnvironList();
 }
@@ -37,7 +40,7 @@ CGI::_assignEnvironList( void ) {
 /* METHOD - proceed: get outsourcing data */
 void
 CGI::proceed( const Request& rqst, process_t& procs ) {
-	log( "CGI\t: proceed" );
+	log::print( "proceed CGI" );
 
 	_valid( rqst );
 	_detach( rqst, procs );
@@ -82,7 +85,7 @@ void
 CGI::readFrom( const process_t& procs, sstream_t& out_body) {
 	c_buffer_t	buf;
 	
-	while ( ( buf.read = read( procs.fd[R], buf.ptr, SIZE_BUF ) ) > 0 ) {
+	while ( ( buf.read = read( procs.fd[R], buf.ptr, SIZE_BUFF_C ) ) > 0 ) {
 		out_body.write( buf.ptr, buf.read );
 		buf.total += buf.read;
 	}
@@ -92,74 +95,74 @@ CGI::readFrom( const process_t& procs, sstream_t& out_body) {
 }
 
 void
-CGI::build( msg_buffer_t& out ) {
+CGI::build( message_t& out ) {
 	_buildLine( out );
 	if ( streamsize( out.body ) ) _buildHeader( out );
 	if ( out.chunk ) { out.body.seekg( 0 ); _buildChunk( out ); }
 }
 
 void
-CGI::_buildLine( msg_buffer_t& out ) {
-	out.msg << 
+CGI::_buildLine( message_t& out ) {
+	out.head << 
 	HTTP::http.signature << '/' << HTTP::http.version.at( VERSION_11 ) << SP;
 
-	if ( !streamsize( out.body ) ) out.msg << "204" << SP << HTTP::key.status.at( 204 ) << CRLF;
-	else out.msg << "200" << SP << HTTP::key.status.at( 200 );
+	if ( !streamsize( out.body ) ) out.head << "204" << SP << HTTP::key.status.at( 204 ) << CRLF;
+	else out.head << "200" << SP << HTTP::key.status.at( 200 );
 	
-	out.msg << CRLF;
+	out.head << CRLF;
 }
 
 void
-CGI::_buildHeader( msg_buffer_t& out ) {
+CGI::_buildHeader( message_t& out ) {
 	size_t pos_header_end = out.body.str().find( MSG_END );
 
 	_buildHeaderServer( out );
 
 	// Add headers from the CGI contents and adjust out.body buffer 
 	if ( found( pos_header_end ) ) {
-		out.msg << out.body.str().substr( 0, pos_header_end + 2 );
+		out.head << out.body.str().substr( 0, pos_header_end + 2 );
 		out.body.str( out.body.str().substr( pos_header_end + 4 ) );
 	}
 
 	_buildHeaderType( out, pos_header_end );
 	_buildHeaderLen( out, pos_header_end );
 	
-	out.msg << CRLF;
+	out.head << CRLF;
 }
 
 void
-CGI::_buildHeaderServer( msg_buffer_t& out ) {
+CGI::_buildHeaderServer( message_t& out ) {
 	// Add server info
-	out.msg << 
+	out.head << 
 	HTTP::key.header_out.at( OUT_SERVER ) << ':' << SP <<
 	software << CRLF;
 
 	// Add date
-	out.msg << 
+	out.head << 
 	HTTP::key.header_out.at( OUT_DATE ) << ':' << SP <<
 	timeToStr( getNow() ) << CRLF;
 
 	// Add connection 
-	out.msg << 
+	out.head << 
 	HTTP::key.header_out.at( OUT_CONNECTION ) << ':' << SP <<
 	HTTP::http.connection.at( CN_KEEP_ALIVE ) << CRLF;
 }
 
 void
-CGI::_buildHeaderType( msg_buffer_t& out, const size_t& pos_header_end ) {
+CGI::_buildHeaderType( message_t& out, const size_t& pos_header_end ) {
 	if ( !found( pos_header_end ) || ( found( pos_header_end ) &&
-		!found( out.msg.str().find( HTTP::key.header_out.at( OUT_CONTENT_TYPE ) ) ) ) ) {
-		out.msg <<
+		!found( out.head.str().find( HTTP::key.header_out.at( OUT_CONTENT_TYPE ) ) ) ) ) {
+		out.head <<
 		HTTP::key.header_out.at( OUT_CONTENT_TYPE ) << ':' << SP <<
 		HTTP::key.mime.at( "txt" ) << CRLF;
 	}
 }
 
 void
-CGI::_buildHeaderLen( msg_buffer_t& out, const size_t& pos_header_end ) {
+CGI::_buildHeaderLen( message_t& out, const size_t& pos_header_end ) {
 	if ( !found( pos_header_end ) || ( found( pos_header_end ) &&
-		!found( out.msg.str().find( HTTP::key.header_out.at( OUT_CONTENT_LEN ) ) ) ) ) {
-		out.msg << 
+		!found( out.head.str().find( HTTP::key.header_out.at( OUT_CONTENT_LEN ) ) ) ) ) {
+		out.head << 
 		HTTP::key.header_out.at( OUT_TRANSFER_ENC ) << ':' << SP <<
 		HTTP::http.encoding.at( TE_CHUNKED ) << CRLF;
 
@@ -168,7 +171,7 @@ CGI::_buildHeaderLen( msg_buffer_t& out, const size_t& pos_header_end ) {
 }
 
 void
-CGI::_buildChunk( msg_buffer_t& out ) {
+CGI::_buildChunk( message_t& out ) {
 	sstream_t	chunked;
 
 	char		data[15];
@@ -180,7 +183,7 @@ CGI::_buildChunk( msg_buffer_t& out ) {
 		else frac = size; 
 		
 		// Add chunk head
-		chunked << hexdigt[frac] << CRLF;
+		chunked << hexdigit[frac] << CRLF;
 
 		// Add chunk data
 		out.body.read( data, frac );
@@ -271,3 +274,16 @@ c_buffer_s::c_buffer_s( void ) {
 	total	= 0;
 	read	= 0;
 }
+
+process_s::process_s() { reset(); }
+
+void process_s::reset() {
+    pid		= NONE;
+    stat	= NONE;
+    fd[R]	= NONE;
+    fd[W]	= NONE;
+
+    argv.clear();
+    env.clear();
+}
+

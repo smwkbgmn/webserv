@@ -1,9 +1,11 @@
 #ifndef UTILL_HPP
 # define UTILL_HPP
 
-# include "structure.hpp"
+# include "type.hpp"
 
 # define NOT_FOUND -1
+
+// typedef struct process_s process_t;
 
 /* UTILL */
 bool 			dead( const process_t& );
