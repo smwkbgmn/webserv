@@ -88,9 +88,7 @@ void Webserv::run() {
 	log::print("Server Has Started");
 
 	state = RUNNING;
-	while (state) {
-		_runHandler();
-	}
+	while (state) { _runHandler(); }
 }
 
 void Webserv::_runHandler() {
