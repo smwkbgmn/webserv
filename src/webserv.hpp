@@ -68,7 +68,6 @@ class Webserv {
 
 		void	_disconnect(const event_t&);
 		void	_disconnectPrintLog(const event_t&);
-
 };
 
 #endif

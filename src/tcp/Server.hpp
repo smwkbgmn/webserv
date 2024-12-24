@@ -7,7 +7,6 @@
 # define DEFAULT	0
 
 class Server: public Socket {
-
 	public:
 		Server(const port_t&);
 		Server(Server&&) noexcept;
@@ -27,8 +26,6 @@ class Server: public Socket {
 
 		void	_open(const port_t&);
 		void	_openSetAddr(const int&);
-		// void	_openSetNonblock();
-
 };
 
 

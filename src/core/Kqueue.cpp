@@ -15,7 +15,6 @@ Kqueue::Kqueue() {
 Kqueue::~Kqueue() {}
 
 int Kqueue::renew() {
-	// int evnt_new = kevent(_fd, nullptr, 0, _que.data(), _que.size(), &_timeout);
 	int evnt_new = kevent(_fd, nullptr, 0, _que.data(), _que.size(), nullptr);
 	if (evnt_new == ERROR) { throwSysErr("kevent_renew"); }
 	return evnt_new;
@@ -46,4 +45,3 @@ int Kqueue::castUdata(void* target) const {
 	}
 	return *reinterpret_cast<int*>(target);
 }
-// void Kqueue::del() {}

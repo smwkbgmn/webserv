@@ -6,10 +6,8 @@
 # include "Transaction.hpp"
 
 class Kqueue;
-// struct proces_t;
 
 class Client: public Socket {
-	
 	public:
 		Client() = delete;
 		Client(const Server&);
