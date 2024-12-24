@@ -220,7 +220,7 @@ void Webserv::_runHandlerProcess(const event_t& evnt) {
 void Webserv::_runHandlerTimeout(const event_t& evnt) {
 	log::print("Proceeding handler timeout");
 	/*
-		When timed out, the ident could be client_sock or proc_id either
+		When timed out, the ident may be client_sock and proc_id either
 		So need to chekc if it's from Client or Process by searching map sock_cl
 	*/
 	auto it = _map.sock_cl.find(evnt.ident);
