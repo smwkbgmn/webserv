@@ -1,15 +1,5 @@
 #include "Server.hpp"
 
-// const config_t& Server::config(const size_t& i) const {
-// 	if (i < _conf.size()) { return _conf.at(i); }
-// 	return _conf.at(DEFAULT);
-// }
-
-/* ACCESS */
-const vec<config_t>& Server::config() const {
-	return _conf;
-}
-
 /* INSTANCIATE */
 Server::Server(const port_t& port):
 	Socket() {
@@ -48,12 +38,17 @@ void Server::_openSetAddr(const int& port) {
 }
 
 /* OPERATOR */
-// Server& Server::operator=(Server&& target) noexcept {
-// 	if (this != &target) {
-// 		// Do move things
-// 	}
-// 	return *this;
-// }
+Server& Server::operator=(Server&& target) noexcept {
+	if (this != &target) {
+		// Do move things
+	}
+	return *this;
+}
+
+/* ACCESS */
+const vec<config_t>& Server::config() const {
+	return _conf;
+}
 
 /* METHOD */
 void Server::configAdd(const config_t& conf) { 

@@ -15,7 +15,6 @@ typedef struct sockaddr		sockaddr_t;
 typedef struct sockaddr_in	sockaddr_in_t;
 
 class Socket {
-
 	public:
 		Socket(); // Open Server
 		Socket(const fd_t&); // Accept Client
@@ -32,7 +31,6 @@ class Socket {
 
 	private:	
 		fd_t 			_sock;
-
 };
 
 #endif
