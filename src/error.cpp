@@ -2,22 +2,28 @@
 
 void
 throwSysErr( const str_t& fname ) {
-	perror( fname.c_str() );
-	std::cout << "errno: " << errno << '\n';
+	sstream_t ss;
+
+	ss << fname + ": " + std::to_string(errno);
+	perror( ss.str().c_str() );
 	throw errstat_t( 500, 0 );
 }
 
 void
 throwSysErr( const str_t& fname, const uint_t& code ) {
-	perror( fname.c_str() );
-	std::cout << "errno: " << errno << '\n';
+	sstream_t ss;
+	
+	ss << fname + ": " + std::to_string(errno);
+	perror( ss.str().c_str() );
 	throw errstat_t( code, 0 );
 }
 
 void
 throwSysErr( const str_t& fname, const uint_t& code, const size_t& confidx ) {
-	perror( fname.c_str() );
-	std::cout << "errno: " << errno << '\n';
+	sstream_t ss;
+	
+	ss << fname + ": " + std::to_string(errno);
+	perror( ss.str().c_str() );
 	throw errstat_t( code, confidx );
 }
 

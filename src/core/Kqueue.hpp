@@ -19,13 +19,14 @@ class Kqueue {
 		const event_t&	que(const size_t&) const;
 
 		int				renew();
-		void			add(uintptr_t, int16_t, uint16_t, uint32_t, intptr_t, void*);
-		// void	del();
+		void			set(uintptr_t, int16_t, uint16_t, uint32_t, intptr_t, void*);
+
+		void*			castUdata(const int&) const;
+		int				castUdata(void*) const;
 		
 	private:	
 		int				_fd;
 		vec<event_t>	_que;
-		// event_t			_que[EVENT_POOL];
 		struct timespec	_timeout;
 };
 
@@ -499,4 +500,9 @@ class Kqueue {
 		Otherwise, -1 will be returned, and errno will be set to indicate the
 		error condition.  If the time limit expires, then kevent(), kevent64()
 		and kevent_qos() return 0.
+*/
+
+
+/*
+
 */

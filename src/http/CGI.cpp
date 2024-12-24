@@ -40,7 +40,7 @@ CGI::_assignEnvironList( void ) {
 /* METHOD - proceed: get outsourcing data */
 void
 CGI::proceed( const Request& rqst, process_t& procs ) {
-	log::print( "proceed CGI" );
+	log::print( "proceeding CGI" );
 
 	_valid( rqst );
 	_detach( rqst, procs );
