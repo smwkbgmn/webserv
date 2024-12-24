@@ -19,7 +19,7 @@ Socket::Socket(const fd_t& sock_srv) {
 	_sock = accept(sock_srv, reinterpret_cast<sockaddr_t*>(&addr), &addr_len);
 	if (_sock == ERROR) { throwSysErr("accept"); }
 
-	log::print("Client " + std::to_string(_sock) + " has connected with server " + std::to_string(sock_srv));
+	log::print("Client " + std::to_string(_sock) + " has connected to Server " + std::to_string(sock_srv));
 }
 
 Socket::Socket(const Socket&& source) noexcept:

@@ -6,22 +6,20 @@
 Client::Client(const Server& srv):
 	Socket(srv.sock()),
 	trans(nullptr),
-	cgi(false),
-	cgi_exit(false),
 	_srv(srv) {
 
+	reset();
 	setNonblock();
 }
 
 Client::Client(Client&& source) noexcept:
 	Socket(std::move(source)),
 	trans(source.trans),
-	in(std::move(source.in)),
-	out(std::move(source.out)),
-	subproc(std::move(source.subproc)),
-	cgi(source.cgi),
-	cgi_exit(source.cgi_exit),
 	_srv(source._srv) {
+
+	in = std::move(source.in);
+	out = std::move(source.out);
+	subproc = std::move(source.subproc);
 
 	source.trans = nullptr;
 }
@@ -31,7 +29,8 @@ Client::~Client() {
 		delete trans;
 	}
 }
-/* OPERATOR OVERLOAD */
+
+/* OPERATOR */
 Client& Client::operator=(Client&& source) noexcept {
 	if (this != &source) {
 		// do move things
@@ -48,7 +47,7 @@ const Server& Client::server() const {
 	return _srv;
 }
 
-/* METHOD */
+/* METHOD - receive: Receive message and handle it with in buffer */
 ssize_t Client::receive(Kqueue& kq) {
 	log::print("receiving");
 
@@ -67,17 +66,9 @@ ssize_t Client::receive(Kqueue& kq) {
 			else {
 				Transaction::buildError(400, *this);
 			}
-			// cgi = true;
 
-			// kq.add(sock(), EVFILT_READ, EV_ADD | EV_DISABLE, 0, 0, reinterpret_cast<void*>(&evnt_udata[EV_UDATA_MESSAGE]));
-			kq.add(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+			kq.set(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
 		}
-	}
-	else if (byte == 0) {
-		kq.add(sock(), EVFILT_READ, EV_ADD | EV_DISABLE, 0, 0, reinterpret_cast<void*>(&evnt_udata[EV_UDATA_MESSAGE]));
-	}
-	else {
-		throw err_t("Server socket error on receive");
 	}
 	return byte;
 }
@@ -88,51 +79,64 @@ void Client::_receiveTransaction(Kqueue& kq, ssize_t& byte_recv) {
 
 		if (!trans) {
 			trans = new Transaction(*this);
-
-			if (subproc.pid) {
-				/*
-					When CGI request has received, disable requests from the client 
-					and remove the client timer by replacing it with process timer
-				*/
-				kq.add(sock(), EVFILT_TIMER, EV_DELETE | EV_ONESHOT, 0, 0, nullptr);
-				kq.add(sock(), EVFILT_READ, EV_ADD | EV_DISABLE, 0, 0, reinterpret_cast<void*>(&evnt_udata[EV_UDATA_MESSAGE]));
-				kq.add(subproc.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_PROC_TIMEOUT, reinterpret_cast<void*>(const_cast<int*>(&sock())));
-				kq.add(subproc.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, reinterpret_cast<void*>(const_cast<int*>(&sock())));
-			}
 		}
 
 		if (Transaction::recvBody(in, subproc, _buff, byte_recv)) {
 			log::history.fs << in.body.str() << std::endl;
 
-			if (!subproc.pid) {
-				if (trans) { trans->act(); }
-
-				in.reset();
-				kq.add(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-			}
-			else { close(subproc.fd[W]); }
+			_doRequestedAction(kq);
 		}
 	}
 }
 
+void Client::_doRequestedAction(Kqueue& kq) {
+	kq.set(sock(), EVFILT_TIMER, EV_DELETE, 0, 0, kq.castUdata(udata[UDT_TIMER_CLIENT_RQST]));
+
+	if (!subproc.pid) {
+		if (trans) {
+			trans->act();
+		}
+
+		kq.set(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+		kq.set(sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, kq.castUdata(udata[UDT_TIMER_CLIENT_IDLE]));
+	}
+	else {
+		/*
+			When CGI request has received and receving body data has done,
+			disable receiving from the client and remove the client timer
+			by replacing it with process timer
+		*/
+		kq.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, kq.castUdata(udata[UDT_READ_CLIENT]));
+
+		kq.set(subproc.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, kq.castUdata(sock()));
+		kq.set(subproc.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_PROC, kq.castUdata(sock()));
+
+		close(subproc.fd[W]);
+	}
+}
+
+/* METHOD - send: Send the message from out buffer */
 bool Client::send() {
 	log::print("sending");
 
-	ssize_t byte = _send(out.head);
-	if (byte < 0) {
+	ssize_t total = 0;
+	ssize_t head = _send(out.head);
+
+	if (head < 0) {
 		return false;
 	}
+	total += head;
 
 	if (out.body.peek() != EOF) {
-		ssize_t byte_body = _send(out.body);
+		ssize_t body = _send(out.body);
 
-		if (byte_body < 0) {
+		if (body < 0) {
 			return false;
 		}
-		byte += byte_body;
+		total += body;
 	}
 
-	log::print("sending done by " + std::to_string(byte));
+	log::print("sending done by " + std::to_string(total));
 
 	return true;
 }
@@ -144,15 +148,12 @@ ssize_t Client::_send(sstream_t& source) {
 }
 
 void Client::reset() {
-	_resetTransaction();
 	in.reset();
 	out.reset();
-}
 
-void Client::_resetTransaction() {
 	if (trans) {
 		delete trans;
 		trans = NULL;
 	}
+	subproc.reset();
 }
-

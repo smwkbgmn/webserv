@@ -16,23 +16,17 @@ class Client: public Socket {
 		Client(Client&&) noexcept;
 		~Client();
 
-		// For move sementics to container
 		Client&			operator=(Client&&) noexcept;
-		// For searching map container sock_Client
+		/* For searching map container sock_Client */
 		bool			operator==(const Client&) const;
 
 		const Server&	server() const;
 
-		Transaction*	trans;
 		message_t		in;
 		message_t		out;
-		
-		process_t		subproc;
 
-		// what for? //////////
-		bool			cgi;
-		bool			cgi_exit;
-		///////////////////////
+		Transaction*	trans;
+		process_t		subproc;
 
 		ssize_t			receive(Kqueue&);
 		bool			send();
@@ -43,10 +37,9 @@ class Client: public Socket {
 		char			_buff[SIZE_BUFF_RECV];
 	
 		void			_receiveTransaction(Kqueue&, ssize_t&);
+		void			_doRequestedAction(Kqueue&);
 
 		ssize_t			_send(sstream_t&);
-
-		void			_resetTransaction();
 };
 
 #endif

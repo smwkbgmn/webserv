@@ -21,7 +21,7 @@ int Kqueue::renew() {
 	return evnt_new;
 }
 
-void Kqueue::add(uintptr_t ident, int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void* udata) {
+void Kqueue::set(uintptr_t ident, int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void* udata) {
 	event_t evnt;
 
 	EV_SET(&evnt, ident, filter, flags, fflags, data, udata);
@@ -36,4 +36,14 @@ const event_t& Kqueue::que(const size_t& i) const {
 	else { return _que[0]; }
 }
 
+void* Kqueue::castUdata(const int& target) const {
+	return reinterpret_cast<void*>(const_cast<int*>(&target));
+}
+
+int Kqueue::castUdata(void* target) const {
+	if (target == nullptr) {
+		std::cout << "udata has set as nullptr\n";
+	}
+	return *reinterpret_cast<int*>(target);
+}
 // void Kqueue::del() {}

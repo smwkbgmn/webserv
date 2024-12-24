@@ -14,7 +14,7 @@ Response::Response( void ) {}
 
 Response::Response( const uint_t& status, const config_t& conf ) {
 	_errpage( status, conf );
-	_addServerInfo( CN_CLOSE );
+	_addServerInfo( CN_KEEP_ALIVE );
 }
 
 Response::~Response( void ) {}

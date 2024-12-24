@@ -6,27 +6,27 @@
 # include "Server.hpp"
 # include "HTTP.hpp"
 
-# include <signal.h> /* kill */
+# include <signal.h>
 
-# define CL_TIMEOUT 50000 // 5s
-# define CL_PROC_TIMEOUT 300000 // 30s
+/* Timeout in ms */
+# define CL_TIMEOUT_IDLE 30000
+# define CL_TIMEOUT_RQST 30000
+# define CL_TIMEOUT_PROC 60000
+
 
 enum state_e {
 	SUSPEND,
 	RUNNING
 };
 
-enum evnt_udata_e {
-	EV_UDATA_CONNECTION,
-	EV_UDATA_MESSAGE
+enum udata_e {
+	UDT_READ_SERVER,
+	UDT_READ_CLIENT,
+	UDT_TIMER_CLIENT_IDLE,
+	UDT_TIMER_CLIENT_RQST
 };
 
-// const int evnt_udata[2] = {
-// 	EV_UDATA_CONNECTION,
-// 	EV_UDATA_MESSAGE
-// };
-
-extern int evnt_udata[2];
+extern int udata[4];
 
 class Webserv {
 	public:
@@ -60,14 +60,12 @@ class Webserv {
 		void	_runHandler();
 		bool	_runHandlerDisconnect(const event_t&);
 		void	_runHandlerRead(const event_t&);
-		void	_runHandlerReadConnect(const uintptr_t&);
-		void	_runHandlerReadMessage(const event_t&);
+		void	_runHandlerReadServer(const uintptr_t&);
+		void	_runHandlerReadClient(const event_t&);
 		void	_runHandlerWrite(const event_t&);
 		void	_runHandlerProcess(const event_t&);
 		void	_runHandlerTimeout(const event_t&);
-		void	_runHandlerTimeoutException(const event_t&, map<fd_t, Client&>::iterator&, const errstat_t&);
 
-		void	_refreshTimer(const fd_t&);
 		void	_disconnect(const event_t&);
 		void	_disconnectPrintLog(const event_t&);
 

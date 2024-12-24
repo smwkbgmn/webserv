@@ -97,17 +97,6 @@ Transaction::recvHead( message_t& in, char* buf, ssize_t& byte_read ) {
 			if ( byte_read )
 				strncpy( buf, &buf[body_begin], byte_read );
 		}
-		// else {
-		// 	in.head_done = TRUE;
-
-		// 	size_t body_begin	= pos_header_end - in.head_read + SIZE_MSG_END;
-		// 	in.body_read		= byte_read - body_begin;
-
-		// 	if ( in.body_read )
-		// 		in.body.write( &buf[body_begin], in.body_read );
-
-		// 	byte_read = 0;
-		// }
 	}
 	return in.head_done;
 }
@@ -277,7 +266,7 @@ Transaction::_buildBody( const Response& rspn, message_t& out ) {
 void
 Transaction::buildError( const uint_t& status, Client& cl ) {
 	cl.out.reset();
-	
+
 	if ( cl.trans ) build( Response( status, cl.trans->config() ), cl.out );
 	else build( Response( status, cl.server().config().at(DEFAULT) ), cl.out );
 }
