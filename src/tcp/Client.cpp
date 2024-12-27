@@ -25,9 +25,7 @@ Client::Client(Client&& source) noexcept:
 }
 
 Client::~Client() {
-	if (trans) {
-		delete trans;
-	}
+	if (trans) { delete trans; }
 }
 
 /* OPERATOR */
@@ -48,32 +46,63 @@ const Server& Client::server() const {
 }
 
 /* METHOD - receive: Receive message and handle it with in buffer */
-ssize_t Client::receive(Kqueue& kq) {
-	log::print("receiving");
+bool Client::receive(Kqueue& kq) {
+	log::print("Client " + std::to_string(sock()) + " receiving");
 
     ssize_t byte = recv(sock(), _buff, SIZE_BUFF_RECV, 0);
-	log::print("receiving done by " + std::to_string(byte));
+	log::print("Client " + std::to_string(sock()) + " receiving done by " + std::to_string(byte));
 
 	if (byte > 0) {
-		try { _receiveTransaction(kq, byte); }
-		catch (err_t& err) {
-			log::print("Request: " + str_t(err.what()));
+		_receiveTransaction(kq, byte);
 
-			const errstat_t* errstat = dynamic_cast<const errstat_t*>(&err);
-			if (errstat) {
-				Transaction::buildError(errstat->code, *this);
-			}
-			else {
-				Transaction::buildError(400, *this);
-			}
+		return true;
+	} else if (byte == 0) {
+		/*
+			The client has gracefully closed the connection.
+			This means the client has sent a FIN packet to signal that
+			it will not send any more data.
 
-			kq.set(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-		}
+			Because the client may still be able to receive data from
+			the server (if it has not closed its receiving side), should
+			not close the connection by just disable more receiving 
+			(e.g. The rest part of data that is produced through CGI)
+		*/
+		kq.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, kq.castUdata(udata[UDT_READ_CLIENT]));
+
+		return true;
+	} else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+		/*
+			If errno is EAGAIN or EWOULDBLOCK, the socket is set to
+			non-blocking mode, and no data is available to read at the moment
+			and it means that it's not error while should wait for new read event
+		*/
+		return true;
+	} else {
+		return false;
 	}
-	return byte;
 }
 
 void Client::_receiveTransaction(Kqueue& kq, ssize_t& byte_recv) {
+	try {
+		if (_receiveTransactionMessage(byte_recv)) {
+			_receiveTransactionDo(kq);
+		}
+	}
+	catch (err_t& err) {
+		log::print("Request: " + str_t(err.what()));
+
+		const errstat_t* errstat = dynamic_cast<const errstat_t*>(&err);
+		if (errstat) {
+			Transaction::buildError(errstat->code, *this);
+		} else {
+			Transaction::buildError(400, *this);
+		}
+
+		kq.set(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+	}
+}
+
+bool Client::_receiveTransactionMessage(ssize_t& byte_recv) {
 	if (Transaction::recvHead(in, _buff, byte_recv)) {
 		log::history.fs << in.head.str() << std::endl;
 
@@ -84,12 +113,13 @@ void Client::_receiveTransaction(Kqueue& kq, ssize_t& byte_recv) {
 		if (Transaction::recvBody(in, subproc, _buff, byte_recv)) {
 			log::history.fs << in.body.str() << std::endl;
 
-			_doRequestedAction(kq);
+			return true;
 		}
 	}
+	return false;
 }
 
-void Client::_doRequestedAction(Kqueue& kq) {
+void Client::_receiveTransactionDo(Kqueue& kq) {
 	kq.set(sock(), EVFILT_TIMER, EV_DELETE, 0, 0, kq.castUdata(udata[UDT_TIMER_CLIENT_RQST]));
 
 	if (!subproc.pid) {
@@ -99,13 +129,14 @@ void Client::_doRequestedAction(Kqueue& kq) {
 
 		kq.set(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
 		kq.set(sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, kq.castUdata(udata[UDT_TIMER_CLIENT_IDLE]));
-	}
-	else {
+	} else {
 		/*
 			When CGI request has received and receving body data has done,
 			disable receiving from the client and remove the client timer
 			by replacing it with process timer
 		*/
+		log::print("Client " + std::to_string(sock()) + " proceeding CGI");
+
 		kq.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, kq.castUdata(udata[UDT_READ_CLIENT]));
 
 		kq.set(subproc.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, kq.castUdata(sock()));
@@ -117,7 +148,7 @@ void Client::_doRequestedAction(Kqueue& kq) {
 
 /* METHOD - send: Send the message from out buffer */
 bool Client::send() {
-	log::print("sending");
+	log::print("Client " + std::to_string(sock()) + " sending");
 
 	ssize_t total = 0;
 	ssize_t head = _send(out.head);
@@ -136,7 +167,7 @@ bool Client::send() {
 		total += body;
 	}
 
-	log::print("sending done by " + std::to_string(total));
+	log::print("Client " + std::to_string(sock()) + " sending done by " + std::to_string(total));
 
 	return true;
 }

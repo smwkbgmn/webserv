@@ -57,7 +57,7 @@ const str_t	err_msg[] = {
 	"the requested body size is unknown from client request",
 	"the requested body size exceeds configured size of limitation",
 
-	"the CGI failed to exit with SUCCESS",
+	"the CGI failed to exit as SUCCESS",
 	"the CGI exceed time to limit for proceeding",
 
     "fail to send"

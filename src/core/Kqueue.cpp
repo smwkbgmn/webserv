@@ -2,21 +2,27 @@
 
 /* INSTANCIATE */
 Kqueue::Kqueue() {
-	log::print("Constructing Event Handler...");
+	log::print("Loading Event Handler...");
 
-	_fd = kqueue();
-	if (_fd == ERROR) { throwSysErr("kqueue"); }
+	_fd = kqueue();	
+	if (_fd == ERROR) {
+		throwSysErr("kqueue");
+	}
 
 	_timeout.tv_sec = TIMEOUT_SEC;
 	_timeout.tv_nsec = 0;
 
 	_que.resize(EVENT_POOL);
 }
+
 Kqueue::~Kqueue() {}
 
 int Kqueue::renew() {
 	int evnt_new = kevent(_fd, nullptr, 0, _que.data(), _que.size(), nullptr);
-	if (evnt_new == ERROR) { throwSysErr("kevent_renew"); }
+	if (evnt_new == ERROR) {
+		throwSysErr("kevent_renew");
+	}
+
 	return evnt_new;
 }
 
@@ -31,8 +37,11 @@ void Kqueue::set(uintptr_t ident, int16_t filter, uint16_t flags, uint32_t fflag
 int Kqueue::fd() const { return _fd; }
 
 const event_t& Kqueue::que(const size_t& i) const {
-	if (i < _que.size()) { return _que[i]; }
-	else { return _que[0]; }
+	if (i < _que.size()) {
+		return _que[i];
+	} else {
+		return _que[0];
+	}
 }
 
 void* Kqueue::castUdata(const int& target) const {
@@ -43,5 +52,6 @@ int Kqueue::castUdata(void* target) const {
 	if (target == nullptr) {
 		std::cout << "udata has set as nullptr\n";
 	}
+
 	return *reinterpret_cast<int*>(target);
 }

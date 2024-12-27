@@ -25,7 +25,8 @@ void
 CGI::_assignScriptBin( void ) {
 	script_bin.insert( std::make_pair<str_t, path_t>( "php", "/usr/bin/php" ) );
 	script_bin.insert( std::make_pair<str_t, path_t>( "pl", "/usr/bin/perl" ) );
-	script_bin.insert( std::make_pair<str_t, path_t>( "py", "/usr/bin/python" ) );
+	// script_bin.insert( std::make_pair<str_t, path_t>( "py", "/usr/bin/python" ) );
+	script_bin.insert( std::make_pair<str_t, path_t>( "py", "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3" ) );
 }
 
 void
@@ -40,8 +41,6 @@ CGI::_assignEnvironList( void ) {
 /* METHOD - proceed: get outsourcing data */
 void
 CGI::proceed( const Request& rqst, process_t& procs ) {
-	log::print( "proceeding CGI" );
-
 	_valid( rqst );
 	_detach( rqst, procs );
 }

@@ -3,6 +3,7 @@
 /* INSTANCIATE */
 Server::Server(const port_t& port):
 	Socket() {
+
 	_open(port);
 	setNonblock();
 
@@ -15,8 +16,7 @@ Server::Server(const port_t& port):
 Server::Server(Server&& target) noexcept:
 	Socket(std::move(target)),
 	_addr(std::move(target._addr)),
-	_conf(std::move(target._conf)) {
-}
+	_conf(std::move(target._conf)) {}
 
 Server::~Server() {}
 
@@ -26,6 +26,7 @@ void Server::_open(const port_t& port) {
 	if (bind(sock(), reinterpret_cast<const sockaddr_t*>(&addr), addr_len) == ERROR) {
 		throwSysErr("bind");
 	}
+	
 	if (listen(sock(), MAX_CLIENT) == ERROR) {
 		throwSysErr("listen");
 	}
