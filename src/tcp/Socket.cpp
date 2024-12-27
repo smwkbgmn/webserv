@@ -1,23 +1,23 @@
 #include "Socket.hpp"
 
-/* ACCESS */
-const fd_t& Socket::sock() const { return _sock; }
-
 /* INSTANTIATE */
-
-/* Open Sever endpoint */
 Socket::Socket() {
+	/* Open Sever endpoint */
 	_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (_sock == ERROR) { throwSysErr("socket"); }
+	if (_sock == ERROR) {
+		throwSysErr("socket");
+	}
 
 	memset(&addr, NONE, sizeof(sockaddr_in_t));
 	addr_len = sizeof(addr);
 }
 
-/* Accept Client connection */
 Socket::Socket(const fd_t& sock_srv) {
+	/* Accept Client connection */
 	_sock = accept(sock_srv, reinterpret_cast<sockaddr_t*>(&addr), &addr_len);
-	if (_sock == ERROR) { throwSysErr("accept"); }
+	if (_sock == ERROR) {
+		throwSysErr("accept");
+	}
 
 	log::print("Client " + std::to_string(_sock) + " has connected to Server " + std::to_string(sock_srv));
 }
@@ -43,6 +43,9 @@ Socket&	Socket::operator=(const Socket&& source) noexcept {
 	}
 	return *this;
 }
+
+/* ACCESS */
+const fd_t& Socket::sock() const { return _sock; }
 
 /* METHOD */
 void Socket::setNonblock() const {

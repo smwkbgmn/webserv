@@ -26,7 +26,7 @@ class Client: public Socket {
 		Transaction*	trans;
 		process_t		subproc;
 
-		ssize_t			receive(Kqueue&);
+		bool			receive(Kqueue&);
 		bool			send();
 		void			reset();
 
@@ -35,7 +35,8 @@ class Client: public Socket {
 		char			_buff[SIZE_BUFF_RECV];
 	
 		void			_receiveTransaction(Kqueue&, ssize_t&);
-		void			_doRequestedAction(Kqueue&);
+		bool			_receiveTransactionMessage(ssize_t&);
+		void			_receiveTransactionDo(Kqueue&);
 
 		ssize_t			_send(sstream_t&);
 };

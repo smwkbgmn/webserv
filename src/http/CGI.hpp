@@ -12,19 +12,6 @@ enum pipe_mode_e { R, W };
 
 class Request;
 
-// typedef struct process_s {
-// 	process_s( void );
-
-// 	void		reset( void );
-
-// 	pid_t		pid;
-// 	stat_t		stat;
-// 	pipe_t		fd[2];
-
-// 	vec_str_t	argv;
-// 	vec_str_t	env;
-// }	process_t;
-
 typedef struct c_buffer_s {
 	c_buffer_s( void );
 	

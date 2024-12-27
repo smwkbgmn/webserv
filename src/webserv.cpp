@@ -8,15 +8,10 @@ int udata[4] = {
 };
 
 /* INSTANCIATE */
-Webserv::Webserv(Kqueue& event_interface): state(SUSPEND), _kq(event_interface) {
-	log::print("Constructing Core Module...");
-}
+Webserv::Webserv(Kqueue& event_interface):
+	state(SUSPEND), _kq(event_interface) {}
 
-Webserv::~Webserv() {
-	for (auto it = _list.cl.begin(); it != _list.cl.end(); ++it) {
-		close(it->sock());
-	}
-}
+Webserv::~Webserv() {}
 
 /* METHOD - init: To be ready to run server */
 void Webserv::init(const char* filename) {
@@ -28,10 +23,11 @@ void Webserv::init(const char* filename) {
 }
 
 void Webserv::_loadConfig(const char* filename, vec<config_t>& holder) {
-	log::print("Parsing Config...");
+	log::print("Loading Config...");
 
-	if (filename) { configParse(holder, filename); }
-	else {
+	if (filename) {
+		configParse(holder, filename);
+	} else {
 		holder.push_back(config_t());
 		holder.front().locations.push_back(location_t(holder.front()));
 	}
@@ -63,16 +59,15 @@ void Webserv::_initServer(vec<config_t>& confs) {
 	for (auto it = confs.begin(); it != confs.end(); ++it) {
 		if (_map.port_sock.find(it->listen) == _map.port_sock.end()) {
 			_list.srv.emplace_back(it->listen);
-			Server& srv = _list.srv.back();
 
+			Server& srv = _list.srv.back();
 			srv.configAdd(*it);
 
 			_map.port_sock.insert(pair<port_t, fd_t>(it->listen, srv.sock()));
 			_map.sock_srv.insert(pair<fd_t, Server&>(srv.sock(), srv));
 
 			_kq.set(srv.sock(), EVFILT_READ, EV_ADD, 0, 0, _kq.castUdata(udata[UDT_READ_SERVER]));
-		}
-		else {
+		} else {
 			_map.sock_srv.at(_map.port_sock.at(it->listen)).configAdd(*it);
 		}
 	}
@@ -85,7 +80,7 @@ void Webserv::_initModule() {
 
 /* METHOD - run: Start the server */
 void Webserv::run() {
-	log::print("Server Has Started");
+	log::print("Server has started");
 
 	state = RUNNING;
 	while (state) { _runHandler(); }
@@ -98,7 +93,9 @@ void Webserv::_runHandler() {
 	log::print(std::to_string(evnt_new) + " Event");
 
 	for (auto i = 0; i < evnt_new; ++i) {
-		if (_runHandlerDisconnect(_kq.que(i))) { continue; }
+		if (_runHandlerDisconnect(_kq.que(i))) {
+			continue;
+		}
 
 		switch (_kq.que(i).filter) {
 			case EVFILT_READ	: _runHandlerRead(_kq.que(i)); break;
@@ -134,6 +131,7 @@ void Webserv::_runHandlerRead(const event_t& evnt) {
 
 void Webserv::_runHandlerReadServer(const uintptr_t& ident) {
 	_list.cl.emplace_back(_map.sock_srv.at(ident));
+
 	Client& cl = _list.cl.back();
 
 	_map.sock_cl.insert(pair<fd_t, Client&>(cl.sock(), cl));
@@ -146,26 +144,7 @@ void Webserv::_runHandlerReadClient(const event_t& evnt) {
 	_kq.set(evnt.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.castUdata(udata[UDT_TIMER_CLIENT_IDLE]));
 	_kq.set(evnt.ident, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_RQST, _kq.castUdata(udata[UDT_TIMER_CLIENT_RQST]));
 
-	ssize_t byte = _map.sock_cl.at(evnt.ident).receive(_kq);
-	if (byte == 0) {
-		/*
-			The client has gracefully closed the connection.
-			This means the client has sent a FIN packet to signal that
-			it will not send any more data.
-
-			Because the client may still be able to receive data from
-			the server (if it has not closed its receiving side), should
-			not close the connection by just disable more receiving 
-			(e.g. The rest part of data that is produced through CGI)
-		*/
-		_kq.set(evnt.ident, EVFILT_READ, EV_DISABLE, 0, 0, _kq.castUdata(udata[UDT_READ_CLIENT]));
-	}
-	/*
-		If errno is EAGAIN or EWOULDBLOCK, the socket is set to
-		non-blocking mode, and no data is available to read at the moment
-		and it means that it's not error while should wait for new read event
-	*/
-	else if (byte < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
+	if (!_map.sock_cl.at(evnt.ident).receive(_kq)) {
 		_disconnect(evnt);
 	}
 }
@@ -177,34 +156,26 @@ void Webserv::_runHandlerWrite(const event_t& evnt) {
 		cl.reset();
 
 		_kq.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _kq.castUdata(udata[UDT_TIMER_CLIENT_IDLE]));
-	}
-	else {
+	} else {
 		_disconnect(evnt);
 	}
 }
 
 void Webserv::_runHandlerProcess(const event_t& evnt) {
-	log::print("proceeding CGI done");
+	log::print("Client " + std::to_string(_kq.castUdata(evnt.udata)) + " proceeding CGI done");
 	/*
 		If while CGI procedure the Client has disconnected,
 		we will catch and handle it in write handler
 	*/
 	Client& cl = _map.sock_cl.at(_kq.castUdata(evnt.udata));
 
-	try {
-		CGI::wait(cl.subproc);
+	CGI::wait(cl.subproc);
 
-		if (WEXITSTATUS(cl.subproc.stat) != EXIT_SUCCESS) {
-			throw errstat_t(500, err_msg[CGI_EXIT_FAILURE]);
-		}
-
+	if (WEXITSTATUS(cl.subproc.stat) == EXIT_SUCCESS) {
 		CGI::readFrom(cl.subproc, cl.out.body);
 		CGI::build(cl.out);
-	}
-	catch (const errstat_t& e) {
-        log::print(str_t(e.what()));
-
-		Transaction::buildError(e.code, cl);
+	} else {
+		Transaction::buildError(500, cl);	
 	}
 
 	close(cl.subproc.fd[R]);
@@ -218,7 +189,6 @@ void Webserv::_runHandlerProcess(const event_t& evnt) {
 }
 
 void Webserv::_runHandlerTimeout(const event_t& evnt) {
-	log::print("Proceeding handler timeout");
 	/*
 		When timed out, the ident may be client_sock and proc_id either
 		So need to chekc if it's from Client or Process by searching map sock_cl
@@ -226,16 +196,18 @@ void Webserv::_runHandlerTimeout(const event_t& evnt) {
 	auto it = _map.sock_cl.find(evnt.ident);
 
 	if (it != _map.sock_cl.end()) {
+		log::print("Client " + std::to_string(it->second.sock()) + " Proceeding handler timeout");
+
 		if (_kq.castUdata(evnt.udata) == udata[UDT_TIMER_CLIENT_IDLE]) {
 			_disconnect(evnt);
-		}
-		else {
+		} else {
 			Transaction::buildError(408, it->second);
-			
+
 			_kq.set(evnt.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
 		}
-	}
-	else {
+	} else {
+		log::print("Client " + std::to_string(_kq.castUdata(evnt.udata)) + " Proceeding handler timeout");
+
 		Client& cl = _map.sock_cl.at(_kq.castUdata(evnt.udata));
 
 		Transaction::buildError(504, cl);
@@ -252,8 +224,8 @@ void Webserv::_disconnect(const event_t& evnt) {
 	close(evnt.ident);
 
 	auto it_map = _map.sock_cl.find(evnt.ident);
-	auto it_vec = std::find(_list.cl.begin(), _list.cl.end(), it_map->second);
-	_list.cl.erase(it_vec);
+	auto it_lst = std::find(_list.cl.begin(), _list.cl.end(), it_map->second);
+	_list.cl.erase(it_lst);
 	_map.sock_cl.erase(it_map);
 
 	if (evnt.filter != EVFILT_TIMER) {
@@ -271,16 +243,13 @@ void Webserv::_disconnectPrintLog(const event_t& evnt) {
 
 	if (evnt.filter == EVFILT_TIMER) {
 		cause << "EVFILT_TIMER";
-	}
-	else {
+	} else {
 		if (evnt.flags & EV_EOF) {
 			cause << "EV_EOF";
-		}
-		else if (evnt.flags & EV_ERROR) {
+		} else if (evnt.flags & EV_ERROR) {
 			cause << "EV_ERROR";
-		}
-		else {
-			cause << "EV_UNKNOWN";
+		} else {
+			cause << "UNKNOWN";
 		}
 	}
 

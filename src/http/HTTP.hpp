@@ -38,7 +38,6 @@ class HTTP {
 		static void		DELETE( const Request& );
 
 	private:
-		/* init */
 		static void		_assignHeader( void );
 		static void		_assignStatus( void );
 		static void		_assignMime( void );
