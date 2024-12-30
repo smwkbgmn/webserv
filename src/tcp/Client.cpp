@@ -103,14 +103,14 @@ void Client::_receiveTransaction(Kqueue& kq, ssize_t& byte_recv) {
 }
 
 bool Client::_receiveTransactionMessage(ssize_t& byte_recv) {
-	if (Transaction::recvHead(in, _buff, byte_recv)) {
+	if (Transaction::takeHead(in, _buff, byte_recv)) {
 		log::history.fs << in.head.str() << std::endl;
 
 		if (!trans) {
 			trans = new Transaction(*this);
 		}
 
-		if (Transaction::recvBody(in, subproc, _buff, byte_recv)) {
+		if (Transaction::takeBody(in, subproc, _buff, byte_recv)) {
 			log::history.fs << in.body.str() << std::endl;
 
 			return true;

@@ -72,15 +72,15 @@ Transaction::act( void ) {
 
 /*	
 	METHOD -
-	recvHead: store request line and header field at stream buffer
+	takeHead: store request line and header field at stream buffer
 	then determine if the receiving message is done
 
-	recvBody: store contetnts at steram buffer and
+	takeBody: store contetnts at steram buffer and
 	determine if the receving body contents is done
 */
 
 bool
-Transaction::recvHead( message_t& in, char* buf, ssize_t& byte_read ) {
+Transaction::takeHead( message_t& in, char* buf, ssize_t& byte_read ) {
 	if ( !in.head_done ) {
 		in.head.write( buf, byte_read );
 
@@ -102,7 +102,7 @@ Transaction::recvHead( message_t& in, char* buf, ssize_t& byte_read ) {
 }
 
 bool
-Transaction::recvBody( message_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
+Transaction::takeBody( message_t& in, const process_t& procs, const char* buf, const ssize_t& byte_read ) {
 	if ( !in.chunk ) return _recvBodyPlain( in, procs, buf, byte_read );
 	else {
 		if ( byte_read == 0 && in.body_read ) return _recvBodyChunkPredata( in, procs ); 	
