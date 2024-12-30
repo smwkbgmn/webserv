@@ -172,7 +172,7 @@ std::string trim(const std::string& str) {
     return str.substr(start, end - start);
 }
 
-void configParse(std::vector<config_t>& serv, const std::string& filename) {
+void parseConfig(std::vector<config_t>& serv, const std::string& filename) {
     std::ifstream configFile(filename.c_str());
     if (!configFile.is_open()) {
         throw std::runtime_error("Failed to open file: " + filename);

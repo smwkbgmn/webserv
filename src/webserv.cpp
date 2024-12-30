@@ -26,7 +26,7 @@ void Webserv::_loadConfig(const char* filename, vec<config_t>& holder) {
 	log::print("Loading Config...");
 
 	if (filename) {
-		configParse(holder, filename);
+		parseConfig(holder, filename);
 	} else {
 		holder.push_back(config_t());
 		holder.front().locations.push_back(location_t(holder.front()));
