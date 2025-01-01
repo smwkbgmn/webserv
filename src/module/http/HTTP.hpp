@@ -17,7 +17,7 @@ class Response;
 
 const str_t		software		= "webserv/1.0";
 
-const path_t	dir_keys		= "src/http/key/";
+const path_t	dir_keys		= "src/module/http/key/";
 const path_t	file_status		= dir_keys + "status.txt";
 const path_t	file_mime		= dir_keys + "mime.txt";
 const path_t	file_header_in	= dir_keys + "header_in.txt";
