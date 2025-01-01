@@ -5,6 +5,8 @@
 # include <sys/wait.h>
 
 # include "HTTP.hpp"
+# include "Socket.hpp"
+# include "Kqueue.hpp"
 
 # define SIZE_BUFF_C 2048
 
@@ -29,12 +31,15 @@ class CGI {
 		static map_uint_str_t	environ_list;
 
 		static void				init( void );
+		static void 			detach( const Request&, process_t& );
 
-		static void 			proceed( const Request&, process_t& );
+		static void				proceedParent( pid_t, const fd_t&, Kqueue& );
 		static void				writeTo( const process_t&, const char*, const size_t& );
 		static void				readFrom( const process_t&, sstream_t& );
 		static void				wait( process_t& );
 		static void				build( message_t& );
+
+		static void				proceedChild( const Request&, process_t& );
 
 	private:
 		/* init */
@@ -42,13 +47,11 @@ class CGI {
 		static void				_assignEnvironList( void );
 		static void				_assignVectorChar( vec_cstr_t&, const vec_str_t& );
 
-		/* proceed */
+		/* detach */
 		static void				_valid( const Request& );
+		static void				_detach( process_t& );
 
-		static void				_detach( const Request&, process_t& );
-		static void				_buildEnviron( const Request&, process_t& );
-		static bool				_buildEnvironVar( const Request&, process_t&, uint_t idx );
-		
+		/* Parent */
 		static void				_buildLine( message_t& );
 		static void				_buildHeader( message_t& );
 		static void				_buildHeaderServer( message_t& );
@@ -56,8 +59,12 @@ class CGI {
 		static void				_buildHeaderLen( message_t&, const size_t& );
 		static void				_buildChunk( message_t& );
 
-		static bool				_redirect( const process_t& );
+		/* Child */
+		static void				_buildEnviron( const Request&, process_t& );
+		static bool				_buildEnvironVar( const Request&, process_t&, uint_t idx );
+
 		static void				_execve( const process_t& );
+		static bool				_redirect( const process_t& );
 };
 
 #endif

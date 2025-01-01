@@ -1,6 +1,7 @@
 #ifndef TRANSACTION_HPP
 # define TRANSACTION_HPP
 
+# include "Kqueue.hpp"
 # include "Request.hpp"
 # include "Response.hpp"
 
@@ -28,7 +29,7 @@ static const char hexdigit[17] = "0123456789ABCDEF";
 
 class Transaction {
 	public:
-		Transaction( Client& );
+		Transaction( Client&, Kqueue& );
 
 		const config_t&		config( void );
 		connection_e		connection( void );			

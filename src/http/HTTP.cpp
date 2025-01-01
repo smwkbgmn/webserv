@@ -6,8 +6,6 @@ keys_t HTTP::key;
 /* METHOD - init: assign basic HTTP info and load keys */
 void
 HTTP::init( void ) {
-	log::print("Loading HTTP Module...");
-	
 	http.signature			= "HTTP";
 	http.type_unknown		= "text/plain";
 
@@ -19,6 +17,8 @@ HTTP::init( void ) {
 	_assignHeader();
 	_assignStatus();
 	_assignMime();
+
+	_initModule();	
 }
 
 void
@@ -50,7 +50,7 @@ HTTP::_assignStatus( void ) {
 }
 
 void
-HTTP::_assignMime(void) {
+HTTP::_assignMime( void ) {
 	File	file( file_mime, READ );
 	str_t	type, exts, ext;
 
@@ -67,6 +67,11 @@ void
 HTTP::_assignVec( vec_str_t& target, const str_t source[], size_t cnt ) {
 	for ( size_t idx = 0; idx < cnt; ++idx )
 		target.push_back(source[idx]);
+}
+
+void
+HTTP::_initModule( void ) {
+	CGI::init();
 }
 
 /* METHOD - setConfig: get index for config_t matching with server name and port */
