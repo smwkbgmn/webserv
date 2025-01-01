@@ -15,14 +15,14 @@
 class Request;
 class Response;
 
-const str_t		software		= "Webserv/1.0";
+const str_t		software		= "webserv/1.0";
 
 const path_t	dir_keys		= "src/http/key/";
-const path_t	file_status		= dir_keys + "key_status.txt";
-const path_t	file_mime		= dir_keys + "key_mime.txt";
-const path_t	file_header_in	= dir_keys + "key_header_in.txt";
-const path_t	file_header_out	= dir_keys + "key_header_out.txt";
-const path_t	file_environ	= dir_keys + "key_environ.txt";
+const path_t	file_status		= dir_keys + "status.txt";
+const path_t	file_mime		= dir_keys + "mime.txt";
+const path_t	file_header_in	= dir_keys + "header_in.txt";
+const path_t	file_header_out	= dir_keys + "header_out.txt";
+const path_t	file_environ	= dir_keys + "environ.txt";
 
 class HTTP {
 	public:

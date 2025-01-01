@@ -6,11 +6,7 @@
 # define FALSE			0
 # define TRUE			1
 
-// # define SIZE_BUFF_C	2048
-
 typedef int							socket_t;
-// it already had stored at Socket.hpp. remove it later
-typedef int							fd_t;
 typedef int							port_t;
 typedef int							pipe_t;
 typedef int							stat_t;
@@ -84,29 +80,6 @@ typedef struct process_s {
 	vec_str_t	argv;
 	vec_str_t	env;
 }	process_t;
-
-// typedef struct c_buffer_s {
-// 	c_buffer_s( void );
-	
-// 	char		ptr[SIZE_BUFF_C];
-
-// 	size_t		total;
-// 	ssize_t		read;
-// }	c_buffer_t;
-
-// typedef struct process_s {
-// 	process_s( void );
-
-// 	void		reset( void );
-
-// 	pid_t		pid;
-// 	stat_t		stat;
-// 	pipe_t		fd[2];
-
-// 	vec_str_t	argv;
-// 	vec_str_t	env;
-
-// }	process_t;
 
 # include "File.hpp"
 

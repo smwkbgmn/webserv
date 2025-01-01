@@ -21,8 +21,8 @@ class Kqueue {
 		int				renew();
 		void			set(uintptr_t, int16_t, uint16_t, uint32_t, intptr_t, void*);
 
-		void*			castUdata(const int&) const;
-		int				castUdata(void*) const;
+		void*			cast(const int&) const;
+		int				cast(void*) const;
 		
 	private:	
 		int				_fd;
@@ -500,9 +500,4 @@ class Kqueue {
 		Otherwise, -1 will be returned, and errno will be set to indicate the
 		error condition.  If the time limit expires, then kevent(), kevent64()
 		and kevent_qos() return 0.
-*/
-
-
-/*
-
 */

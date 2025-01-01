@@ -130,7 +130,7 @@ Transaction::_recvBodyPlain( message_t& in, const process_t& procs, const char* 
 		osstream_t oss;
 
 		oss << "body read by " << byte_read <<
-		" so far: " << in.body_read << " / " << in.body_size;
+		", so far: " << in.body_read << " / " << in.body_size;
 		log::print( oss.str() );
 	}
 
