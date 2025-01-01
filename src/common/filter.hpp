@@ -186,24 +186,6 @@ typedef struct config_s {
 
 typedef std::vector<config_t> vec_config_t;
 
-/* STRUCT - Buffer for messages (composed with two parts of msg and body part) */
-// typedef struct message_s{
-// 	message_s();
-	
-// 	void	reset();
-	
-// 	sstream_t	head;
-// 	ssize_t		head_read;
-// 	bool		head_done;
-
-// 	sstream_t	body;
-// 	ssize_t		body_read;
-// 	ssize_t		body_size;
-
-// 	bool		chunk;
-// 	size_t		incomplete;
-// }	message_t;
-
 /* STRUCT - Request, Response */
 typedef struct {
 	version_e			version;
