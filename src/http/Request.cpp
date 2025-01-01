@@ -159,12 +159,12 @@ Request::_valid( void ) {
 
 void
 Request::_redirectURI( void ) {
-	// With dir and file
 	if ( *location().path.begin() == '/' )
+		/* With dir and file */
 		_line.uri.replace( 0, location().path.length(), location().root );
 	
-	// With extension
 	else 
+		/* With extension */
 		_line.uri = location().root +  _line.uri.substr( _line.uri.rfind( '/' ) );
 }
 
