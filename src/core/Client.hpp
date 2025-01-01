@@ -34,7 +34,7 @@ class Client: public Socket {
 		char			_buff[SIZE_BUFF_RECV];
 	
 		void			_receiveRequest(Kqueue&, ssize_t&);
-		bool			_receiveRequestMessage(ssize_t&);
+		bool			_receiveRequestMessage(Kqueue&, ssize_t&);
 		void			_receiveRequestDo(Kqueue&);
 
 		ssize_t			_send(sstream_t&);

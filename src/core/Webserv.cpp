@@ -19,7 +19,7 @@ void Webserv::init(const char* filename) {
 
 	_loadConfig(filename, confs);
 	_initServer(confs);
-	_initModule();
+	_initScheme();
 }
 
 void Webserv::_loadConfig(const char* filename, vec<config_t>& holder) {
@@ -75,15 +75,12 @@ void Webserv::_initServerCreate(const port_t& port) {
 	_kq.set(srv.sock(), EVFILT_READ, EV_ADD, 0, 0, _kq.cast(udata[READ_SERVER]));
 }
 
-void Webserv::_initModule() {
+void Webserv::_initScheme() {
 	HTTP::init();
-	CGI::init();
 }
 
 /* METHOD - run: Start the server */
 void Webserv::run() {
-	log::print("Server has started");
-
 	state = RUNNING;
 	while (state) { _runHandler(); }
 }

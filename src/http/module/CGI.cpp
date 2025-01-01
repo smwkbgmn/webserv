@@ -15,8 +15,6 @@ map_uint_str_t	CGI::environ_list;
 /* METHOD - init: assign keys for running CGI */
 void
 CGI::init( void ) {
-	log::print("Loading CGI Module...");
-
 	_assignScriptBin();
 	_assignEnvironList();
 }
@@ -38,11 +36,11 @@ CGI::_assignEnvironList( void ) {
 		environ_list.insert( std::make_pair( keyidx, key ) );
 }
 
-/* METHOD - proceed: get outsourcing data */
+/* METHOD - detach: Fork process for CGI */
 void
-CGI::proceed( const Request& rqst, process_t& procs ) {
+CGI::detach( const Request& rqst, process_t& procs ) {
 	_valid( rqst );
-	_detach( rqst, procs );
+	_detach( procs );
 }
 
 void
@@ -57,17 +55,19 @@ CGI::_valid( const Request& rqst ) {
 }
 
 void
-CGI::_detach( const Request& rqst, process_t& procs ) {
+CGI::_detach( process_t& procs ) {
 	if ( pipe( procs.fd ) == ERROR ) throwSysErr( "pipe", 500 );
 	if ( ( procs.pid = fork() )  == ERROR ) throwSysErr( "fork", 500 );
-
-	if ( !procs.pid ) {
-		_buildEnviron( rqst, procs );
-		_execve( procs );
-	}
 }
 
 /* PARENT */
+void
+CGI::proceedParent( pid_t pid, const fd_t& sock_cl, Kqueue& kq ) {
+	log::print( "Client " + std::to_string( sock_cl ) + " proceeding CGI" );
+
+	kq.set( pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, kq.cast( sock_cl ) );
+}
+
 void
 CGI::writeTo( const process_t& procs, const char* in_body, const size_t& size ) {
 	if ( write( procs.fd[W], in_body, size ) == ERROR )
@@ -198,6 +198,12 @@ CGI::_buildChunk( message_t& out ) {
 
 /* CHILD */
 void
+CGI::proceedChild( const Request& rqst, process_t& procs ) {
+	_buildEnviron( rqst, procs );
+	_execve( procs );
+}
+
+void
 CGI::_buildEnviron( const Request& rqst, process_t& procs ) {
 	for ( uint_t idx = 0; _buildEnvironVar( rqst, procs, idx ); ++idx );
 }
@@ -238,16 +244,6 @@ CGI::_buildEnvironVar( const Request& rqst, process_t& procs, uint_t idx ) {
 	catch ( exception_t& exc ) { return FALSE; }
 }
 
-bool
-CGI::_redirect( const process_t& procs ) {
-	if ( dup2( procs.fd[R], STDIN_FILENO ) == ERROR ||
-		dup2( procs.fd[W], STDOUT_FILENO ) == ERROR ||
-		close( procs.fd[R] ) == ERROR ||
-		close( procs.fd[W] ) == ERROR )
-		return FALSE;
-	return TRUE;	
-}
-
 void
 CGI::_execve( const process_t& procs ) {
 	vec_cstr_t	argv_c;
@@ -259,6 +255,16 @@ CGI::_execve( const process_t& procs ) {
 	if ( !_redirect( procs ) ||
 		execve( argv_c[0], argv_c.data(), env_c.data() ) == ERROR )
 		exit( EXIT_FAILURE );
+}
+
+bool
+CGI::_redirect( const process_t& procs ) {
+	if ( dup2( procs.fd[R], STDIN_FILENO ) == ERROR ||
+		dup2( procs.fd[W], STDOUT_FILENO ) == ERROR ||
+		close( procs.fd[R] ) == ERROR ||
+		close( procs.fd[W] ) == ERROR )
+		return FALSE;
+	return TRUE;	
 }
 
 void

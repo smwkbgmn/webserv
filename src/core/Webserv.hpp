@@ -56,7 +56,7 @@ class Webserv {
 		void	_loadConfigPrint(const vec<config_t>&) const;
 		void	_initServer(vec<config_t>&);
 		void	_initServerCreate(const port_t&);
-		void	_initModule();
+		void	_initScheme();
 
 		void	_runHandler();
 		bool	_runHandlerDisconnect(const event_t&);
