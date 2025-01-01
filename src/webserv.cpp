@@ -1,10 +1,10 @@
  #include "Webserv.hpp"	
 
 int udata[4] = {
-	UDT_READ_SERVER,
-	UDT_READ_CLIENT,
-	UDT_TIMER_CLIENT_IDLE,
-	UDT_TIMER_CLIENT_RQST
+	READ_SERVER,
+	READ_CLIENT,
+	TIMER_CLIENT_IDLE,
+	TIMER_CLIENT_RQST
 };
 
 /* INSTANCIATE */
@@ -13,7 +13,7 @@ Webserv::Webserv(Kqueue& event_interface):
 
 Webserv::~Webserv() {}
 
-/* METHOD - init: To be ready to run server */
+/* METHOD - init: To be ready for running server */
 void Webserv::init(const char* filename) {
 	vec<config_t> confs;
 
@@ -26,7 +26,7 @@ void Webserv::_loadConfig(const char* filename, vec<config_t>& holder) {
 	log::print("Loading Config...");
 
 	if (filename) {
-		configParse(holder, filename);
+		parseConfig(holder, filename);
 	} else {
 		holder.push_back(config_t());
 		holder.front().locations.push_back(location_t(holder.front()));
@@ -58,19 +58,21 @@ void Webserv::_initServer(vec<config_t>& confs) {
 
 	for (auto it = confs.begin(); it != confs.end(); ++it) {
 		if (_map.port_sock.find(it->listen) == _map.port_sock.end()) {
-			_list.srv.emplace_back(it->listen);
-
-			Server& srv = _list.srv.back();
-			srv.configAdd(*it);
-
-			_map.port_sock.insert(pair<port_t, fd_t>(it->listen, srv.sock()));
-			_map.sock_srv.insert(pair<fd_t, Server&>(srv.sock(), srv));
-
-			_kq.set(srv.sock(), EVFILT_READ, EV_ADD, 0, 0, _kq.castUdata(udata[UDT_READ_SERVER]));
-		} else {
-			_map.sock_srv.at(_map.port_sock.at(it->listen)).configAdd(*it);
-		}
+			_initServerCreate(it->listen);
+		} 
+		_map.sock_srv.at(_map.port_sock.at(it->listen)).configAdd(*it);
 	}
+}
+
+void Webserv::_initServerCreate(const port_t& port) {
+	_list.srv.emplace_back(port);
+
+	Server& srv = _list.srv.back();
+
+	_map.port_sock.insert(pair<port_t, fd_t>(port, srv.sock()));
+	_map.sock_srv.insert(pair<fd_t, Server&>(srv.sock(), srv));
+
+	_kq.set(srv.sock(), EVFILT_READ, EV_ADD, 0, 0, _kq.cast(udata[READ_SERVER]));
 }
 
 void Webserv::_initModule() {
@@ -123,9 +125,9 @@ bool Webserv::_runHandlerDisconnect(const event_t& evnt) {
 }
 
 void Webserv::_runHandlerRead(const event_t& evnt) { 
-	switch (_kq.castUdata(evnt.udata)) {
-		case UDT_READ_SERVER	: _runHandlerReadServer(evnt.ident); break;
-		case UDT_READ_CLIENT	: _runHandlerReadClient(evnt); break;
+	switch (_kq.cast(evnt.udata)) {
+		case READ_SERVER	: _runHandlerReadServer(evnt.ident); break;
+		case READ_CLIENT	: _runHandlerReadClient(evnt); break;
 	}
 }
 
@@ -136,13 +138,13 @@ void Webserv::_runHandlerReadServer(const uintptr_t& ident) {
 
 	_map.sock_cl.insert(pair<fd_t, Client&>(cl.sock(), cl));
 
-	_kq.set(cl.sock(), EVFILT_READ, EV_ADD, 0, 0, _kq.castUdata(udata[UDT_READ_CLIENT]));
-	_kq.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _kq.castUdata(udata[UDT_TIMER_CLIENT_IDLE]));
+	_kq.set(cl.sock(), EVFILT_READ, EV_ADD, 0, 0, _kq.cast(udata[READ_CLIENT]));
+	_kq.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _kq.cast(udata[TIMER_CLIENT_IDLE]));
 }	
 
 void Webserv::_runHandlerReadClient(const event_t& evnt) {
-	_kq.set(evnt.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.castUdata(udata[UDT_TIMER_CLIENT_IDLE]));
-	_kq.set(evnt.ident, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_RQST, _kq.castUdata(udata[UDT_TIMER_CLIENT_RQST]));
+	_kq.set(evnt.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.cast(udata[TIMER_CLIENT_IDLE]));
+	_kq.set(evnt.ident, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_RQST, _kq.cast(udata[TIMER_CLIENT_RQST]));
 
 	if (!_map.sock_cl.at(evnt.ident).receive(_kq)) {
 		_disconnect(evnt);
@@ -155,19 +157,19 @@ void Webserv::_runHandlerWrite(const event_t& evnt) {
 	if (cl.send() || (cl.trans && cl.trans->connection() != CN_CLOSE)) { 
 		cl.reset();
 
-		_kq.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _kq.castUdata(udata[UDT_TIMER_CLIENT_IDLE]));
+		_kq.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _kq.cast(udata[TIMER_CLIENT_IDLE]));
 	} else {
 		_disconnect(evnt);
 	}
 }
 
 void Webserv::_runHandlerProcess(const event_t& evnt) {
-	log::print("Client " + std::to_string(_kq.castUdata(evnt.udata)) + " proceeding CGI done");
+	log::print("Client " + std::to_string(_kq.cast(evnt.udata)) + " proceeding CGI done");
 	/*
 		If while CGI procedure the Client has disconnected,
 		we will catch and handle it in write handler
 	*/
-	Client& cl = _map.sock_cl.at(_kq.castUdata(evnt.udata));
+	Client& cl = _map.sock_cl.at(_kq.cast(evnt.udata));
 
 	CGI::wait(cl.subproc);
 
@@ -180,12 +182,12 @@ void Webserv::_runHandlerProcess(const event_t& evnt) {
 
 	close(cl.subproc.fd[R]);
 
-	_kq.set(cl.sock(), EVFILT_READ, EV_ENABLE, 0, 0, _kq.castUdata(udata[UDT_READ_CLIENT]));
+	_kq.set(cl.sock(), EVFILT_READ, EV_ENABLE, 0, 0, _kq.cast(udata[READ_CLIENT]));
 	_kq.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-	_kq.set(cl.sock() ,EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _kq.castUdata(udata[UDT_TIMER_CLIENT_IDLE]));
+	_kq.set(cl.sock() ,EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _kq.cast(udata[TIMER_CLIENT_IDLE]));
 
-	_kq.set(evnt.ident, EVFILT_PROC, EV_DELETE, 0, 0, _kq.castUdata(cl.sock()));
-	_kq.set(evnt.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.castUdata(cl.sock()));
+	_kq.set(evnt.ident, EVFILT_PROC, EV_DELETE, 0, 0, _kq.cast(cl.sock()));
+	_kq.set(evnt.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.cast(cl.sock()));
 }
 
 void Webserv::_runHandlerTimeout(const event_t& evnt) {
@@ -196,28 +198,36 @@ void Webserv::_runHandlerTimeout(const event_t& evnt) {
 	auto it = _map.sock_cl.find(evnt.ident);
 
 	if (it != _map.sock_cl.end()) {
-		log::print("Client " + std::to_string(it->second.sock()) + " Proceeding handler timeout");
-
-		if (_kq.castUdata(evnt.udata) == udata[UDT_TIMER_CLIENT_IDLE]) {
-			_disconnect(evnt);
-		} else {
-			Transaction::buildError(408, it->second);
-
-			_kq.set(evnt.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-		}
+		_runHandlerTimeoutClient(evnt, it->second);
 	} else {
-		log::print("Client " + std::to_string(_kq.castUdata(evnt.udata)) + " Proceeding handler timeout");
-
-		Client& cl = _map.sock_cl.at(_kq.castUdata(evnt.udata));
-
-		Transaction::buildError(504, cl);
-
-		_kq.set(evnt.ident, EVFILT_PROC, EV_DELETE, 0, 0, nullptr);
-
-		_kq.set(cl.sock(), EVFILT_READ, EV_ENABLE, 0, 0, _kq.castUdata(udata[UDT_READ_CLIENT]));
-		_kq.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-		_kq.set(cl.sock() ,EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _kq.castUdata(udata[UDT_TIMER_CLIENT_IDLE]));
+		_runHandlerTimeoutProcess(evnt);
 	}
+}
+
+void Webserv::_runHandlerTimeoutClient(const event_t& evnt, Client& cl) {
+	log::print("Client " + std::to_string(cl.sock()) + " Proceeding handler timeout");
+
+	if (_kq.cast(evnt.udata) == udata[TIMER_CLIENT_IDLE]) {
+		_disconnect(evnt);
+	} else {
+		Transaction::buildError(408, cl);
+
+		_kq.set(evnt.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+	}
+}
+
+void Webserv::_runHandlerTimeoutProcess(const event_t& evnt) {
+	log::print("Client " + std::to_string(_kq.cast(evnt.udata)) + " Proceeding handler timeout");
+
+	Client& cl = _map.sock_cl.at(_kq.cast(evnt.udata));
+
+	Transaction::buildError(504, cl);
+
+	_kq.set(evnt.ident, EVFILT_PROC, EV_DELETE, 0, 0, nullptr);
+
+	_kq.set(cl.sock(), EVFILT_READ, EV_ENABLE, 0, 0, _kq.cast(udata[READ_CLIENT]));
+	_kq.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+	_kq.set(cl.sock() ,EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _kq.cast(udata[TIMER_CLIENT_IDLE]));	
 }
 
 void Webserv::_disconnect(const event_t& evnt) {
@@ -229,16 +239,16 @@ void Webserv::_disconnect(const event_t& evnt) {
 	_map.sock_cl.erase(it_map);
 
 	if (evnt.filter != EVFILT_TIMER) {
-		_kq.set(evnt.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.castUdata(udata[UDT_TIMER_CLIENT_IDLE]));
-		_kq.set(evnt.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.castUdata(udata[UDT_TIMER_CLIENT_RQST]));
+		_kq.set(evnt.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.cast(udata[TIMER_CLIENT_IDLE]));
+		_kq.set(evnt.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.cast(udata[TIMER_CLIENT_RQST]));
 	}
 	_kq.set(evnt.ident, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
 	_kq.set(evnt.ident, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
 
-	_disconnectPrintLog(evnt);
+	_disconnectPrint(evnt);
 }
 
-void Webserv::_disconnectPrintLog(const event_t& evnt) {
+void Webserv::_disconnectPrint(const event_t& evnt) {
 	sstream_t cause;
 
 	if (evnt.filter == EVFILT_TIMER) {

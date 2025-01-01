@@ -20,10 +20,10 @@ enum state_e {
 };
 
 enum udata_e {
-	UDT_READ_SERVER,
-	UDT_READ_CLIENT,
-	UDT_TIMER_CLIENT_IDLE,
-	UDT_TIMER_CLIENT_RQST
+	READ_SERVER,
+	READ_CLIENT,
+	TIMER_CLIENT_IDLE,
+	TIMER_CLIENT_RQST
 };
 
 extern int udata[4];
@@ -55,6 +55,7 @@ class Webserv {
 		void	_loadConfig(const char*, vec<config_t>&);
 		void	_loadConfigPrint(const vec<config_t>&) const;
 		void	_initServer(vec<config_t>&);
+		void	_initServerCreate(const port_t&);
 		void	_initModule();
 
 		void	_runHandler();
@@ -65,9 +66,11 @@ class Webserv {
 		void	_runHandlerWrite(const event_t&);
 		void	_runHandlerProcess(const event_t&);
 		void	_runHandlerTimeout(const event_t&);
+		void	_runHandlerTimeoutClient(const event_t&, Client&);
+		void	_runHandlerTimeoutProcess(const event_t&);
 
 		void	_disconnect(const event_t&);
-		void	_disconnectPrintLog(const event_t&);
+		void	_disconnectPrint(const event_t&);
 };
 
 #endif

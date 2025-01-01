@@ -18,6 +18,6 @@
 #define on true
 #define off false
 
-void configParse(std::vector<config_t>& serv, const std::string& filename);
+void parseConfig(std::vector<config_t>& serv, const std::string& filename);
 
 #endif

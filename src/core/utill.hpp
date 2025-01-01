@@ -5,8 +5,6 @@
 
 # define NOT_FOUND -1
 
-// typedef struct process_s process_t;
-
 /* UTILL */
 bool 			dead( const process_t& );
 bool			found( const size_t& );
@@ -26,15 +24,14 @@ void			errpageScript( sstream_t&, const uint_t&, const str_t& );
 void			autoindexScript( const path_t&, sstream_t& );
 
 /* TEMPLETE FUNCTION */
-
-// lookup: get iterator for matching with the token whitin container object
+/* lookup: Get iterator for matching with the token whitin container object */
 template<typename Container, typename Target> typename Container::iterator
 lookup( Container& obj, Target token ) { return std::find( obj.begin(), obj.end(), token ); }
 
 template<typename Container, typename Target> typename Container::const_iterator
 lookup( const Container& obj, Target token ) { return std::find( obj.begin(), obj.end(), token ); }
 
-// distance: get index of container object matching with the token
+/* distance: Get index of container object matching with the token */
 template<typename Container, typename Target> ssize_t
 distance( Container& obj, Target token ) {
 	typename Container::iterator	iter = lookup( obj, token );
@@ -51,8 +48,8 @@ distance( const Container& obj, const Target token ) {
 	else return -1;
 }
 
-// streamsize: get size of stream object
-// not actually alloc'd size, but from the current positon to end
+/* streamsize: Get size of stream object
+not actually alloc'd size, but from the current positon to end */
 typedef std::streamsize	streamsize_t;
 typedef std::streampos	streampos_t;
 

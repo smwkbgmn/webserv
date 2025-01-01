@@ -53,7 +53,7 @@ bool Client::receive(Kqueue& kq) {
 	log::print("Client " + std::to_string(sock()) + " receiving done by " + std::to_string(byte));
 
 	if (byte > 0) {
-		_receiveTransaction(kq, byte);
+		_receiveRequest(kq, byte);
 
 		return true;
 	} else if (byte == 0) {
@@ -67,7 +67,7 @@ bool Client::receive(Kqueue& kq) {
 			not close the connection by just disable more receiving 
 			(e.g. The rest part of data that is produced through CGI)
 		*/
-		kq.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, kq.castUdata(udata[UDT_READ_CLIENT]));
+		kq.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, kq.cast(udata[READ_CLIENT]));
 
 		return true;
 	} else if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -82,10 +82,10 @@ bool Client::receive(Kqueue& kq) {
 	}
 }
 
-void Client::_receiveTransaction(Kqueue& kq, ssize_t& byte_recv) {
+void Client::_receiveRequest(Kqueue& kq, ssize_t& byte_recv) {
 	try {
-		if (_receiveTransactionMessage(byte_recv)) {
-			_receiveTransactionDo(kq);
+		if (_receiveRequestMessage(byte_recv)) {
+			_receiveRequestDo(kq);
 		}
 	}
 	catch (err_t& err) {
@@ -102,15 +102,15 @@ void Client::_receiveTransaction(Kqueue& kq, ssize_t& byte_recv) {
 	}
 }
 
-bool Client::_receiveTransactionMessage(ssize_t& byte_recv) {
-	if (Transaction::recvHead(in, _buff, byte_recv)) {
+bool Client::_receiveRequestMessage(ssize_t& byte_recv) {
+	if (Transaction::takeHead(in, _buff, byte_recv)) {
 		log::history.fs << in.head.str() << std::endl;
 
 		if (!trans) {
 			trans = new Transaction(*this);
 		}
 
-		if (Transaction::recvBody(in, subproc, _buff, byte_recv)) {
+		if (Transaction::takeBody(in, subproc, _buff, byte_recv)) {
 			log::history.fs << in.body.str() << std::endl;
 
 			return true;
@@ -119,8 +119,8 @@ bool Client::_receiveTransactionMessage(ssize_t& byte_recv) {
 	return false;
 }
 
-void Client::_receiveTransactionDo(Kqueue& kq) {
-	kq.set(sock(), EVFILT_TIMER, EV_DELETE, 0, 0, kq.castUdata(udata[UDT_TIMER_CLIENT_RQST]));
+void Client::_receiveRequestDo(Kqueue& kq) {
+	kq.set(sock(), EVFILT_TIMER, EV_DELETE, 0, 0, kq.cast(udata[TIMER_CLIENT_RQST]));
 
 	if (!subproc.pid) {
 		if (trans) {
@@ -128,7 +128,7 @@ void Client::_receiveTransactionDo(Kqueue& kq) {
 		}
 
 		kq.set(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-		kq.set(sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, kq.castUdata(udata[UDT_TIMER_CLIENT_IDLE]));
+		kq.set(sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, kq.cast(udata[TIMER_CLIENT_IDLE]));
 	} else {
 		/*
 			When CGI request has received and receving body data has done,
@@ -137,10 +137,10 @@ void Client::_receiveTransactionDo(Kqueue& kq) {
 		*/
 		log::print("Client " + std::to_string(sock()) + " proceeding CGI");
 
-		kq.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, kq.castUdata(udata[UDT_READ_CLIENT]));
+		kq.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, kq.cast(udata[READ_CLIENT]));
 
-		kq.set(subproc.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, kq.castUdata(sock()));
-		kq.set(subproc.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_PROC, kq.castUdata(sock()));
+		kq.set(subproc.pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, kq.cast(sock()));
+		kq.set(subproc.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_PROC, kq.cast(sock()));
 
 		close(subproc.fd[W]);
 	}

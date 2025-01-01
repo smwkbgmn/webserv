@@ -44,11 +44,11 @@ const event_t& Kqueue::que(const size_t& i) const {
 	}
 }
 
-void* Kqueue::castUdata(const int& target) const {
+void* Kqueue::cast(const int& target) const {
 	return reinterpret_cast<void*>(const_cast<int*>(&target));
 }
 
-int Kqueue::castUdata(void* target) const {
+int Kqueue::cast(void* target) const {
 	if (target == nullptr) {
 		std::cout << "udata has set as nullptr\n";
 	}

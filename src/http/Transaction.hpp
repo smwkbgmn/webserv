@@ -33,8 +33,8 @@ class Transaction {
 		const config_t&		config( void );
 		connection_e		connection( void );			
 
-		static bool			recvHead( message_t&, char*, ssize_t& );
-		static bool			recvBody( message_t&, const process_t&, const char*, const ssize_t& );
+		static bool			takeHead( message_t&, char*, ssize_t& );
+		static bool			takeBody( message_t&, const process_t&, const char*, const ssize_t& );
 
 		static void			build( const Response&, message_t& );
 		static void			buildError( const uint_t&, Client& );
