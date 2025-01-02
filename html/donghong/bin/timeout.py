@@ -10,13 +10,13 @@ def main():
     print("")  # Empty line to separate headers from body
     
     try:
-        # Sleep for 35 seconds
-        time.sleep(35)
+        # Sleep for 120 seconds
+        time.sleep(120)
         
         # Prepare response data
         response = {
             "status": "success",
-            "message": "Response after 35 second delay",
+            "message": "Response after 120 second delay",
             "timestamp": time.time(),
             "environment": {
                 "REQUEST_METHOD": os.environ.get("REQUEST_METHOD", ""),

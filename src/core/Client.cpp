@@ -134,11 +134,11 @@ void Client::_receiveRequestDo(Kqueue& kq) {
 			When CGI request has received and receving body data has done,
 			disable receiving from the client and add process timer
 		*/
+		close(subproc.fd[W]);
+
 		kq.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, kq.cast(udata[READ_CLIENT]));
 
 		kq.set(subproc.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_PROC, kq.cast(sock()));
-
-		close(subproc.fd[W]);
 	}
 }
 
