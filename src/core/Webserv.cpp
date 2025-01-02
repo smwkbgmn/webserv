@@ -222,11 +222,12 @@ void Webserv::_runHandlerTimeoutProcess(const event_t& evnt) {
 	log::print("Client " + std::to_string(_kq.cast(evnt.udata)) + " Proceeding handler timeout");
 
 	Client& cl = _map.sock_cl.at(_kq.cast(evnt.udata));
-	
-	/* Because of no need to proceed futher process, kill
-	the process and collect exit status by calling wait.
-	It also prevent the process from being zombie. */
-	kill(evnt.ident, SIGTERM);
+	/*
+		Because of no need to proceed futher process, kill
+		the process and collect exit status by calling wait.
+		It also prevent the process from being zombie.
+	*/
+	kill(cl.subproc.pid, SIGTERM);
 	CGI::wait(cl.subproc);
 
 	close(cl.subproc.fd[R]);
