@@ -4,19 +4,15 @@
 
 /* INSTANCIATE */
 Client::Client(const Server& srv):
-	Socket(srv.sock()),
-	trans(nullptr),
-	_srv(srv) {
+Socket(srv.sock()), trans(nullptr), _srv(srv) {
 
 	reset();
 	setNonblock();
 }
 
 Client::Client(Client&& source) noexcept:
-	Socket(std::move(source)),
-	trans(source.trans),
-	_srv(source._srv) {
-
+Socket(std::move(source)), trans(source.trans), _srv(source._srv) {
+		
 	in = std::move(source.in);
 	out = std::move(source.out);
 	subproc = std::move(source.subproc);

@@ -82,7 +82,9 @@ void Webserv::_initScheme() {
 /* METHOD - run: Start the server */
 void Webserv::run() {
 	state = RUNNING;
-	while (state) { _runHandler(); }
+	while (state == RUNNING) {
+		_runHandler();
+	}
 }
 
 void Webserv::_runHandler() {
@@ -92,9 +94,7 @@ void Webserv::_runHandler() {
 	log::print(std::to_string(evnt_new) + " Event");
 
 	for (auto i = 0; i < evnt_new; ++i) {
-		if (_runHandlerDisconnect(_kq.que(i))) {
-			continue;
-		}
+		if (_runHandlerDisconnect(_kq.que(i))) { continue; }
 
 		switch (_kq.que(i).filter) {
 			case EVFILT_READ	: _runHandlerRead(_kq.que(i)); break;
@@ -169,7 +169,7 @@ void Webserv::_runHandlerProcess(const event_t& evnt) {
 	log::print("Client " + std::to_string(_kq.cast(evnt.udata)) + " proceeding CGI done");
 	/*
 		During CGI procedure if the Client has disconnected,
-		we will catch it and handle in write handler
+		we will catch and handle it in handler_write
 	*/
 	Client& cl = _map.sock_cl.at(_kq.cast(evnt.udata));
 
@@ -194,8 +194,8 @@ void Webserv::_runHandlerProcess(const event_t& evnt) {
 
 void Webserv::_runHandlerTimeout(const event_t& evnt) {
 	/*
-		When timed out, the ident may be client_sock and proc_id either
-		So need to chekc if it's from Client or Process by searching map sock_cl
+		When timed out, the ident may be client_sock and proc_id either.
+		So need to chekc if it's from Client or Process by searching map sock_cl.
 	*/
 	auto it = _map.sock_cl.find(evnt.ident);
 
