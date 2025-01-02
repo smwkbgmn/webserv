@@ -9,7 +9,7 @@ int udata[4] = {
 
 /* INSTANCIATE */
 Webserv::Webserv(Kqueue& event_interface):
-	state(SUSPEND), _kq(event_interface) {}
+state(SUSPEND), _kq(event_interface) {}
 
 Webserv::~Webserv() {}
 
