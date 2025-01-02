@@ -150,8 +150,13 @@ void Webserv::_runHandlerReadClient(const event_t& evnt) {
 
 void Webserv::_runHandlerWrite(const event_t& evnt) {
 	Client& cl = _map.sock_cl.at(evnt.ident);
-
-	if (cl.send() || (cl.trans && cl.trans->connection() != CN_CLOSE)) { 
+	/*
+		If the connection field has set as close, we need to disconnect Client
+		without concern of succecss of sending. For this implementation we need to
+		check first if the Reqeust has constructed well, and second what connection
+		has set at the header field from both Requeset and Response
+	*/
+	if (cl.send() && (!cl.trans || cl.trans->connection() != CN_CLOSE)) { 
 		cl.reset();
 
 		_kq.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _kq.cast(udata[TIMER_CLIENT_IDLE]));

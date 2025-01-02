@@ -2,7 +2,7 @@
 
 int main(int argc, char* argv[]) {
 	if (argc > 2) {
-		log::print("Only the first config file will be applied to server");
+		std::cout << "Only the first config file will be applied to server\n";
 	}
 
 	try {
@@ -11,7 +11,11 @@ int main(int argc, char* argv[]) {
 
 		server.init(argv[1]);
 		server.run();
-	} catch (exception_t &exc) { log::print(str_t(exc.what())); }
+	} catch (exception_t &exc) {
+		log::print(str_t(exc.what()));
+
+		return EXIT_FAILURE;
+	}
 
 	return EXIT_SUCCESS;
 }
