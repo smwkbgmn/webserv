@@ -150,8 +150,13 @@ void Webserv::_runHandlerReadClient(const event_t& evnt) {
 
 void Webserv::_runHandlerWrite(const event_t& evnt) {
 	Client& cl = _map.sock_cl.at(evnt.ident);
-
-	if (cl.send() || (cl.trans && cl.trans->connection() != CN_CLOSE)) { 
+	/*
+		If the connection field has set as close, we need to disconnect Client
+		without concern of succecss of sending. For this implementation we need to
+		check first if the Reqeust has constructed well, and second what connection
+		has set at the header field from both Requeset and Response
+	*/
+	if (cl.send() && (!cl.trans || cl.trans->connection() != CN_CLOSE)) { 
 		cl.reset();
 
 		_kq.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _kq.cast(udata[TIMER_CLIENT_IDLE]));
@@ -163,15 +168,15 @@ void Webserv::_runHandlerWrite(const event_t& evnt) {
 void Webserv::_runHandlerProcess(const event_t& evnt) {
 	log::print("Client " + std::to_string(_kq.cast(evnt.udata)) + " proceeding CGI done");
 	/*
-		If while CGI procedure the Client has disconnected,
-		we will catch and handle it in write handler
+		During CGI procedure if the Client has disconnected,
+		we will catch it and handle in write handler
 	*/
 	Client& cl = _map.sock_cl.at(_kq.cast(evnt.udata));
 
 	CGI::wait(cl.subproc);
 
 	if (WEXITSTATUS(cl.subproc.stat) == EXIT_SUCCESS) {
-		CGI::readFrom(cl.subproc, cl.out.body);
+		CGI::read(cl.subproc, cl.out.body);
 		CGI::build(cl.out);
 	} else {
 		Transaction::buildError(500, cl);	
@@ -217,6 +222,14 @@ void Webserv::_runHandlerTimeoutProcess(const event_t& evnt) {
 	log::print("Client " + std::to_string(_kq.cast(evnt.udata)) + " Proceeding handler timeout");
 
 	Client& cl = _map.sock_cl.at(_kq.cast(evnt.udata));
+	
+	/* Because of no need to proceed futher process, kill
+	the process and collect exit status by calling wait.
+	It also prevent the process from being zombie. */
+	kill(evnt.ident, SIGTERM);
+	CGI::wait(cl.subproc);
+
+	close(cl.subproc.fd[R]);
 
 	Transaction::buildError(504, cl);
 
@@ -228,12 +241,11 @@ void Webserv::_runHandlerTimeoutProcess(const event_t& evnt) {
 }
 
 void Webserv::_disconnect(const event_t& evnt) {
-	close(evnt.ident);
-
 	auto it_map = _map.sock_cl.find(evnt.ident);
 	auto it_lst = std::find(_list.cl.begin(), _list.cl.end(), it_map->second);
-	_list.cl.erase(it_lst);
+
 	_map.sock_cl.erase(it_map);
+	_list.cl.erase(it_lst);
 
 	if (evnt.filter != EVFILT_TIMER) {
 		_kq.set(evnt.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.cast(udata[TIMER_CLIENT_IDLE]));

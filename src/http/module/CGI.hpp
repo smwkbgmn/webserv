@@ -34,8 +34,8 @@ class CGI {
 		static void 			detach( const Request&, process_t& );
 
 		static void				proceedParent( pid_t, const fd_t&, Kqueue& );
-		static void				writeTo( const process_t&, const char*, const size_t& );
-		static void				readFrom( const process_t&, sstream_t& );
+		static void				write( const process_t&, const char*, const size_t& );
+		static void				read( const process_t&, sstream_t& );
 		static void				wait( process_t& );
 		static void				build( message_t& );
 

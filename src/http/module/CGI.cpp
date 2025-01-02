@@ -69,22 +69,22 @@ CGI::proceedParent( pid_t pid, const fd_t& sock_cl, Kqueue& kq ) {
 }
 
 void
-CGI::writeTo( const process_t& procs, const char* in_body, const size_t& size ) {
-	if ( write( procs.fd[W], in_body, size ) == ERROR )
+CGI::write( const process_t& procs, const char* in_body, const size_t& size ) {
+	if ( ::write( procs.fd[W], in_body, size ) == ERROR )
 		throwSysErr( "write", 500 );
 }
 
 void
 CGI::wait( process_t& procs ) {
-	if ( waitpid( procs.pid, &procs.stat, WNOHANG ) == ERROR )
+	if ( waitpid( procs.pid, &procs.stat, NONE ) == ERROR )
 		throwSysErr( "wait", 500 );
 }
 
 void
-CGI::readFrom( const process_t& procs, sstream_t& out_body) {
+CGI::read( const process_t& procs, sstream_t& out_body) {
 	c_buffer_t	buf;
 	
-	while ( ( buf.read = read( procs.fd[R], buf.ptr, SIZE_BUFF_C ) ) > 0 ) {
+	while ( ( buf.read = ::read( procs.fd[R], buf.ptr, SIZE_BUFF_C ) ) > 0 ) {
 		out_body.write( buf.ptr, buf.read );
 		buf.total += buf.read;
 	}

@@ -125,9 +125,9 @@ Transaction::_recvBodyPlain( message_t& in, const process_t& procs, const char* 
 
 	else if ( !dead( procs ) ) {
 		if ( byte_read == 0 && in.body_read )
-			CGI::writeTo( procs, in.body.str().c_str(), in.body_read );
+			CGI::write( procs, in.body.str().c_str(), in.body_read );
 		else
-			CGI::writeTo( procs, buf, byte_read );
+			CGI::write( procs, buf, byte_read );
 	}
 	else return TRUE;
 
@@ -168,7 +168,7 @@ Transaction::_recvBodyChunkData( message_t& in, const process_t& procs, isstream
 
 		iss.read( data, frac );
 		if ( !procs.pid ) in.body.write( data, frac );
-		else if ( !dead( procs ) ) CGI::writeTo( procs, data, frac );
+		else if ( !dead( procs ) ) CGI::write( procs, data, frac );
 		else return TRUE;
 
 		if ( in.incomplete ) break;
@@ -194,7 +194,7 @@ Transaction::_recvBodyChunkIncomplete( message_t& in, const process_t& procs, is
 
 	iss.read( data, in.incomplete );
 	if ( !procs.pid ) in.body.write( data, in.incomplete );
-	else if ( !dead( procs ) ) CGI::writeTo( procs, data, in.incomplete );
+	else if ( !dead( procs ) ) CGI::write( procs, data, in.incomplete );
 	else return TRUE;
 
 	iss >> std::ws;
