@@ -13,7 +13,6 @@
 # define CL_TIMEOUT_RQST 30000
 # define CL_TIMEOUT_PROC 60000
 
-
 enum state_e {
 	SUSPEND,
 	RUNNING
@@ -39,7 +38,7 @@ class Webserv {
 		void	run();
 		
 	private:
-		Kqueue&					_kq;
+		Kqueue&					_evnt;
 
 		struct list_s {
 			list<Server>		srv;
