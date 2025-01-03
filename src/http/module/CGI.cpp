@@ -62,10 +62,10 @@ CGI::_detach( process_t& procs ) {
 
 /* PARENT */
 void
-CGI::proceedParent( pid_t pid, const fd_t& sock_cl, Kqueue& kq ) {
+CGI::proceedParent( pid_t pid, const fd_t& sock_cl, Kqueue& evnt ) {
 	log::print( "Client " + std::to_string( sock_cl ) + " proceeding CGI" );
 
-	kq.set( pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, kq.cast( sock_cl ) );
+	evnt.set( pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, evnt.cast( sock_cl ) );
 }
 
 void

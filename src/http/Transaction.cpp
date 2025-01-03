@@ -27,7 +27,7 @@ Transaction::connection( void ) {
 }
 
 /* INTANTIATE */
-Transaction::Transaction( Client& client, Kqueue& kq ): _cl( client ), _rqst( client ) {
+Transaction::Transaction( Client& client, Kqueue& evnt ): _cl( client ), _rqst( client ) {
 	if ( !getInfo( _rqst.line().uri, _rqst.info ) && _rqst.location().rewrite.empty() ) {
 		if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
 		if ( errno == 20 ) throw errstat_t( 404, err_msg[SOURCE_NOT_DIR] );
@@ -38,7 +38,7 @@ Transaction::Transaction( Client& client, Kqueue& kq ): _cl( client ), _rqst( cl
 	if ( _invokeCGI( _rqst, _cl.subproc ) ) {
 		CGI::detach( _rqst, _cl.subproc );
 
-		if ( _cl.subproc.pid ) { CGI::proceedParent( _cl.subproc.pid, _cl.sock(), kq ); }
+		if ( _cl.subproc.pid ) { CGI::proceedParent( _cl.subproc.pid, _cl.sock(), evnt ); }
 		else { CGI::proceedChild( _rqst, _cl.subproc ); }
 	}
 }
