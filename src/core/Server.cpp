@@ -14,7 +14,7 @@ Socket() {
 }
 
 Server::Server(Server&& target) noexcept:
-Socket(std::move(target)), _addr(std::move(target._addr)), _conf(std::move(target._conf)) {}
+Socket(std::move(target)), _conf(std::move(target._conf)) {}
 
 Server::~Server() {}
 

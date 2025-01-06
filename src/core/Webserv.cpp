@@ -136,12 +136,12 @@ void Webserv::_runHandlerReadServer(const uintptr_t& ident) {
 	_map.sock_cl.insert(pair<fd_t, Client&>(cl.sock(), cl));
 
 	_evnt.set(cl.sock(), EVFILT_READ, EV_ADD, 0, 0, _evnt.cast(udata[READ_CLIENT]));
-	_evnt.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
+	_evnt.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
 }	
 
 void Webserv::_runHandlerReadClient(const event_t& ev) {
 	_evnt.set(ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
-	_evnt.set(ev.ident, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_RQST, _evnt.cast(udata[TIMER_CLIENT_RQST]));
+	_evnt.set(ev.ident, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_RQST, _evnt.cast(udata[TIMER_CLIENT_RQST]));
 
 	if (!_map.sock_cl.at(ev.ident).receive(_evnt)) {
 		_disconnect(ev);
@@ -159,7 +159,7 @@ void Webserv::_runHandlerWrite(const event_t& ev) {
 	if (cl.send() && (!cl.trans || cl.trans->connection() != CN_CLOSE)) { 
 		cl.reset();
 
-		_evnt.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
+		_evnt.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
 	} else {
 		_disconnect(ev);
 	}
@@ -174,7 +174,6 @@ void Webserv::_runHandlerProcess(const event_t& ev) {
 	Client& cl = _map.sock_cl.at(_evnt.cast(ev.udata));
 
 	CGI::wait(cl.subproc);
-
 	if (WEXITSTATUS(cl.subproc.stat) == EXIT_SUCCESS) {
 		CGI::read(cl.subproc, cl.out.body);
 		CGI::build(cl.out);
@@ -184,12 +183,12 @@ void Webserv::_runHandlerProcess(const event_t& ev) {
 
 	close(cl.subproc.fd[R]);
 
-	_evnt.set(cl.sock(), EVFILT_READ, EV_ENABLE, 0, 0, _evnt.cast(udata[READ_CLIENT]));
-	_evnt.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-	_evnt.set(cl.sock() ,EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
-
 	_evnt.set(ev.ident, EVFILT_PROC, EV_DELETE, 0, 0, _evnt.cast(cl.sock()));
 	_evnt.set(ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _evnt.cast(cl.sock()));
+
+	_evnt.set(cl.sock(), EVFILT_READ, EV_ENABLE, 0, 0, _evnt.cast(udata[READ_CLIENT]));
+	_evnt.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+	_evnt.set(cl.sock() ,EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
 }
 
 void Webserv::_runHandlerTimeout(const event_t& ev) {
@@ -227,7 +226,7 @@ void Webserv::_runHandlerTimeoutProcess(const event_t& ev) {
 		the process and collect exit status by calling wait.
 		It also prevent the process from being zombie.
 	*/
-	kill(cl.subproc.pid, SIGTERM);
+	kill(ev.ident, SIGTERM);
 	CGI::wait(cl.subproc);
 
 	close(cl.subproc.fd[R]);
@@ -238,7 +237,7 @@ void Webserv::_runHandlerTimeoutProcess(const event_t& ev) {
 
 	_evnt.set(cl.sock(), EVFILT_READ, EV_ENABLE, 0, 0, _evnt.cast(udata[READ_CLIENT]));
 	_evnt.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-	_evnt.set(cl.sock() ,EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));	
+	_evnt.set(cl.sock() ,EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));	
 }
 
 void Webserv::_disconnect(const event_t& ev) {
