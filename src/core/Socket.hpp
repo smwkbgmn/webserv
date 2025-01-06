@@ -16,8 +16,8 @@ typedef struct sockaddr_in	sockaddr_in_t;
 
 class Socket {
 	public:
-		Socket(); // Open Server 
-		Socket(const fd_t&); // Accept Client
+		Socket();
+		Socket(const fd_t&);
 		Socket(const Socket&&) noexcept;
 		virtual ~Socket();
 

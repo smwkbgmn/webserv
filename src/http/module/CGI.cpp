@@ -40,7 +40,10 @@ CGI::_assignEnvironList( void ) {
 void
 CGI::detach( const Request& rqst, process_t& procs ) {
 	_valid( rqst );
-	_detach( procs );
+
+	if ( pipe( procs.fd ) == ERROR ) throwSysErr( "pipe", 500 );
+	if ( ( procs.pid = fork() )  == ERROR ) throwSysErr( "fork", 500 );
+	// _detach( procs );
 }
 
 void
@@ -54,11 +57,11 @@ CGI::_valid( const Request& rqst ) {
 		throw errstat_t( 413, err_msg[POST_OVER_CONTENT_LEN] );
 }
 
-void
-CGI::_detach( process_t& procs ) {
-	if ( pipe( procs.fd ) == ERROR ) throwSysErr( "pipe", 500 );
-	if ( ( procs.pid = fork() )  == ERROR ) throwSysErr( "fork", 500 );
-}
+// void
+// CGI::_detach( process_t& procs ) {
+// 	if ( pipe( procs.fd ) == ERROR ) throwSysErr( "pipe", 500 );
+// 	if ( ( procs.pid = fork() )  == ERROR ) throwSysErr( "fork", 500 );	
+// }
 
 /* PARENT */
 void
@@ -117,7 +120,6 @@ CGI::_buildHeader( message_t& out ) {
 
 	_buildHeaderServer( out );
 
-	// Add headers from the CGI contents and adjust out.body buffer 
 	if ( found( pos_header_end ) ) {
 		out.head << out.body.str().substr( 0, pos_header_end + 2 );
 		out.body.str( out.body.str().substr( pos_header_end + 4 ) );
@@ -131,17 +133,14 @@ CGI::_buildHeader( message_t& out ) {
 
 void
 CGI::_buildHeaderServer( message_t& out ) {
-	// Add server info
 	out.head << 
 	HTTP::key.header_out.at( OUT_SERVER ) << ':' << SP <<
 	software << CRLF;
 
-	// Add date
 	out.head << 
 	HTTP::key.header_out.at( OUT_DATE ) << ':' << SP <<
 	timeToStr( getNow() ) << CRLF;
 
-	// Add connection 
 	out.head << 
 	HTTP::key.header_out.at( OUT_CONNECTION ) << ':' << SP <<
 	HTTP::http.connection.at( CN_KEEP_ALIVE ) << CRLF;
@@ -181,10 +180,10 @@ CGI::_buildChunk( message_t& out ) {
 		if ( size > 14 ) frac = 15;
 		else frac = size; 
 		
-		// Add chunk head
+		/* Add chunk head */
 		chunked << hexdigit[frac] << CRLF;
 
-		// Add chunk data
+		/* Add chunk data */
 		out.body.read( data, frac );
 		chunked.write( data, frac );
 		chunked << CRLF;

@@ -49,7 +49,7 @@ class CGI {
 
 		/* detach */
 		static void				_valid( const Request& );
-		static void				_detach( process_t& );
+		// static void				_detach( process_t& );
 
 		/* Parent */
 		static void				_buildLine( message_t& );

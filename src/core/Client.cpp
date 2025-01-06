@@ -124,7 +124,7 @@ void Client::_receiveRequestDo(Kqueue& evnt) {
 		}
 
 		evnt.set(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-		evnt.set(sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_IDLE, evnt.cast(udata[TIMER_CLIENT_IDLE]));
+		evnt.set(sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, evnt.cast(udata[TIMER_CLIENT_IDLE]));
 	} else {
 		/*
 			When CGI request has received and receving body data has done,
@@ -134,7 +134,7 @@ void Client::_receiveRequestDo(Kqueue& evnt) {
 
 		evnt.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, evnt.cast(udata[READ_CLIENT]));
 
-		evnt.set(subproc.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, CL_TIMEOUT_PROC, evnt.cast(sock()));
+		evnt.set(subproc.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_PROCS, evnt.cast(sock()));
 	}
 }
 

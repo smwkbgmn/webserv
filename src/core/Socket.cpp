@@ -1,8 +1,8 @@
 #include "Socket.hpp"
 
 /* INSTANTIATE */
-Socket::Socket() {
-	/* Open Sever endpoint */
+/* Open Sever endpoint */
+Socket::Socket() { 
 	_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (_sock == ERROR) {
 		throwSysErr("socket");
@@ -12,8 +12,8 @@ Socket::Socket() {
 	addr_len = sizeof(addr);
 }
 
+/* Accept Client connection */
 Socket::Socket(const fd_t& sock_srv) {
-	/* Accept Client connection */
 	_sock = accept(sock_srv, reinterpret_cast<sockaddr_t*>(&addr), &addr_len);
 	if (_sock == ERROR) {
 		throwSysErr("accept");
@@ -23,7 +23,8 @@ Socket::Socket(const fd_t& sock_srv) {
 }
 
 Socket::Socket(const Socket&& source) noexcept:
-	_sock(source._sock) {
+addr(std::move(source.addr)), addr_len(source.addr_len), _sock(source._sock) {
+
 	std::cout << "socket move constructor has called\n";
 
 	/* Prevent source object from closing fd in destructor */

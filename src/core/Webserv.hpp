@@ -9,9 +9,9 @@
 # include <signal.h>
 
 /* Timeout in ms */
-# define CL_TIMEOUT_IDLE 30000
-# define CL_TIMEOUT_RQST 30000
-# define CL_TIMEOUT_PROC 60000
+# define TIMEOUT_CLIENT_IDLE 30000
+# define TIMEOUT_CLIENT_RQST 30000
+# define TIMEOUT_PROCS 60000
 
 enum state_e {
 	SUSPEND,
