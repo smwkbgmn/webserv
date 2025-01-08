@@ -57,12 +57,6 @@ CGI::_valid( const Request& rqst ) {
 		throw errstat_t( 413, err_msg[POST_OVER_CONTENT_LEN] );
 }
 
-// void
-// CGI::_detach( process_t& procs ) {
-// 	if ( pipe( procs.fd ) == ERROR ) throwSysErr( "pipe", 500 );
-// 	if ( ( procs.pid = fork() )  == ERROR ) throwSysErr( "fork", 500 );	
-// }
-
 /* PARENT */
 void
 CGI::proceedParent( pid_t pid, const fd_t& sock_cl, Kqueue& evnt ) {
