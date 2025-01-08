@@ -60,7 +60,7 @@ bool Client::receive(Kqueue& evnt) {
 
 			Because the client may still be able to receive data from
 			the server (if it has not closed its receiving side), should
-			not close the connection by just disable more receiving 
+			not close the connection by just disable any futher receiving 
 			(e.g. The rest part of data that is produced through CGI)
 		*/
 		evnt.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, evnt.cast(udata[READ_CLIENT]));

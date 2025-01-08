@@ -7,10 +7,7 @@ Socket() {
 	_open(port);
 	setNonblock();
 
-	log::print("Server has created on port "
-		+ std::to_string(port)
-		+ " with sock "
-		+ std::to_string(sock()));
+	log::print("Server has created on port " + std::to_string(port) + " with sock " + std::to_string(sock()));
 }
 
 Server::Server(Server&& target) noexcept:

@@ -29,6 +29,7 @@ extern int udata[4];
 
 class Webserv {
 	public:
+		Webserv() = delete;
 		Webserv(Kqueue&);
 		~Webserv();
 
