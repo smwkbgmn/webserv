@@ -43,7 +43,6 @@ CGI::detach( const Request& rqst, process_t& procs ) {
 
 	if ( pipe( procs.fd ) == ERROR ) throwSysErr( "pipe", 500 );
 	if ( ( procs.pid = fork() )  == ERROR ) throwSysErr( "fork", 500 );
-	// _detach( procs );
 }
 
 void
