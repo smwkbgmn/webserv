@@ -100,15 +100,10 @@ void Client::_receiveRequest(Kqueue& evnt, ssize_t& byte_recv) {
 
 bool Client::_receiveRequestMessage(Kqueue& evnt, ssize_t& byte_recv) {
 	if (Transaction::takeHead(in, _buff, byte_recv)) {
-		log::history.fs << in.head.str() << std::endl;
-
 		if (!trans) {
 			trans = new Transaction(*this, evnt);
 		}
-
 		if (Transaction::takeBody(in, subproc, _buff, byte_recv)) {
-			log::history.fs << in.body.str() << std::endl;
-
 			return true;
 		}
 	}
@@ -143,31 +138,46 @@ bool Client::send() {
 	log::print("Client " + std::to_string(sock()) + " sending");
 
 	ssize_t total = 0;
-	ssize_t head = _send(out.head);
-
-	if (head < 0) {
-		return false;
-	}
-	total += head;
-
-	if (out.body.peek() != EOF) {
-		ssize_t body = _send(out.body);
-
-		if (body < 0) {
+	
+	if (out.head.peek() != EOF) {
+		if (!_sendMessage(out.head, total)) {
 			return false;
 		}
-		total += body;
+	}
+
+	if (out.head.peek() == EOF && out.body.peek() != EOF) {
+		if (!_sendMessage(out.body, total)) {
+			return false;
+		}
 	}
 
 	log::print("Client " + std::to_string(sock()) + " sending done by " + std::to_string(total));
+	return true;
+}
 
+bool Client::_sendMessage(sstream_t& source, ssize_t& counter) {
+	size_t pos = static_cast<size_t>(source.tellg());
+
+	ssize_t sent = _send(source);
+	if (sent < 0) {
+		return false;
+	}
+	counter += sent;
+
+	source.seekg(static_cast<streamoff_t>(pos + sent), std::ios_base::beg);
 	return true;
 }
 
 ssize_t Client::_send(sstream_t& source) {
-	log::history.fs << source.str() << '\n' << std::endl;
+	size_t size = streamsize(source);
 
-	return ::send(sock(), source.str().c_str(), streamsize(source), NONE);
+	char* buff = new char[size];
+	source.read(buff, size);
+	
+	ssize_t sent = ::send(sock(), buff, size, NONE);
+	delete[] buff;
+
+	return sent;
 }
 
 void Client::reset() {

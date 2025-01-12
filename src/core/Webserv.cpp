@@ -1,4 +1,4 @@
- #include "Webserv.hpp"	
+#include "Webserv.hpp"	
 
 int udata[4] = {
 	READ_SERVER,
@@ -82,6 +82,7 @@ void Webserv::_initScheme() {
 /* METHOD - run: Start the server */
 void Webserv::run() {
 	state = RUNNING;
+
 	while (state == RUNNING) {
 		_runHandler();
 	}
@@ -157,8 +158,14 @@ void Webserv::_runHandlerWrite(const event_t& ev) {
 		has set at the header field from both Requeset and Response
 	*/
 	if (cl.send() && (!cl.trans || cl.trans->connection() != CN_CLOSE)) { 
-		cl.reset();
-
+		if (cl.out.body.peek() == EOF) {
+			cl.reset();
+		} else {
+			/*
+				The body message has not sent all yet.
+			*/
+			_evnt.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+		}
 		_evnt.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
 	} else {
 		_disconnect(ev);
@@ -224,7 +231,7 @@ void Webserv::_runHandlerTimeoutProcess(const event_t& ev) {
 	/*
 		Because of no need to proceed futher process, kill
 		the process and collect exit status by calling wait.
-		It also prevent the process from being zombie.
+		It also prevent the process from being defunct(a.k.a zombie).
 	*/
 	kill(ev.ident, SIGTERM);
 	CGI::wait(cl.subproc);
