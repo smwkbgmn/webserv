@@ -158,12 +158,10 @@ void Webserv::_runHandlerWrite(const event_t& ev) {
 		has set at the header field from both Requeset and Response
 	*/
 	if (cl.send() && (!cl.trans || cl.trans->connection() != CN_CLOSE)) { 
-		if (cl.out.body.peek() == EOF) {
+		if (cl.out.empty()) {
 			cl.reset();
 		} else {
-			/*
-				The body message has not sent all yet.
-			*/
+			/* The message has not sent all yet. */
 			_evnt.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
 		}
 		_evnt.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
