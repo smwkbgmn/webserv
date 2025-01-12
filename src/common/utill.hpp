@@ -52,6 +52,7 @@ distance( const Container& obj, const Target token ) {
 not actually alloc'd size, but from the current positon to end */
 typedef std::streamsize	streamsize_t;
 typedef std::streampos	streampos_t;
+typedef std::streamoff	streamoff_t;
 
 template<typename Stream> streamsize_t
 streamsize( Stream& obj ) {

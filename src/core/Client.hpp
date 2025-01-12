@@ -15,7 +15,7 @@ class Client: public Socket {
 		~Client();
 
 		Client&			operator=(Client&&) noexcept;
-		bool			operator==(const Client&) const; /* For searching map container sock_Client */
+		bool			operator==(const Client&) const; 
 
 		const Server&	server() const;
 
@@ -37,6 +37,7 @@ class Client: public Socket {
 		bool			_receiveRequestMessage(Kqueue&, ssize_t&);
 		void			_receiveRequestDo(Kqueue&);
 
+		bool			_sendMessage(sstream_t&, ssize_t&);
 		ssize_t			_send(sstream_t&);
 };
 

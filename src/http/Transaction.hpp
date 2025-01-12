@@ -12,6 +12,7 @@ typedef struct message_s{
 	message_s();
 	
 	void	reset();
+	bool	empty();
 	
 	sstream_t	head;
 	ssize_t		head_read;

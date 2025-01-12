@@ -277,7 +277,10 @@ Transaction::buildError( const uint_t& status, Client& cl ) {
 }
 
 /* STRUCT */
-message_s::message_s() { reset(); }
+message_s::message_s() {
+	// body_c = nullptr;
+	reset();
+}
 
 void message_s::reset() {
 	head.str("");
@@ -292,6 +295,17 @@ void message_s::reset() {
 	body_size	= 0;
 	body_read 	= 0;
 
+	// if (body_c) {
+	// 	free(body_c);
+	// 	body_c = nullptr;
+	// }
+	// body_c_size = 0;
+	// body_c_pos = 0;
+
 	chunk		= false;
 	incomplete	= 0;
+}
+
+bool message_s::empty() {
+	return head.peek() == EOF && body.peek() == EOF;
 }
