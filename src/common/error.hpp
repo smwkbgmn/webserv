@@ -48,9 +48,9 @@ const str_t	err_msg[] = {
 	"a cnunked data exceeding hexsize",
 
 	"the transfer_encoding and content_length can not be taken at the same time",
-	"requested Transfer-Encoding way is not implemented",
+	"Transfer-Encoding way is not implemented",
 	"target source is not exist",
-	"requested uri has trailing slash but target source is not dir",
+	"uri has trailing slash but target source is not dir",
 	"cgi may be with GET and POST method only",
 
 	"the GET request may not be with body",
