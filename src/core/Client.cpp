@@ -139,16 +139,14 @@ bool Client::send() {
 
 	ssize_t total = 0;
 	
-	if (out.head.peek() != EOF) {
-		if (!_sendMessage(out.head, total)) {
-			return false;
-		}
+	if (out.head.peek() != EOF
+		&& !_sendMessage(out.head, total)) {
+		return false;
 	}
 
-	if (out.head.peek() == EOF && out.body.peek() != EOF) {
-		if (!_sendMessage(out.body, total)) {
-			return false;
-		}
+	if (out.head.peek() == EOF && out.body.peek() != EOF
+		&& !_sendMessage(out.body, total)) {
+		return false;
 	}
 
 	log::print("Client " + std::to_string(sock()) + " sending done by " + std::to_string(total));
