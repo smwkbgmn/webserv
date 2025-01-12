@@ -2,7 +2,7 @@
 
 int main(int argc, char* argv[]) {
 	if (argc > 2) {
-		std::cout << "Only the first config file will be applied to the server\n";
+		std::cerr << "Only the first config file will be applied to the server\n";
 	}
 
 	try {
@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
 		server.run();
 		
 	} catch (exception_t &exc) {
-		std::cout << exc.what() << '\n';
+		std::cerr << exc.what() << '\n';
 
 		return EXIT_FAILURE;
 	}

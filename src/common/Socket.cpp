@@ -22,9 +22,7 @@ Socket::Socket(const fd_t& sock_srv) {
 
 Socket::Socket(const Socket&& source) noexcept:
 addr(std::move(source.addr)), addr_len(source.addr_len), _sock(source._sock) {
-
-	std::cout << "socket move constructor has called\n";
-
+	
 	/* Prevent source object from closing fd in destructor */
 	const_cast<Socket&>(source)._sock = -1;
 }
