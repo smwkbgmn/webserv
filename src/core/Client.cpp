@@ -8,6 +8,8 @@ Socket(srv.sock()), trans(nullptr), _srv(srv) {
 
 	reset();
 	setNonblock();
+
+	log::print("Client " + std::to_string(sock()) + " connected to Server " + std::to_string(srv.sock()));
 }
 
 Client::Client(Client&& source) noexcept:
@@ -26,9 +28,8 @@ Client::~Client() {
 
 /* OPERATOR */
 Client& Client::operator=(Client&& source) noexcept {
-	if (this != &source) {
-		// do move things
-	}
+	if (this != &source) {}
+
 	return *this;
 }
 
@@ -43,10 +44,9 @@ const Server& Client::server() const {
 
 /* METHOD - receive: Receive message and handle it with in buffer */
 bool Client::receive(Kqueue& evnt) {
-	log::print("Client " + std::to_string(sock()) + " receiving");
-
     ssize_t byte = recv(sock(), _buff, SIZE_BUFF_RECV, 0);
-	log::print("Client " + std::to_string(sock()) + " receiving done by " + std::to_string(byte));
+
+	log::print("Client " + std::to_string(sock()) + " received by " + std::to_string(byte));
 
 	if (byte > 0) {
 		_receiveRequest(evnt, byte);
@@ -85,16 +85,7 @@ void Client::_receiveRequest(Kqueue& evnt, ssize_t& byte_recv) {
 		}
 	}
 	catch (err_t& err) {
-		log::print("Request: " + str_t(err.what()));
-
-		const errstat_t* errstat = dynamic_cast<const errstat_t*>(&err);
-		if (errstat) {
-			Transaction::buildError(errstat->code, *this);
-		} else {
-			Transaction::buildError(400, *this);
-		}
-
-		evnt.set(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+		_receiveRequestFail(evnt, err);
 	}
 }
 
@@ -133,10 +124,21 @@ void Client::_receiveRequestDo(Kqueue& evnt) {
 	}
 }
 
+void Client::_receiveRequestFail(Kqueue& evnt, err_t& err) {
+	std::cout << "Request: " + str_t(err.what()) << '\n';
+
+	const errstat_t* errstat = dynamic_cast<const errstat_t*>(&err);
+	if (errstat) {
+		Transaction::buildError(errstat->code, *this);
+	} else {
+		Transaction::buildError(400, *this);
+	}
+
+	evnt.set(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+}
+
 /* METHOD - send: Send the message from out buffer */
 bool Client::send() {
-	log::print("Client " + std::to_string(sock()) + " sending");
-
 	ssize_t total = 0;
 	
 	if (out.head.peek() != EOF
@@ -149,7 +151,7 @@ bool Client::send() {
 		return false;
 	}
 
-	log::print("Client " + std::to_string(sock()) + " sending done by " + std::to_string(total));
+	log::print("Client " + std::to_string(sock()) + " sent by " + std::to_string(total));
 	return true;
 }
 

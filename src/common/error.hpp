@@ -50,7 +50,7 @@ const str_t	err_msg[] = {
 	"the transfer_encoding and content_length can not be taken at the same time",
 	"requested Transfer-Encoding way is not implemented",
 	"target source is not exist",
-	"requested with slash end but target source is not dir",
+	"requested uri has trailing slash but target source is not dir",
 	"cgi may be with GET and POST method only",
 
 	"the GET request may not be with body",

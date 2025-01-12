@@ -2,8 +2,6 @@
 
 /* INSTANCIATE */
 Kqueue::Kqueue() {
-	log::print("Loading Event Handler...");
-
 	_fd = kqueue();	
 	if (_fd == ERROR) {
 		throwSysErr("kqueue");
