@@ -36,6 +36,7 @@ class Client: public Socket {
 		void			_receiveRequest(Kqueue&, ssize_t&);
 		bool			_receiveRequestMessage(Kqueue&, ssize_t&);
 		void			_receiveRequestDo(Kqueue&);
+		void			_receiveRequestFail(Kqueue&, err_t&);
 
 		bool			_sendMessage(sstream_t&, ssize_t&);
 		ssize_t			_send(sstream_t&);

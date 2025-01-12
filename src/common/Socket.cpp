@@ -18,8 +18,6 @@ Socket::Socket(const fd_t& sock_srv) {
 	if (_sock == ERROR) {
 		throwSysErr("accept");
 	}
-
-	log::print("Client " + std::to_string(_sock) + " has connected to Server " + std::to_string(sock_srv));
 }
 
 Socket::Socket(const Socket&& source) noexcept:
@@ -39,9 +37,8 @@ Socket::~Socket() {
 
 /* OPERATOR */
 Socket&	Socket::operator=(const Socket&& source) noexcept {
-	if (this != &source) {
-		// Do move things
-	}
+	if (this != &source) {}
+	
 	return *this;
 }
 

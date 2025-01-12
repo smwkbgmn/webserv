@@ -59,8 +59,6 @@ CGI::_valid( const Request& rqst ) {
 /* PARENT */
 void
 CGI::proceedParent( pid_t pid, const fd_t& sock_cl, Kqueue& evnt ) {
-	log::print( "Client " + std::to_string( sock_cl ) + " proceeding CGI" );
-
 	evnt.set( pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, evnt.cast( sock_cl ) );
 }
 
@@ -173,10 +171,8 @@ CGI::_buildChunk( message_t& out ) {
 		if ( size > 14 ) frac = 15;
 		else frac = size; 
 		
-		/* Add chunk head */
 		chunked << hexdigit[frac] << CRLF;
 
-		/* Add chunk data */
 		out.body.read( data, frac );
 		chunked.write( data, frac );
 		chunked << CRLF;

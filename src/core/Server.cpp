@@ -7,7 +7,7 @@ Socket() {
 	_open(port);
 	setNonblock();
 
-	log::print("Server has created on port " + std::to_string(port) + " with sock " + std::to_string(sock()));
+	std::cout << "Server " + std::to_string(sock()) + " has created on port " + std::to_string(port) + "\n";
 }
 
 Server::Server(Server&& target) noexcept:
@@ -35,9 +35,8 @@ void Server::_openSetAddr(const int& port) {
 
 /* OPERATOR */
 Server& Server::operator=(Server&& target) noexcept {
-	if (this != &target) {
-		// Do move things
-	}
+	if (this != &target) {}
+	
 	return *this;
 }
 

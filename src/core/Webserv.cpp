@@ -23,8 +23,6 @@ void Webserv::init(const char* filename) {
 }
 
 void Webserv::_loadConfig(const char* filename, vec<config_t>& holder) {
-	log::print("Loading Config...");
-
 	if (filename) {
 		parseConfig(holder, filename);
 	} else {
@@ -54,8 +52,6 @@ void Webserv::_loadConfigPrint(const vec<config_t>& holder) const {
 }
 
 void Webserv::_initServer(vec<config_t>& confs) {
-	log::print("Initiating Server...");
-
 	for (auto it = confs.begin(); it != confs.end(); ++it) {
 		if (_map.port_sock.find(it->listen) == _map.port_sock.end()) {
 			_initServerCreate(it->listen);
@@ -171,7 +167,7 @@ void Webserv::_runHandlerWrite(const event_t& ev) {
 }
 
 void Webserv::_runHandlerProcess(const event_t& ev) {
-	log::print("Client " + std::to_string(_evnt.cast(ev.udata)) + " proceeding CGI done");
+	log::print("Client " + std::to_string(_evnt.cast(ev.udata)) + " finished CGI");
 	/*
 		During CGI procedure if the Client has disconnected,
 		we will catch and handle it in handler_write
@@ -277,5 +273,5 @@ void Webserv::_disconnectPrint(const event_t& ev) {
 		}
 	}
 
-	log::print("Client " + std::to_string(ev.ident) + " has disconnected due to " + cause.str());
+	log::print("Client " + std::to_string(ev.ident) + " disconnected due to " + cause.str());
 }
