@@ -48,7 +48,7 @@ void* Kqueue::cast(const int& target) const {
 
 int Kqueue::cast(void* target) const {
 	if (target == nullptr) {
-		std::cout << "udata has set as nullptr\n";
+		std::cerr << "udata has set as nullptr\n";
 	}
 
 	return *reinterpret_cast<int*>(target);

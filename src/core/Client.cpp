@@ -83,8 +83,7 @@ void Client::_receiveRequest(Kqueue& evnt, ssize_t& byte_recv) {
 		if (_receiveRequestMessage(evnt, byte_recv)) {
 			_receiveRequestDo(evnt);
 		}
-	}
-	catch (err_t& err) {
+	} catch (err_t& err) {
 		_receiveRequestFail(evnt, err);
 	}
 }
@@ -125,7 +124,7 @@ void Client::_receiveRequestDo(Kqueue& evnt) {
 }
 
 void Client::_receiveRequestFail(Kqueue& evnt, err_t& err) {
-	std::cout << "Request: " + str_t(err.what()) << '\n';
+	std::cerr << "Request: " + str_t(err.what()) << '\n';
 
 	const errstat_t* errstat = dynamic_cast<const errstat_t*>(&err);
 	if (errstat) {
