@@ -34,7 +34,7 @@ void Kqueue::set(uintptr_t ident, int16_t filter, uint16_t flags, uint32_t fflag
 /* ACCESS */
 int Kqueue::fd() const { return _fd; }
 
-const event_t& Kqueue::que(const size_t& i) const {
+const event_t& Kqueue::event(const size_t& i) const {
 	if (i < _que.size()) {
 		return _que[i];
 	} else {

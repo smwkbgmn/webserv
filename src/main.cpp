@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
 		server.run();
 		
 	} catch (exception_t &exc) {
-		std::cerr << exc.what() << '\n';
+		std::cerr << "webserv: " << exc.what() << '\n';
 
 		return EXIT_FAILURE;
 	}

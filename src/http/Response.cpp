@@ -14,7 +14,12 @@ Response::Response( void ) {}
 
 Response::Response( const uint_t& status, const config_t& conf ) {
 	_errpage( status, conf );
-	_addServerInfo( CN_KEEP_ALIVE );
+	
+	if (status < 410) {
+		_addServerInfo( CN_KEEP_ALIVE );
+	} else {
+		_addServerInfo( CN_CLOSE );
+	}
 }
 
 Response::~Response( void ) {}

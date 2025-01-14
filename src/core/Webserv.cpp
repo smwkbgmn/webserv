@@ -1,15 +1,16 @@
 #include "Webserv.hpp"	
 
-int udata[4] = {
+int udata[5] = {
 	READ_SERVER,
 	READ_CLIENT,
+	WRITE_CLIENT_CLOSE,
 	TIMER_CLIENT_IDLE,
 	TIMER_CLIENT_RQST
 };
 
 /* INSTANCIATE */
 Webserv::Webserv(Kqueue& event_interface):
-state(SUSPEND), _evnt(event_interface) {}
+state(SUSPEND), _kq(event_interface) {}
 
 Webserv::~Webserv() {}
 
@@ -68,7 +69,7 @@ void Webserv::_initServerCreate(const port_t& port) {
 	_map.port_sock.insert(pair<port_t, fd_t>(port, srv.sock()));
 	_map.sock_srv.insert(pair<fd_t, Server&>(srv.sock(), srv));
 
-	_evnt.set(srv.sock(), EVFILT_READ, EV_ADD, 0, 0, _evnt.cast(udata[READ_SERVER]));
+	_kq.set(srv.sock(), EVFILT_READ, EV_ADD, 0, 0, _kq.cast(udata[READ_SERVER]));
 }
 
 void Webserv::_initScheme() {
@@ -85,19 +86,19 @@ void Webserv::run() {
 }
 
 void Webserv::_runHandler() {
-	int evnt_new = _evnt.renew();
+	int evnt_new = _kq.renew();
 
 	std::cout << '\n';
 	log::print(std::to_string(evnt_new) + " Event");
 
 	for (auto i = 0; i < evnt_new; ++i) {
-		if (_runHandlerDisconnect(_evnt.que(i))) { continue; }
+		if (_runHandlerDisconnect(_kq.event(i))) { continue; }
 
-		switch (_evnt.que(i).filter) {
-			case EVFILT_READ	: _runHandlerRead(_evnt.que(i)); break;
-			case EVFILT_WRITE	: _runHandlerWrite(_evnt.que(i)); break;
-			case EVFILT_PROC	: _runHandlerProcess(_evnt.que(i)); break;
-			case EVFILT_TIMER	: _runHandlerTimeout(_evnt.que(i)); break;
+		switch (_kq.event(i).filter) {
+			case EVFILT_READ	: _runHandlerRead(_kq.event(i)); break;
+			case EVFILT_WRITE	: _runHandlerWrite(_kq.event(i)); break;
+			case EVFILT_PROC	: _runHandlerProcess(_kq.event(i)); break;
+			case EVFILT_TIMER	: _runHandlerTimeout(_kq.event(i)); break;
 		}
 	}
 }
@@ -119,7 +120,7 @@ bool Webserv::_runHandlerDisconnect(const event_t& ev) {
 }
 
 void Webserv::_runHandlerRead(const event_t& ev) { 
-	switch (_evnt.cast(ev.udata)) {
+	switch (_kq.cast(ev.udata)) {
 		case READ_SERVER	: _runHandlerReadServer(ev.ident); break;
 		case READ_CLIENT	: _runHandlerReadClient(ev); break;
 	}
@@ -132,15 +133,15 @@ void Webserv::_runHandlerReadServer(const uintptr_t& ident) {
 
 	_map.sock_cl.insert(pair<fd_t, Client&>(cl.sock(), cl));
 
-	_evnt.set(cl.sock(), EVFILT_READ, EV_ADD, 0, 0, _evnt.cast(udata[READ_CLIENT]));
-	_evnt.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
+	_kq.set(cl.sock(), EVFILT_READ, EV_ADD, 0, 0, _kq.cast(udata[READ_CLIENT]));
+	_kq.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _kq.cast(udata[TIMER_CLIENT_IDLE]));
 }	
 
 void Webserv::_runHandlerReadClient(const event_t& ev) {
-	_evnt.set(ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
-	_evnt.set(ev.ident, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_RQST, _evnt.cast(udata[TIMER_CLIENT_RQST]));
+	_kq.set(ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.cast(udata[TIMER_CLIENT_IDLE]));
+	_kq.set(ev.ident, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_RQST, _kq.cast(udata[TIMER_CLIENT_RQST]));
 
-	if (!_map.sock_cl.at(ev.ident).receive(_evnt)) {
+	if (!_map.sock_cl.at(ev.ident).receive(_kq)) {
 		_disconnect(ev);
 	}
 }
@@ -153,26 +154,26 @@ void Webserv::_runHandlerWrite(const event_t& ev) {
 		check first if the Reqeust has constructed well, and second what connection
 		has set at the header field from both Requeset and Response
 	*/
-	if (cl.send() && (!cl.trans || cl.trans->connection() != CN_CLOSE)) { 
+	if (cl.send() && (!cl.trans || cl.trans->connection() != CN_CLOSE) && !ev.udata) { 
 		if (cl.out.empty()) {
 			cl.reset();
 		} else {
 			/* The message has not sent all yet. */
-			_evnt.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+			_kq.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
 		}
-		_evnt.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
+		_kq.set(cl.sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _kq.cast(udata[TIMER_CLIENT_IDLE]));
 	} else {
 		_disconnect(ev);
 	}
 }
 
 void Webserv::_runHandlerProcess(const event_t& ev) {
-	log::print("Client " + std::to_string(_evnt.cast(ev.udata)) + " finished CGI");
+	log::print("Client " + std::to_string(_kq.cast(ev.udata)) + " finished CGI");
 	/*
 		During CGI procedure if the Client has disconnected,
 		we will catch and handle it in handler_write
 	*/
-	Client& cl = _map.sock_cl.at(_evnt.cast(ev.udata));
+	Client& cl = _map.sock_cl.at(_kq.cast(ev.udata));
 
 	CGI::wait(cl.subproc);
 	if (WEXITSTATUS(cl.subproc.stat) == EXIT_SUCCESS) {
@@ -184,12 +185,12 @@ void Webserv::_runHandlerProcess(const event_t& ev) {
 
 	close(cl.subproc.fd[R]);
 
-	_evnt.set(ev.ident, EVFILT_PROC, EV_DELETE, 0, 0, _evnt.cast(cl.sock()));
-	_evnt.set(ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _evnt.cast(cl.sock()));
+	_kq.set(ev.ident, EVFILT_PROC, EV_DELETE, 0, 0, _kq.cast(cl.sock()));
+	_kq.set(ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.cast(cl.sock()));
 
-	_evnt.set(cl.sock(), EVFILT_READ, EV_ENABLE, 0, 0, _evnt.cast(udata[READ_CLIENT]));
-	_evnt.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-	_evnt.set(cl.sock() ,EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
+	_kq.set(cl.sock(), EVFILT_READ, EV_ENABLE, 0, 0, _kq.cast(udata[READ_CLIENT]));
+	_kq.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+	_kq.set(cl.sock() ,EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _kq.cast(udata[TIMER_CLIENT_IDLE]));
 }
 
 void Webserv::_runHandlerTimeout(const event_t& ev) {
@@ -209,19 +210,20 @@ void Webserv::_runHandlerTimeout(const event_t& ev) {
 void Webserv::_runHandlerTimeoutClient(const event_t& ev, Client& cl) {
 	log::print("Client " + std::to_string(cl.sock()) + " Proceeding handler timeout");
 
-	if (_evnt.cast(ev.udata) == udata[TIMER_CLIENT_IDLE]) {
+	if (_kq.cast(ev.udata) == udata[TIMER_CLIENT_IDLE]) {
 		_disconnect(ev);
+		
 	} else {
 		Transaction::buildError(408, cl);
 
-		_evnt.set(ev.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+		_kq.set(ev.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
 	}
 }
 
 void Webserv::_runHandlerTimeoutProcess(const event_t& ev) {
-	log::print("Client " + std::to_string(_evnt.cast(ev.udata)) + " Proceeding handler timeout");
+	log::print("Client " + std::to_string(_kq.cast(ev.udata)) + " Proceeding handler timeout");
 
-	Client& cl = _map.sock_cl.at(_evnt.cast(ev.udata));
+	Client& cl = _map.sock_cl.at(_kq.cast(ev.udata));
 	/*
 		Because of no need to proceed futher process, kill
 		the process and collect exit status by calling wait.
@@ -234,11 +236,11 @@ void Webserv::_runHandlerTimeoutProcess(const event_t& ev) {
 
 	Transaction::buildError(504, cl);
 
-	_evnt.set(ev.ident, EVFILT_PROC, EV_DELETE, 0, 0, nullptr);
+	_kq.set(ev.ident, EVFILT_PROC, EV_DELETE, 0, 0, nullptr);
 
-	_evnt.set(cl.sock(), EVFILT_READ, EV_ENABLE, 0, 0, _evnt.cast(udata[READ_CLIENT]));
-	_evnt.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-	_evnt.set(cl.sock() ,EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _evnt.cast(udata[TIMER_CLIENT_IDLE]));	
+	_kq.set(cl.sock(), EVFILT_READ, EV_ENABLE, 0, 0, _kq.cast(udata[READ_CLIENT]));
+	_kq.set(cl.sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+	_kq.set(cl.sock() ,EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, _kq.cast(udata[TIMER_CLIENT_IDLE]));	
 }
 
 void Webserv::_disconnect(const event_t& ev) {
@@ -249,11 +251,11 @@ void Webserv::_disconnect(const event_t& ev) {
 	_list.cl.erase(it_lst);
 
 	if (ev.filter != EVFILT_TIMER) {
-		_evnt.set(ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _evnt.cast(udata[TIMER_CLIENT_IDLE]));
-		_evnt.set(ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _evnt.cast(udata[TIMER_CLIENT_RQST]));
+		_kq.set(ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.cast(udata[TIMER_CLIENT_IDLE]));
+		_kq.set(ev.ident, EVFILT_TIMER, EV_DELETE, 0, 0, _kq.cast(udata[TIMER_CLIENT_RQST]));
 	}
-	_evnt.set(ev.ident, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
-	_evnt.set(ev.ident, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
+	_kq.set(ev.ident, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
+	_kq.set(ev.ident, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
 
 	_disconnectPrint(ev);
 }
@@ -261,15 +263,27 @@ void Webserv::_disconnect(const event_t& ev) {
 void Webserv::_disconnectPrint(const event_t& ev) {
 	sstream_t cause;
 
-	if (ev.filter == EVFILT_TIMER) {
-		cause << "EVFILT_TIMER";
-	} else {
-		if (ev.flags & EV_EOF) {
-			cause << "EV_EOF";
-		} else if (ev.flags & EV_ERROR) {
-			cause << "EV_ERROR";
-		} else {
-			cause << "UNKNOWN";
+	switch (ev.filter) {
+		case EVFILT_TIMER	: cause << "EVFILT_TIMER"; break;
+		case EVFILT_WRITE	: {
+			if (ev.udata && _kq.cast(ev.udata) == udata[WRITE_CLIENT_CLOSE]) {
+				/*
+					Above err_status code 410 means that it may include 
+					following body data receiving. To avoid unnecessary 
+					receiving, flaged it as closing connection.
+				*/
+				cause << "ERR_STATUS_ABOVE_410"; break;
+			}
+		}
+
+		default: {
+			if (ev.flags & EV_EOF) {
+				cause << "EV_EOF";
+			} else if (ev.flags & EV_ERROR) {
+				cause << "EV_ERROR";
+			} else {
+				cause << "UNKNOWN";
+			}
 		}
 	}
 

@@ -11,7 +11,7 @@
 /* Timeout in ms */
 # define TIMEOUT_CLIENT_IDLE 30000
 # define TIMEOUT_CLIENT_RQST 30000
-# define TIMEOUT_PROCS 60000
+# define TIMEOUT_PROCS 30000
 
 enum state_e {
 	SUSPEND,
@@ -21,11 +21,12 @@ enum state_e {
 enum udata_e {
 	READ_SERVER,
 	READ_CLIENT,
+	WRITE_CLIENT_CLOSE,
 	TIMER_CLIENT_IDLE,
 	TIMER_CLIENT_RQST
 };
 
-extern int udata[4];
+extern int udata[5];
 
 class Webserv {
 	public:
@@ -39,7 +40,7 @@ class Webserv {
 		void	run();
 		
 	private:
-		Kqueue&					_evnt;
+		Kqueue&					_kq;
 
 		struct list_s {
 			list<Server>		srv;

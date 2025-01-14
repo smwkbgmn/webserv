@@ -181,8 +181,34 @@ CGI::_buildChunk( message_t& out ) {
 	}
 	chunked << "0" << CRLF << CRLF;
 
-	out.body.str( chunked.str() );
+	// out.body.str( chunked.str() );
+	out.body = std::move(chunked);
 }
+
+// void
+// CGI::_buildChunk( message_t& out ) {
+// 	sstream_t	chunked;
+
+// 	char		data[15];
+// 	size_t		size = streamsize( out.body );
+// 	size_t		frac;
+
+// 	while ( size > 0 ) {
+// 		if ( size > 14 ) frac = 15;
+// 		else frac = size; 
+		
+// 		chunked << hexdigit[frac] << CRLF;
+
+// 		out.body.read( data, frac );
+// 		chunked.write( data, frac );
+// 		chunked << CRLF;
+
+// 		size -= frac;
+// 	}
+// 	chunked << "0" << CRLF << CRLF;
+
+// 	out.body.str( chunked.str() );
+// }
 
 /* CHILD */
 void
