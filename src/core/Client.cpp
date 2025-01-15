@@ -44,9 +44,7 @@ const Server& Client::server() const {
 
 /* METHOD - receive: Receive message and handle it with in buffer */
 bool Client::receive(Kqueue& kq) {
-	::memset(_buff, '\0', SIZE_BUFF_RECV);
     ssize_t byte = recv(sock(), _buff, SIZE_BUFF_RECV, 0);
-	log::history.fs << "RECEIVED:\n" << _buff;
 
 	log::print("Client " + std::to_string(sock()) + " received by " + std::to_string(byte));
 
@@ -184,8 +182,6 @@ ssize_t Client::_send(sstream_t& source) {
 	char* buff = new char[size];
 	source.read(buff, size);
 
-	log::history.fs << "SENT:\n" << buff;
-	
 	ssize_t sent = ::send(sock(), buff, size, NONE);
 	delete[] buff;
 
