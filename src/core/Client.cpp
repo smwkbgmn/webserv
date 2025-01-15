@@ -43,13 +43,13 @@ const Server& Client::server() const {
 }
 
 /* METHOD - receive: Receive message and handle it with in buffer */
-bool Client::receive(Kqueue& evnt) {
+bool Client::receive(Kqueue& kq) {
     ssize_t byte = recv(sock(), _buff, SIZE_BUFF_RECV, 0);
 
 	log::print("Client " + std::to_string(sock()) + " received by " + std::to_string(byte));
 
 	if (byte > 0) {
-		_receiveRequest(evnt, byte);
+		_receiveRequest(kq, byte);
 
 		return true;
 	} else if (byte == 0) {
@@ -63,7 +63,7 @@ bool Client::receive(Kqueue& evnt) {
 			not close the connection by just disable any futher receiving 
 			(e.g. The rest part of data that is produced through CGI)
 		*/
-		evnt.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, evnt.cast(udata[READ_CLIENT]));
+		kq.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, kq.cast(udata[READ_CLIENT]));
 
 		return true;
 	} else if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -78,38 +78,37 @@ bool Client::receive(Kqueue& evnt) {
 	}
 }
 
-void Client::_receiveRequest(Kqueue& evnt, ssize_t& byte_recv) {
+void Client::_receiveRequest(Kqueue& kq, ssize_t& byte_recv) {
 	try {
-		if (_receiveRequestMessage(evnt, byte_recv)) {
-			_receiveRequestDo(evnt);
+		if (_receiveRequestMessage(kq, byte_recv)) {
+			_receiveRequestDo(kq);
 		}
 	} catch (err_t& err) {
-		_receiveRequestFail(evnt, err);
+		_receiveRequestFail(kq, err);
 	}
 }
 
-bool Client::_receiveRequestMessage(Kqueue& evnt, ssize_t& byte_recv) {
-	if (Transaction::takeHead(in, _buff, byte_recv)) {
-		if (!trans) {
-			trans = new Transaction(*this, evnt);
-		}
-		if (Transaction::takeBody(in, subproc, _buff, byte_recv)) {
-			return true;
-		}
+bool Client::_receiveRequestMessage(Kqueue& kq, ssize_t& byte_recv) {
+	if (!in.head_done && Transaction::takeHead(in, _buff, byte_recv)) {
+		trans = new Transaction(*this);
+
+		trans->checkTarget();
+		trans->checkCGI(kq);
+	}
+	if (trans && Transaction::takeBody(in, subproc, _buff, byte_recv)) {
+		return true;
 	}
 	return false;
 }
 
-void Client::_receiveRequestDo(Kqueue& evnt) {
-	evnt.set(sock(), EVFILT_TIMER, EV_DELETE, 0, 0, evnt.cast(udata[TIMER_CLIENT_RQST]));
+void Client::_receiveRequestDo(Kqueue& kq) {
+	kq.set(sock(), EVFILT_TIMER, EV_DELETE, 0, 0, kq.cast(udata[TIMER_CLIENT_RQST]));
 
 	if (!subproc.pid) {
-		if (trans) {
-			trans->act();
-		}
+		trans->act();
 
-		evnt.set(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
-		evnt.set(sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, evnt.cast(udata[TIMER_CLIENT_IDLE]));
+		kq.set(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+		kq.set(sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, kq.cast(udata[TIMER_CLIENT_IDLE]));
 	} else {
 		/*
 			When CGI request has received and receving body data has done,
@@ -117,23 +116,33 @@ void Client::_receiveRequestDo(Kqueue& evnt) {
 		*/
 		close(subproc.fd[W]);
 
-		evnt.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, evnt.cast(udata[READ_CLIENT]));
+		kq.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, kq.cast(udata[READ_CLIENT]));
 
-		evnt.set(subproc.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_PROCS, evnt.cast(sock()));
+		kq.set(subproc.pid, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_PROCS, kq.cast(sock()));
 	}
 }
 
-void Client::_receiveRequestFail(Kqueue& evnt, err_t& err) {
+void Client::_receiveRequestFail(Kqueue& kq, err_t& err) {
 	std::cerr << "Request: " + str_t(err.what()) << '\n';
 
 	const errstat_t* errstat = dynamic_cast<const errstat_t*>(&err);
+	void* udata_close = nullptr;
+	
 	if (errstat) {
 		Transaction::buildError(errstat->code, *this);
+
+		if (errstat->code > 410) {
+			udata_close = kq.cast(udata[WRITE_CLIENT_CLOSE]);
+
+			kq.set(sock(), EVFILT_READ, EV_DISABLE, 0, 0, kq.cast(udata[READ_CLIENT]));
+		}
 	} else {
 		Transaction::buildError(400, *this);
 	}
 
-	evnt.set(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, nullptr);
+	kq.set(sock(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata_close);
+	kq.set(sock(), EVFILT_TIMER, EV_DELETE, 0, 0, kq.cast(udata[TIMER_CLIENT_RQST]));
+	kq.set(sock(), EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT_CLIENT_IDLE, kq.cast(udata[TIMER_CLIENT_IDLE]));
 }
 
 /* METHOD - send: Send the message from out buffer */
@@ -154,14 +163,14 @@ bool Client::send() {
 	return true;
 }
 
-bool Client::_sendMessage(sstream_t& source, ssize_t& counter) {
+bool Client::_sendMessage(sstream_t& source, ssize_t& total) {
 	size_t pos = static_cast<size_t>(source.tellg());
 
 	ssize_t sent = _send(source);
 	if (sent < 0) {
 		return false;
 	}
-	counter += sent;
+	total += sent;
 
 	source.seekg(static_cast<streamoff_t>(pos + sent), std::ios_base::beg);
 	return true;
@@ -172,7 +181,7 @@ ssize_t Client::_send(sstream_t& source) {
 
 	char* buff = new char[size];
 	source.read(buff, size);
-	
+
 	ssize_t sent = ::send(sock(), buff, size, NONE);
 	delete[] buff;
 

@@ -151,11 +151,22 @@ void
 CGI::_buildHeaderLen( message_t& out, const size_t& pos_header_end ) {
 	if ( !found( pos_header_end ) || ( found( pos_header_end ) &&
 		!found( out.head.str().find( HTTP::key.header_out.at( OUT_CONTENT_LEN ) ) ) ) ) {
-		out.head << 
-		HTTP::key.header_out.at( OUT_TRANSFER_ENC ) << ':' << SP <<
-		HTTP::http.encoding.at( TE_CHUNKED ) << CRLF;
+		/*
+			Checkout the Nginx's cgi_buffering.
+			Nginx can serve both way that gives data to Client directly and
+			buffer the produced data. I'm currentlt implemented only buffered
+			one, so in my case no need of the chunked reponse (stream). 
+			https://nginx.org/en/docs/http/ngx_http_scgi_module.html#example
+		*/
+		// out.head << 
+		// HTTP::key.header_out.at( OUT_TRANSFER_ENC ) << ':' << SP <<
+		// HTTP::http.encoding.at( TE_CHUNKED ) << CRLF;
 
-		out.chunk = TRUE;
+		// out.chunk = TRUE;
+
+		out.head <<
+		HTTP::key.header_out.at(OUT_CONTENT_LEN) << ':' << SP <<
+		streamsize(out.body) << CRLF;
 	}
 }
 

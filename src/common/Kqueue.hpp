@@ -16,7 +16,7 @@ class Kqueue {
 		virtual ~Kqueue();
 
 		int				fd() const;
-		const event_t&	que(const size_t&) const;
+		const event_t&	event(const size_t&) const;
 
 		int				renew();
 		void			set(uintptr_t, int16_t, uint16_t, uint32_t, intptr_t, void*);

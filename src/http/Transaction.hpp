@@ -5,8 +5,8 @@
 # include "Request.hpp"
 # include "Response.hpp"
 
-# define SIZE_BUFF		1024
-# define SIZE_BUFF_RECV 2048
+# define SIZE_BUFF_RECV		0xffff
+# define SIZE_BUFF_CHUNK	0xffff
 
 typedef struct message_s{
 	message_s();
@@ -30,10 +30,10 @@ static const char hexdigit[17] = "0123456789ABCDEF";
 
 class Transaction {
 	public:
-		Transaction( Client&, Kqueue& );
+		Transaction( Client& );
 
 		const config_t&		config( void );
-		connection_e		connection( void );			
+		connection_e		connection( void );
 
 		static bool			takeHead( message_t&, char*, ssize_t& );
 		static bool			takeBody( message_t&, const process_t&, const char*, const ssize_t& );
@@ -41,6 +41,8 @@ class Transaction {
 		static void			build( const Response&, message_t& );
 		static void			buildError( const uint_t&, Client& );
 
+		void				checkTarget( void );
+		void				checkCGI( Kqueue& );
 		void				act( void );
 
 	private:
@@ -48,6 +50,7 @@ class Transaction {
 
 		Request				_rqst;
 		Response			_rspn;
+
 
 		static bool			_recvBodyPlain( message_t&, const process_t&, const char*, const ssize_t& );
 		static bool			_recvBodyChunk( message_t&, const process_t&, const char* );
@@ -61,7 +64,6 @@ class Transaction {
 		static void			_buildHeaderValue( const response_header_t&, uint_t, sstream_t& );
 		static void			_buildBody( const Response&, message_t& );
 		
-		void				_validRequest( void );
 		void				_setBodyEnd( void );
 		bool				_invokeCGI( const Request&, process_t& );
 };

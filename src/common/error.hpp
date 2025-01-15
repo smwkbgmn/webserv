@@ -54,8 +54,8 @@ const str_t	err_msg[] = {
 	"cgi may be with GET and POST method only",
 
 	"the GET request may not be with body",
-	"the requested body size is unknown from client request",
-	"the requested body size exceeds configured size of limitation",
+	"content-length is unknown from client request",
+	"content-length exceeds configured size of limitation",
 
 	"the CGI failed to exit as SUCCESS",
 	"the CGI exceed time to limit for proceeding",

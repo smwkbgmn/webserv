@@ -27,26 +27,37 @@ Transaction::connection( void ) {
 }
 
 /* INTANTIATE */
-Transaction::Transaction( Client& client, Kqueue& evnt ): _cl( client ), _rqst( client ) {
-	if ( !getInfo( _rqst.line().uri, _rqst.info ) && _rqst.location().rewrite.empty() ) {
-		if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
-		if ( errno == 20 ) throw errstat_t( 404, err_msg[SOURCE_NOT_DIR] );
-		throw errstat_t( 500 );
-	}
- 
+Transaction::Transaction( Client& cl ): _cl( cl ), _rqst( cl ) {
 	_setBodyEnd();
-	if ( _invokeCGI( _rqst, _cl.subproc ) ) {
-		CGI::detach( _rqst, _cl.subproc );
-
-		if ( _cl.subproc.pid ) { CGI::proceedParent( _cl.subproc.pid, _cl.sock(), evnt ); }
-		else { CGI::proceedChild( _rqst, _cl.subproc ); }
-	}
 }
 
 void
 Transaction::_setBodyEnd( void ) {
 	if ( _rqst.header().transfer_encoding == TE_CHUNKED ) _cl.in.chunk = TRUE;
 	else _cl.in.body_size = _rqst.header().content_length;
+}
+
+/* METHOD - checkTarget:
+Confirm state of target source before proceed */
+void
+Transaction::checkTarget( void ) {
+	if ( !getInfo( _rqst.line().uri, _rqst.info ) && _rqst.location().rewrite.empty() ) {
+		if ( errno == 2 ) throw errstat_t( 404, err_msg[SOURCE_NOT_FOUND] );
+		if ( errno == 20 ) throw errstat_t( 404, err_msg[SOURCE_NOT_DIR] );
+		throw errstat_t( 500 );
+	}
+}
+
+/* METHOD - checkCGI:
+Confirm if the CGI request has received and be ready for CGI proceed */
+void
+Transaction::checkCGI( Kqueue& kq ) {
+	if ( _invokeCGI( _rqst, _cl.subproc ) ) {
+		CGI::detach( _rqst, _cl.subproc );
+
+		if ( _cl.subproc.pid ) { CGI::proceedParent( _cl.subproc.pid, _cl.sock(), kq ); }
+		else { CGI::proceedChild( _rqst, _cl.subproc ); }
+	}
 }
 
 bool
@@ -153,7 +164,7 @@ Transaction::_recvBodyChunk( message_t& in, const process_t& procs, const char* 
 
 bool
 Transaction::_recvBodyChunkData( message_t& in, const process_t& procs, isstream_t& iss ) {
-	char		data[SIZE_BUFF];
+	char		data[SIZE_BUFF_CHUNK];
 	
 	ssize_t		frac = 1;
 	ssize_t		left;
@@ -161,7 +172,7 @@ Transaction::_recvBodyChunkData( message_t& in, const process_t& procs, isstream
 	while ( frac ) {
 		iss >> std::hex >> frac >> std::ws;
 
-		if ( iss.fail() || frac > SIZE_BUFF ) throw errstat_t( 400 );
+		if ( iss.fail() || frac > SIZE_BUFF_CHUNK ) throw errstat_t( 400 );
 
 		left = streamsize( iss );
 		if ( left < frac + SIZE_CRLF ) in.incomplete = frac + SIZE_CRLF - left;
@@ -191,7 +202,7 @@ Transaction::_recvBodyChunkPredata( message_t& in, const process_t& procs ) {
 
 bool
 Transaction::_recvBodyChunkIncomplete( message_t& in, const process_t& procs, isstream_t& iss ) {
-	char data[SIZE_BUFF];
+	char data[SIZE_BUFF_CHUNK];
 
 	iss.read( data, in.incomplete );
 	if ( !procs.pid ) in.body.write( data, in.incomplete );
