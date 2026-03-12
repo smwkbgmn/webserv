@@ -1,7 +1,8 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-# include "Socket.hpp"
+// # include "Socket.hpp"
+# include "filter.hpp"
 
 # define MAX_CLIENT 32
 # define DEFAULT	0

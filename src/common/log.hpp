@@ -1,10 +1,10 @@
 #ifndef LOG_HPP
 # define LOG_HPP
 
+# include "common.hpp"
+
 # include <ctime>
 # include <filesystem>
-
-# include "type.hpp"
 
 namespace log {
 	extern const std::time_t	begin;

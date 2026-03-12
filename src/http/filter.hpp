@@ -1,7 +1,7 @@
 #ifndef FILTER_HPP
 # define FILTER_HPP
 
-# include "type.hpp"
+# include "common.hpp"
 
 /*
 	token	= 1*tchar

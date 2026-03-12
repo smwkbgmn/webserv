@@ -1,13 +1,13 @@
 #ifndef ERROR_HPP
 # define ERROR_HPP
 
-# include <exception>
-# include <sys/errno.h>
-
-# include "type.hpp"
-
 # define ERROR -1
 # define SUCCESS 0
+
+# include "common.hpp"
+
+# include <exception>
+# include <sys/errno.h>
 
 extern int errno;
 
@@ -78,8 +78,6 @@ typedef struct errstat_s: err_t {
 void	throwSysErr( const str_t&);
 void	throwSysErr( const str_t&, const uint_t& );
 void	throwSysErr( const str_t&, const uint_t&, const size_t& );
-
-# include "log.hpp"
 
 #endif
 

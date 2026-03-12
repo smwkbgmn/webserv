@@ -1,4 +1,5 @@
 #include "error.hpp"
+#include "log.hpp"
 
 void
 throwSysErr( const str_t& fname ) {

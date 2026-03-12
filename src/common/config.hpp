@@ -1,19 +1,19 @@
 #ifndef CONFIG_HPP
 # define CONFIG_HPP
 
-#include <cstdlib>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <map>
-#include <stdexcept>
-#include <algorithm>
-#include <climits>
-#include <cctype>
+// #include <cstdlib>
+// #include <fstream>
+// #include <iostream>
+// #include <sstream>
+// #include <string>
+// #include <vector>
+// #include <map>
+// #include <stdexcept>
+// #include <algorithm>
+// #include <climits>
+// #include <cctype>
 
-#include "type.hpp"
+#include "filter.hpp"
 
 #define on true
 #define off false

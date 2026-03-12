@@ -1,12 +1,9 @@
 #ifndef CGI_HPP
 # define CGI_HPP
 
-# include <unistd.h>
 # include <sys/wait.h>
 
 # include "HTTP.hpp"
-# include "Socket.hpp"
-# include "Kqueue.hpp"
 
 # define SIZE_BUFF_C 2048
 

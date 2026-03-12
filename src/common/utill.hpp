@@ -1,9 +1,9 @@
 #ifndef UTILL_HPP
 # define UTILL_HPP
 
-# include "type.hpp"
-
 # define NOT_FOUND -1
+
+# include "common.hpp"
 
 /* UTILL */
 bool 			dead( const process_t& );

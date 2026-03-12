@@ -1,12 +1,8 @@
 #ifndef HTTP_HPP
 # define HTTP_HPP
 
-# include <cstdio>
+# include "config.hpp"
 
-# include "log.hpp"
-# include "utill.hpp"
-# include "Client.hpp"
-	
 # define CNT_METHOD 3
 # define CNT_VERSION 4
 # define CNT_ENCODING 2
@@ -48,9 +44,6 @@ class HTTP {
 };
 
 # include "CGI.hpp"
-
-# include "Request.hpp"
-# include "Response.hpp"
 
 #endif
 

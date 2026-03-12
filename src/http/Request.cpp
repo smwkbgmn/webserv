@@ -1,7 +1,5 @@
-# include "HTTP.hpp"
-# include "Client.hpp"
-
 #include "Request.hpp"
+#include "Client.hpp"
 
 /* ACCESS */
 const Client&			Request::client( void ) const { return _client; }

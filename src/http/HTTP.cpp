@@ -1,4 +1,5 @@
 #include "HTTP.hpp"
+#include "Request.hpp"
 
 http_t HTTP::http;
 keys_t HTTP::key;

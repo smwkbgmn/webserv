@@ -1,8 +1,7 @@
 #ifndef REQUEST_HPP
 # define REQUEST_HPP
 
-# include "type.hpp"
-# include "utill.hpp"
+# include "HTTP.hpp"
 
 class Client;
 

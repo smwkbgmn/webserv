@@ -1,8 +1,6 @@
 #ifndef TRANSACTION_HPP
 # define TRANSACTION_HPP
 
-# include "Kqueue.hpp"
-# include "Request.hpp"
 # include "Response.hpp"
 
 # define SIZE_BUFF_RECV		0xffff
@@ -67,7 +65,5 @@ class Transaction {
 		void				_setBodyEnd( void );
 		bool				_invokeCGI( const Request&, process_t& );
 };
-
-# include "Client.hpp"
 
 #endif

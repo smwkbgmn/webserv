@@ -1,7 +1,7 @@
-#ifndef TYPE_HPP
-# define TYPE_HPP
+#ifndef COMMON_HPP
+# define COMMON_HPP
 
-# include <string>
+# define NONE			0
 
 # define FALSE			0
 # define TRUE			1
@@ -14,6 +14,7 @@ typedef int							stat_t;
 typedef unsigned int				uint_t;
 typedef unsigned int				bits_t;
 
+# include <string>
 typedef std::string					str_t;
 
 /*
@@ -82,9 +83,13 @@ typedef struct process_s {
 }	process_t;
 
 # include "File.hpp"
+# include "log.hpp"
 
 # include "error.hpp"
-# include "filter.hpp"
+# include "utill.hpp"
+
+# include "Socket.hpp"
+# include "Kqueue.hpp"
 
 #endif
 

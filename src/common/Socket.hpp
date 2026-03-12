@@ -1,7 +1,7 @@
 #ifndef SOCKET_HPP
 # define SOCKET_HPP
 
-# include "type.hpp"
+# include "common.hpp"
 
 # include <unistd.h>
 # include <fcntl.h>

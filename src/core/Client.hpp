@@ -1,7 +1,6 @@
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 
-# include "CGI.hpp"
 # include "Server.hpp"
 # include "Transaction.hpp"
 

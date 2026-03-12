@@ -1,7 +1,7 @@
 #ifndef KQUEUE_HPP
 # define KQUEUE_HPP
 
-# include "type.hpp"
+# include "common.hpp"
 
 # include <sys/event.h>
 typedef struct kevent event_t;

@@ -1,6 +1,4 @@
 #include "Transaction.hpp"
-
-#include "HTTP.hpp"
 #include "Client.hpp"
 
 /*	HTTP MESSAGE FORMMAT
